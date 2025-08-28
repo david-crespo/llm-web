@@ -69,7 +69,6 @@ class Storage {
 			const plainChat = {
 				createdAt: chat.createdAt.toISOString(),
 				systemPrompt: chat.systemPrompt,
-				summary: chat.summary,
 				messages: chat.messages
 			};
 
@@ -94,7 +93,6 @@ class Storage {
 				id,
 				createdAt: chat.createdAt.toISOString(),
 				systemPrompt: chat.systemPrompt,
-				summary: chat.summary,
 				messages: chat.messages
 			};
 

@@ -33,6 +33,5 @@ export type Chat = {
 	systemPrompt: string;
 	messages: ChatMessage[];
 	createdAt: Date;
-	summary?: string;
 	id?: number; // Optional ID for stored chats
 };

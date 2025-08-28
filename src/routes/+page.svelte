@@ -282,6 +282,23 @@
 		};
 	}
 
+	// Click outside handler for sidebar
+	function clickOutsideSidebar(node: HTMLElement) {
+		const handleClick = (event: MouseEvent) => {
+			if (!node.contains(event.target as Node)) {
+				sidebarOpen = false;
+			}
+		};
+
+		document.addEventListener('click', handleClick, true);
+
+		return {
+			destroy() {
+				document.removeEventListener('click', handleClick, true);
+			}
+		};
+	}
+
 	// Auto-scroll to bottom of chat
 	function scrollToBottom() {
 		if (messagesContainer) {
@@ -299,7 +316,7 @@
 
 	// Auto-scroll during streaming responses
 	$effect(() => {
-		if (isLoading && currentChat?.messages.length > 0) {
+		if (isLoading && currentChat?.messages && currentChat.messages.length > 0) {
 			const lastMessage = currentChat.messages[currentChat.messages.length - 1];
 			if (lastMessage.role === 'assistant') {
 				// Scroll to bottom during streaming
@@ -308,15 +325,57 @@
 		}
 	});
 
+	// Get excerpt of first user message for chat preview (two lines)
+	function getChatPreview(chat: Chat): { line1: string; line2: string } {
+		const firstUserMessage = chat.messages.find((msg) => msg.role === 'user');
+		if (firstUserMessage) {
+			const content = firstUserMessage.content;
+			const words = content.split(' ');
+			let line1 = '';
+			let line2 = '';
+
+			// Build first line (up to ~40 chars or 6 words)
+			let charCount = 0;
+			let wordIndex = 0;
+			while (wordIndex < words.length && charCount < 40 && wordIndex < 6) {
+				const word = words[wordIndex];
+				if (charCount + word.length + 1 > 40) break;
+				line1 += (line1 ? ' ' : '') + word;
+				charCount += word.length + 1;
+				wordIndex++;
+			}
+
+			// Build second line with remaining content
+			if (wordIndex < words.length) {
+				line2 = words.slice(wordIndex).join(' ');
+				// Truncate second line if too long
+				if (line2.length > 40) {
+					line2 = line2.slice(0, 37) + '...';
+				}
+			}
+
+			return { line1: line1 || content.slice(0, 40), line2 };
+		}
+		return { line1: 'New Chat', line2: '' };
+	}
+
 	// Initialize on mount
 	init();
 </script>
 
-<div class="flex h-screen">
+<div class="flex h-screen {sidebarOpen ? 'overflow-hidden' : ''}">
+	<!-- Sidebar scrim -->
+	{#if sidebarOpen}
+		<div class="fixed inset-0 z-40 bg-black/20"></div>
+	{/if}
+
 	<!-- Sidebar -->
 	{#if sidebarOpen}
-		<div class="fixed top-0 left-0 z-10 h-full w-64 flex-col border-r border-gray-300 bg-gray-50">
-			<!-- Header with close button -->
+		<div
+			class="fixed top-0 left-0 z-50 flex h-screen w-4/5 flex-col overflow-hidden bg-gray-50"
+			use:clickOutsideSidebar
+		>
+			<!-- Header -->
 			<div class="flex items-center justify-between border-b border-gray-300 p-4">
 				<h3 class="text-sm font-medium">Chat History</h3>
 				<button
@@ -335,75 +394,47 @@
 				{:else}
 					<div class="space-y-2">
 						{#each chatHistory as chat}
-							<div class="group relative">
+							{@const preview = getChatPreview(chat)}
+							<div class="group rounded border border-gray-200">
 								<div
-									class="cursor-pointer rounded p-2 transition-colors hover:bg-gray-200 {currentChat?.id ===
+									class="cursor-pointer p-3 transition-colors hover:bg-gray-100 {currentChat?.id ===
 									chat.id
-										? 'bg-gray-200'
+										? 'bg-gray-100'
 										: ''}"
 									role="button"
 									tabindex="0"
 									onclick={() => selectChat(chat.id)}
 									onkeydown={(e) => e.key === 'Enter' && selectChat(chat.id)}
 								>
-									<div class="truncate text-xs font-medium">
-										{chat.summary || 'Untitled Chat'}
+									<div class="space-y-1">
+										<div class="text-sm font-semibold text-gray-900">
+											<div>{preview.line1}</div>
+											{#if preview.line2}
+												<div>{preview.line2}</div>
+											{/if}
+										</div>
 									</div>
+								</div>
+								<div class="flex items-center justify-between border-t border-gray-200 px-3 py-2">
 									<div class="text-xs text-gray-500">
 										{chat.createdAt.toLocaleDateString()} • {chat.messages.length} messages
 									</div>
-									{#if chat.messages.length > 0}
-										<div class="mt-1 truncate text-xs text-gray-400">
-											{chat.messages[chat.messages.length - 1].content.slice(0, 40)}...
-										</div>
-									{/if}
+									<button
+										onclick={(e) => {
+											e.stopPropagation();
+											chatToDelete = chat.id;
+										}}
+										class="text-gray-400 hover:text-red-500"
+										aria-label="Delete chat"
+									>
+										🗑️
+									</button>
 								</div>
-								<button
-									onclick={(e) => {
-										e.stopPropagation();
-										chatToDelete = chat.id;
-									}}
-									class="absolute top-2 right-2 text-gray-400 opacity-100 hover:text-red-500"
-									aria-label="Delete chat"
-								>
-									🗑️
-								</button>
 							</div>
 						{/each}
 					</div>
 				{/if}
 			</div>
-
-			<!-- Delete confirmation dialog -->
-			{#if chatToDelete !== null}
-				<div class="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
-					<div class="w-80 rounded-lg bg-white p-6 shadow-lg">
-						<h3 class="mb-4 text-lg font-medium">Delete Chat</h3>
-						<p class="mb-6 text-sm text-gray-600">
-							Are you sure you want to delete this chat? This action cannot be undone.
-						</p>
-						<div class="flex justify-end gap-3">
-							<button
-								onclick={() => (chatToDelete = null)}
-								class="rounded border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50"
-							>
-								Cancel
-							</button>
-							<button
-								onclick={async () => {
-									if (chatToDelete !== null) {
-										await deleteChat(chatToDelete);
-										chatToDelete = null;
-									}
-								}}
-								class="rounded bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-700"
-							>
-								Delete
-							</button>
-						</div>
-					</div>
-				</div>
-			{/if}
 
 			<!-- Bottom section -->
 			<div class="space-y-3 border-t border-gray-300 p-4">
@@ -419,6 +450,37 @@
 				<a href="/settings" class="block text-sm text-blue-600 hover:text-blue-800"> API Keys </a>
 			</div>
 		</div>
+
+		<!-- Delete confirmation dialog -->
+		{#if chatToDelete !== null}
+			<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+				<div class="w-80 rounded-lg bg-white p-6 shadow-lg">
+					<h3 class="mb-4 text-lg font-medium">Delete Chat</h3>
+					<p class="mb-6 text-sm text-gray-600">
+						Are you sure you want to delete this chat? This action cannot be undone.
+					</p>
+					<div class="flex justify-end gap-3">
+						<button
+							onclick={() => (chatToDelete = null)}
+							class="rounded border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50"
+						>
+							Cancel
+						</button>
+						<button
+							onclick={async () => {
+								if (chatToDelete !== null) {
+									await deleteChat(chatToDelete);
+									chatToDelete = null;
+								}
+							}}
+							class="rounded bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-700"
+						>
+							Delete
+						</button>
+					</div>
+				</div>
+			</div>
+		{/if}
 	{/if}
 
 	<!-- Main chat area -->

@@ -16,8 +16,8 @@
 		// Configure marked renderer to add target="_blank" to links
 		const renderer = new marked.Renderer();
 		const originalLink = renderer.link.bind(renderer);
-		renderer.link = (href, title, text) => {
-			const link = originalLink(href, title, text);
+		renderer.link = (token) => {
+			const link = originalLink(token);
 			return link.replace('<a ', '<a target="_blank" rel="noopener noreferrer" ');
 		};
 

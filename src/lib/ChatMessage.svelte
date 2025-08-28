@@ -132,12 +132,6 @@
 		<!-- Assistant message -->
 		<div class="border-l-2 border-gray-200 pl-4">
 			<Markdown content={message.content} />
-
-			{#if message.image_url}
-				<div class="mt-3">
-					<img src={message.image_url} alt="" class="max-w-md rounded border" />
-				</div>
-			{/if}
 		</div>
 	{/if}
 </div>
