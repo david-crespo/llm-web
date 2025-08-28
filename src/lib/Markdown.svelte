@@ -11,9 +11,17 @@
 
 	let divClass = $derived(`prose prose-sm max-w-none${className ? ' ' + className : ''}`);
 
-	// Simple markdown rendering without syntax highlighting for now
+	// Configure marked to open links in new tabs
 	$effect(() => {
-		html = marked.parse(content) as string;
+		// Configure marked renderer to add target="_blank" to links
+		const renderer = new marked.Renderer();
+		const originalLink = renderer.link.bind(renderer);
+		renderer.link = (href, title, text) => {
+			const link = originalLink(href, title, text);
+			return link.replace('<a ', '<a target="_blank" rel="noopener noreferrer" ');
+		};
+
+		html = marked.parse(content, { renderer }) as string;
 	});
 </script>
 
@@ -90,5 +98,14 @@
 	.prose :global(th) {
 		background-color: #f9fafb;
 		font-weight: 600;
+	}
+
+	.prose :global(a) {
+		color: #2563eb;
+		text-decoration: underline;
+	}
+
+	.prose :global(a:hover) {
+		color: #1d4ed8;
 	}
 </style>

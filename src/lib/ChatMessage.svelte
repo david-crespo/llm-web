@@ -76,22 +76,27 @@
 				</div>
 			</details>
 		{/if}
-	{:else}
-		<!-- User message header -->
-		<div class="mb-2 flex items-center justify-between text-sm text-gray-600">
-			<span class="font-medium">You</span>
-			<div class="relative" use:clickOutside>
-				<button
-					onclick={() => (showMenu = !showMenu)}
-					class="rounded p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700"
-					aria-label="Message options"
-				>
-					⋮
-				</button>
+	{/if}
+
+	<!-- Message content -->
+	{#if message.role === 'user'}
+		<!-- User message bubble -->
+		<div class="flex justify-end">
+			<div class="relative max-w-[80%] rounded-lg bg-gray-200 px-4 py-3 pr-8" use:clickOutside>
+				<!-- Kebab menu inside bubble -->
+				<div class="absolute top-2 right-2">
+					<button
+						onclick={() => (showMenu = !showMenu)}
+						class="ml-6 rounded-full p-1.5 text-lg font-bold text-gray-600 transition-colors hover:bg-gray-300 hover:text-gray-800"
+						aria-label="Message options"
+					>
+						⋮
+					</button>
+				</div>
 
 				{#if showMenu}
 					<div
-						class="absolute top-full right-0 z-10 mt-1 w-32 rounded border border-gray-300 bg-white py-1 shadow-lg"
+						class="absolute top-8 right-2 z-10 w-32 rounded border border-gray-300 bg-white py-1 shadow-lg"
 					>
 						<button
 							onclick={() => {
@@ -113,18 +118,26 @@
 						</button>
 					</div>
 				{/if}
+
+				<Markdown content={message.content} />
+
+				{#if message.image_url}
+					<div class="mt-3">
+						<img src={message.image_url} alt="" class="max-w-md rounded border" />
+					</div>
+				{/if}
 			</div>
 		</div>
+	{:else}
+		<!-- Assistant message -->
+		<div class="border-l-2 border-gray-200 pl-4">
+			<Markdown content={message.content} />
+
+			{#if message.image_url}
+				<div class="mt-3">
+					<img src={message.image_url} alt="" class="max-w-md rounded border" />
+				</div>
+			{/if}
+		</div>
 	{/if}
-
-	<!-- Message content -->
-	<div class="border-l-2 border-gray-200 pl-4">
-		<Markdown content={message.content} />
-
-		{#if message.role === 'user' && message.image_url}
-			<div class="mt-3">
-				<img src={message.image_url} alt="" class="max-w-md rounded border" />
-			</div>
-		{/if}
-	</div>
 </div>

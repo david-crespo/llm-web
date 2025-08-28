@@ -27,7 +27,7 @@ export const models: Model[] = [
 	{
 		provider: 'openai',
 		key: 'gpt-5',
-		id: 'gpt-5',
+		id: 'GPT-5',
 		input: 1.25,
 		input_cached: 0.125,
 		output: 10,
@@ -36,7 +36,7 @@ export const models: Model[] = [
 	{
 		provider: 'anthropic',
 		key: 'claude-sonnet-4-20250514',
-		id: 'sonnet-4',
+		id: 'Sonnet 4',
 		input: 3,
 		input_cached: 0.3,
 		output: 15
@@ -44,7 +44,7 @@ export const models: Model[] = [
 	{
 		provider: 'anthropic',
 		key: 'claude-opus-4-1-20250805',
-		id: 'opus-4',
+		id: 'Opus 4.1',
 		input: 15,
 		input_cached: 1.5,
 		output: 75
@@ -52,7 +52,7 @@ export const models: Model[] = [
 	{
 		provider: 'google',
 		key: 'gemini-2.5-pro',
-		id: 'gemini-pro',
+		id: 'Gemini 2.5 Pro',
 		input: 1.25,
 		input_cached: 0.31,
 		output: 10.0

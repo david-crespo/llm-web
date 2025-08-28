@@ -438,10 +438,13 @@
 					{sidebarOpen ? '✕' : '☰'}
 				</button>
 
+				<!-- Spacer to push controls to the right -->
+				<div class="flex-1"></div>
+
 				<!-- Model selector -->
 				<select
 					bind:value={selectedModel}
-					class="min-w-0 rounded border border-gray-300 px-2 py-2 text-sm"
+					class="w-36 rounded border border-gray-300 px-2 py-2 text-sm"
 				>
 					{#each models as model}
 						<option value={model}>
