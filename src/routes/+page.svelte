@@ -140,6 +140,17 @@
 	<!-- Sidebar -->
 	{#if sidebarOpen}
 		<div class="fixed top-0 left-0 z-10 h-full w-64 flex-col border-r border-gray-300 bg-gray-50">
+			<!-- Header with close button -->
+			<div class="flex items-center justify-between border-b border-gray-300 p-4">
+				<h3 class="text-sm font-medium">Chat History</h3>
+				<button
+					onclick={toggleSidebar}
+					class="text-gray-500 hover:text-gray-700"
+					aria-label="Close sidebar"
+				>
+					✕
+				</button>
+			</div>
 			<!-- Chat history -->
 			<div class="flex-1 overflow-y-auto p-4">
 				<h3 class="mb-3 text-sm font-medium">Chat History</h3>
@@ -192,7 +203,7 @@
 	{/if}
 
 	<!-- Main chat area -->
-	<div class="flex flex-1 flex-col {sidebarOpen ? 'ml-64' : ''}">
+	<div class="flex flex-1 flex-col">
 		<!-- Chat messages area -->
 		<div class="flex-1 overflow-y-auto p-4">
 			{#if currentChat}
@@ -215,14 +226,14 @@
 			{/if}
 		</div>
 
-		<!-- Input area - Fixed at bottom, not affected by sidebar -->
-		<div class="border-t border-gray-300 bg-white p-4">
+		<!-- Input area - Fixed at bottom, above sidebar -->
+		<div class="relative z-20 border-t border-gray-300 bg-white p-4">
 			<div class="flex gap-2">
 				<button
 					onclick={toggleSidebar}
 					class="rounded border border-gray-300 px-3 py-2 hover:bg-gray-50"
 				>
-					☰
+					{sidebarOpen ? '✕' : '☰'}
 				</button>
 
 				<!-- Model selector -->
