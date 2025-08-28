@@ -2,7 +2,12 @@
 
 I got frustrated with the iOS app I use to hit LLM APIs, and while I see lots of good web apps online, none is quite what I'm looking for. So I guess I'm writing my own. Not coincidentally, LLMs make this a pretty light lift to build.
 
-## Requirements
+## Setup
+
+* Dev: `bun install` and `bun run dev`
+* Build: `bun run build`
+
+## Design
 
 A very light LLM client like my [LLM CLI](https://github.com/david-crespo/llm-cli).
 
