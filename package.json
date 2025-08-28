@@ -40,8 +40,8 @@
 	"dependencies": {
 		"highlight.js": "^11.11.1",
 		"marked": "^16.2.1",
-		"openai": "^4.77.3",
-		"@anthropic-ai/sdk": "^0.32.1",
-		"@google/generative-ai": "^0.21.0"
+		"openai": "^5.16.0",
+		"@anthropic-ai/sdk": "^0.60.0",
+		"@google/generative-ai": "^0.24.1"
 	}
 }

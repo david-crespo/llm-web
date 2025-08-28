@@ -43,7 +43,7 @@ async function openaiCreateMessage({
 		],
 		tools: tools.includes('search') ? [{ type: 'web_search_preview' as const }] : undefined,
 		reasoning: {
-			effort: tools.includes('think') ? 'medium' : 'low'
+			effort: tools.includes('think') || model.id === 'gpt-5-thinking' ? 'medium' : 'low'
 		},
 		instructions: chat.systemPrompt
 	});
@@ -64,7 +64,12 @@ async function openaiCreateMessage({
 }
 
 // Anthropic API adapter
-async function anthropicCreateMessage({ chat, input, model }: ChatInput): Promise<ModelResponse> {
+async function anthropicCreateMessage({
+	chat,
+	input,
+	model,
+	tools
+}: ChatInput): Promise<ModelResponse> {
 	const apiKey = localStorage.getItem('anthropic_api_key');
 	if (!apiKey) throw new Error('Anthropic API key not found');
 
@@ -84,11 +89,16 @@ async function anthropicCreateMessage({ chat, input, model }: ChatInput): Promis
 		}
 	];
 
+	const requestTools = tools.includes('search')
+		? [{ type: 'web_search_20250305' as const, name: 'web_search' as const, max_uses: 5 }]
+		: undefined;
+
 	const response = await client.messages.create({
 		model: model.key,
 		system: chat.systemPrompt,
 		messages,
-		max_tokens: 4096
+		max_tokens: 4096,
+		tools: requestTools
 	});
 
 	const content = response.content
@@ -114,14 +124,20 @@ async function anthropicCreateMessage({ chat, input, model }: ChatInput): Promis
 }
 
 // Google Gemini API adapter
-async function geminiCreateMessage({ chat, input, model }: ChatInput): Promise<ModelResponse> {
+async function geminiCreateMessage({
+	chat,
+	input,
+	model,
+	tools
+}: ChatInput): Promise<ModelResponse> {
 	const apiKey = localStorage.getItem('google_api_key');
 	if (!apiKey) throw new Error('Google AI API key not found');
 
 	const genAI = new GoogleGenerativeAI(apiKey);
 	const geminiModel = genAI.getGenerativeModel({
 		model: model.key,
-		systemInstruction: chat.systemPrompt
+		systemInstruction: chat.systemPrompt,
+		tools: tools.includes('search') ? [{ googleSearch: {} } as any] : undefined
 	});
 
 	const chatSession = geminiModel.startChat({
@@ -134,8 +150,21 @@ async function geminiCreateMessage({ chat, input, model }: ChatInput): Promise<M
 	const result = await chatSession.sendMessage(input);
 	const response = result.response;
 
-	const content = response.text();
+	let content = response.text();
 	const reasoning = ''; // Gemini SDK doesn't separate reasoning in the same way
+
+	// Add search results as sources if available
+	const searchResults = (result.response.candidates?.[0]?.groundingMetadata as any)
+		?.groundingChunks;
+	if (searchResults) {
+		const searchResultsMd =
+			'\n\n### Sources\n\n' +
+			searchResults
+				.filter((chunk: any) => chunk.web)
+				.map((chunk: any) => `- [${chunk.web.title}](${chunk.web.uri})`)
+				.join('\n');
+		content += searchResultsMd;
+	}
 
 	const tokens = {
 		input: response.usageMetadata?.promptTokenCount || 0,
@@ -150,6 +179,34 @@ async function geminiCreateMessage({ chat, input, model }: ChatInput): Promise<M
 		cost: 0, // Will be calculated by caller
 		stop_reason: 'stop' // Gemini SDK doesn't provide detailed stop reasons
 	};
+}
+
+type Tool = 'search' | 'think';
+
+const providerTools: Record<string, Tool[]> = {
+	google: ['search', 'think'],
+	anthropic: ['search', 'think'],
+	openai: ['search', 'think']
+};
+
+function checkTools(provider: string, inputTools: string[]) {
+	const allowedTools = providerTools[provider];
+	const badTools = inputTools.filter((t) => !(allowedTools as string[]).includes(t));
+	if (badTools.length > 0) {
+		throw new Error(
+			`Invalid tools: ${badTools.join(', ')}. Valid tools for ${provider} models are: ${allowedTools.join(', ')}`
+		);
+	}
+}
+
+export function parseTools(provider: string, tools: string[]): Tool[] {
+	if (tools.length === 0) return [];
+
+	if (!(provider in providerTools)) {
+		throw new Error(`Tools can only be used with Google, Anthropic, and OpenAI models`);
+	}
+	checkTools(provider, tools);
+	return tools as Tool[];
 }
 
 export async function createMessage(provider: string, input: ChatInput): Promise<ModelResponse> {
