@@ -4,9 +4,31 @@
 
 	interface Props {
 		message: ChatMessage;
+		messageIndex?: number;
+		onRegen: (index: number) => void;
+		onFork: (index: number) => void;
 	}
 
-	let { message }: Props = $props();
+	let { message, messageIndex = -1, onRegen, onFork }: Props = $props();
+
+	let showMenu = $state(false);
+
+	// Click outside handler for menu
+	function clickOutside(node: HTMLElement) {
+		const handleClick = (event: MouseEvent) => {
+			if (!node.contains(event.target as Node)) {
+				showMenu = false;
+			}
+		};
+
+		document.addEventListener('click', handleClick, true);
+
+		return {
+			destroy() {
+				document.removeEventListener('click', handleClick, true);
+			}
+		};
+	}
 
 	function formatTime(ms: number): string {
 		return `${(ms / 1000).toFixed(2)}s`;
@@ -56,8 +78,42 @@
 		{/if}
 	{:else}
 		<!-- User message header -->
-		<div class="mb-2 text-sm text-gray-600">
+		<div class="mb-2 flex items-center justify-between text-sm text-gray-600">
 			<span class="font-medium">You</span>
+			<div class="relative" use:clickOutside>
+				<button
+					onclick={() => (showMenu = !showMenu)}
+					class="rounded p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700"
+					aria-label="Message options"
+				>
+					⋮
+				</button>
+
+				{#if showMenu}
+					<div
+						class="absolute top-full right-0 z-10 mt-1 w-32 rounded border border-gray-300 bg-white py-1 shadow-lg"
+					>
+						<button
+							onclick={() => {
+								showMenu = false;
+								onFork(messageIndex);
+							}}
+							class="w-full px-3 py-2 text-left text-sm hover:bg-gray-100"
+						>
+							🍴 Fork
+						</button>
+						<button
+							onclick={() => {
+								showMenu = false;
+								onRegen(messageIndex);
+							}}
+							class="w-full px-3 py-2 text-left text-sm hover:bg-gray-100"
+						>
+							🔄 Regen
+						</button>
+					</div>
+				{/if}
+			</div>
 		</div>
 	{/if}
 

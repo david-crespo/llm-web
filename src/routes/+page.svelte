@@ -16,6 +16,114 @@
 	let showPopover = $state(false);
 	let chatToDelete = $state<number | null>(null);
 
+	// Handle regeneration from a specific message
+	async function handleRegen(messageIndex: number) {
+		if (!currentChat || isLoading) return;
+
+		// Find the user message to regenerate from
+		const targetMessage = currentChat.messages[messageIndex];
+		if (targetMessage.role !== 'user') return;
+
+		// Create a new chat with messages up to the specified index
+		const messagesUpToIndex = currentChat.messages.slice(0, messageIndex + 1);
+		const truncatedChat: Chat = {
+			...currentChat,
+			messages: messagesUpToIndex
+		};
+
+		// Remove all messages after the specified index
+		currentChat.messages = messagesUpToIndex;
+
+		isLoading = true;
+
+		try {
+			const startTime = performance.now();
+			const response = await createMessage(selectedModel.provider, {
+				chat: truncatedChat,
+				input: targetMessage.content,
+				model: selectedModel,
+				search: webSearchEnabled,
+				think: reasoningEffort
+			});
+
+			const timeMs = performance.now() - startTime;
+			const cost = getCost(selectedModel, response.tokens);
+
+			const assistantMessage: ChatMessageType = {
+				role: 'assistant',
+				model: selectedModel.id,
+				content: response.content,
+				reasoning: response.reasoning,
+				tokens: response.tokens,
+				stop_reason: response.stop_reason,
+				cost,
+				timeMs
+			};
+
+			currentChat.messages.push(assistantMessage);
+
+			// Save updated chat
+			if (currentChat.id) {
+				await storage.updateChat(currentChat.id, currentChat);
+			} else {
+				const id = await storage.saveChat(currentChat);
+				currentChat = { ...currentChat, id };
+			}
+
+			await loadChatHistory();
+		} catch (error) {
+			console.error('Error regenerating message:', error);
+			// Add error message to chat
+			const errorMessage: ChatMessageType = {
+				role: 'assistant',
+				model: selectedModel.id,
+				content: `Error regenerating: ${error instanceof Error ? error.message : 'Unknown error'}`,
+				tokens: { input: 0, output: 0 },
+				stop_reason: 'error',
+				cost: 0,
+				timeMs: 0
+			};
+			currentChat.messages.push(errorMessage);
+		} finally {
+			isLoading = false;
+		}
+	}
+
+	// Handle forking from a specific message
+	async function handleFork(messageIndex: number) {
+		if (!currentChat) return;
+
+		// Find the message to fork from
+		const targetMessage = currentChat.messages[messageIndex];
+		if (targetMessage.role !== 'user') return;
+
+		// Save current chat if it exists and has messages
+		if (currentChat.messages.length > 0) {
+			if (currentChat.id) {
+				await storage.updateChat(currentChat.id, currentChat);
+			} else {
+				const id = await storage.saveChat(currentChat);
+				currentChat = { ...currentChat, id };
+			}
+		}
+
+		// Create a new chat with messages up to the specified index
+		const messagesUpToIndex = currentChat.messages.slice(0, messageIndex);
+		const newChat: Chat = {
+			createdAt: new Date(),
+			systemPrompt: currentChat.systemPrompt,
+			messages: messagesUpToIndex
+		};
+
+		const id = await storage.saveChat(newChat);
+		currentChat = { ...newChat, id };
+
+		// Put the selected message content into the input field
+		message = targetMessage.content;
+
+		await loadChatHistory();
+	}
+
 	// Initialize storage and load chat history
 	async function init() {
 		await storage.init();
@@ -283,8 +391,13 @@
 		<!-- Chat messages area -->
 		<div class="flex-1 overflow-y-auto p-4">
 			{#if currentChat}
-				{#each currentChat.messages as msg}
-					<ChatMessage message={msg} />
+				{#each currentChat.messages as msg, index}
+					<ChatMessage
+						message={msg}
+						messageIndex={index}
+						onRegen={handleRegen}
+						onFork={handleFork}
+					/>
 				{/each}
 				{#if isLoading}
 					<div class="mb-6">
