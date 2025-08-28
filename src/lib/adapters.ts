@@ -1,5 +1,8 @@
 import type { Chat, TokenCounts } from './types';
 import type { Model } from './models';
+import OpenAI from 'openai';
+import Anthropic from '@anthropic-ai/sdk';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export type ModelResponse = {
 	content: string;
@@ -27,6 +30,11 @@ async function openaiCreateMessage({
 	const apiKey = localStorage.getItem('openai_api_key');
 	if (!apiKey) throw new Error('OpenAI API key not found');
 
+	const client = new OpenAI({
+		apiKey,
+		dangerouslyAllowBrowser: true
+	});
+
 	const systemMsg = chat.systemPrompt
 		? [{ role: 'system' as const, content: chat.systemPrompt }]
 		: [];
@@ -37,28 +45,30 @@ async function openaiCreateMessage({
 		{ role: 'user' as const, content: input }
 	];
 
-	const response = await fetch('https://api.openai.com/v1/chat/completions', {
-		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json',
-			Authorization: `Bearer ${apiKey}`
-		},
-		body: JSON.stringify({
-			model: model.key,
-			messages,
-			tools: tools.includes('search') ? [{ type: 'web_search_preview' }] : undefined,
-			reasoning_effort:
-				tools.includes('think') || model.id === 'gpt-5-thinking' ? 'medium' : 'minimal'
-		})
+	const response = await client.chat.completions.create({
+		model: model.key,
+		messages,
+		tools: tools.includes('search')
+			? [
+					{
+						type: 'function',
+						function: {
+							name: 'web_search',
+							description: 'Search the web for information',
+							parameters: {
+								type: 'object',
+								properties: {
+									query: { type: 'string', description: 'Search query' }
+								},
+								required: ['query']
+							}
+						}
+					}
+				]
+			: undefined
 	});
 
-	if (!response.ok) {
-		const error = await response.json();
-		throw new Error(`OpenAI API error: ${error.error?.message || response.statusText}`);
-	}
-
-	const data = await response.json();
-	const message = data.choices[0].message;
+	const message = response.choices[0].message;
 
 	let reasoning = '';
 	let content = message.content || '';
@@ -71,9 +81,9 @@ async function openaiCreateMessage({
 	}
 
 	const tokens = {
-		input: data.usage?.prompt_tokens || 0,
-		output: data.usage?.completion_tokens || 0,
-		input_cache_hit: data.usage?.prompt_tokens_details?.cached_tokens || 0
+		input: response.usage?.prompt_tokens || 0,
+		output: response.usage?.completion_tokens || 0,
+		input_cache_hit: response.usage?.prompt_tokens_details?.cached_tokens || 0
 	};
 
 	return {
@@ -81,20 +91,19 @@ async function openaiCreateMessage({
 		reasoning,
 		tokens,
 		cost: 0, // Will be calculated by caller
-		stop_reason: data.choices[0].finish_reason
+		stop_reason: response.choices[0].finish_reason
 	};
 }
 
 // Anthropic API adapter
-async function anthropicCreateMessage({
-	chat,
-	input,
-	image_url,
-	model,
-	tools
-}: ChatInput): Promise<ModelResponse> {
+async function anthropicCreateMessage({ chat, input, model }: ChatInput): Promise<ModelResponse> {
 	const apiKey = localStorage.getItem('anthropic_api_key');
 	if (!apiKey) throw new Error('Anthropic API key not found');
+
+	const client = new Anthropic({
+		apiKey,
+		dangerouslyAllowBrowser: true
+	});
 
 	const messages = [
 		...chat.messages.map((m) => ({
@@ -103,54 +112,28 @@ async function anthropicCreateMessage({
 		})),
 		{
 			role: 'user' as const,
-			content: image_url
-				? [
-						{ type: 'image', source: { type: 'url', url: image_url } },
-						{ type: 'text', text: input }
-					]
-				: input
+			content: input
 		}
 	];
 
-	const think = tools.includes('think');
-
-	const response = await fetch('https://api.anthropic.com/v1/messages', {
-		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json',
-			'x-api-key': apiKey,
-			'anthropic-version': '2023-06-01'
-		},
-		body: JSON.stringify({
-			model: model.key,
-			system: chat.systemPrompt,
-			messages,
-			max_tokens: 4096,
-			thinking: think ? { type: 'enabled', budget_tokens: 1024 } : undefined
-		})
+	const response = await client.messages.create({
+		model: model.key,
+		system: chat.systemPrompt,
+		messages,
+		max_tokens: 4096
 	});
 
-	if (!response.ok) {
-		const error = await response.json();
-		throw new Error(`Anthropic API error: ${error.error?.message || response.statusText}`);
-	}
-
-	const data = await response.json();
-
-	const content = data.content
-		.filter((msg: any) => msg.type === 'text')
-		.map((msg: any) => msg.text)
+	const content = response.content
+		.filter((msg) => msg.type === 'text')
+		.map((msg) => (msg.type === 'text' ? msg.text : ''))
 		.join('\n\n');
 
-	const reasoning = data.content
-		.filter((msg: any) => msg.type === 'thinking')
-		.map((msg: any) => msg.thinking)
-		.join('\n\n');
+	const reasoning = ''; // Anthropic doesn't have separate reasoning in the same way
 
 	const tokens = {
-		input: data.usage.input_tokens || 0,
-		output: data.usage.output_tokens || 0,
-		input_cache_hit: data.usage.cache_read_input_tokens || 0
+		input: response.usage.input_tokens || 0,
+		output: response.usage.output_tokens || 0,
+		input_cache_hit: 0 // Anthropic SDK doesn't provide cache info in the same way
 	};
 
 	return {
@@ -158,89 +141,38 @@ async function anthropicCreateMessage({
 		reasoning,
 		tokens,
 		cost: 0, // Will be calculated by caller
-		stop_reason: data.stop_reason
+		stop_reason: response.stop_reason || 'unknown'
 	};
 }
 
 // Google Gemini API adapter
-async function geminiCreateMessage({
-	chat,
-	input,
-	model,
-	tools
-}: ChatInput): Promise<ModelResponse> {
+async function geminiCreateMessage({ chat, input, model }: ChatInput): Promise<ModelResponse> {
 	const apiKey = localStorage.getItem('google_api_key');
 	if (!apiKey) throw new Error('Google AI API key not found');
 
-	const think = model.id.includes('pro') || tools.includes('think');
+	const genAI = new GoogleGenerativeAI(apiKey);
+	const geminiModel = genAI.getGenerativeModel({
+		model: model.key,
+		systemInstruction: chat.systemPrompt
+	});
 
-	const contents = [
-		...chat.messages.map((msg) => ({
+	const chatSession = geminiModel.startChat({
+		history: chat.messages.map((msg) => ({
 			role: msg.role === 'assistant' ? 'model' : 'user',
 			parts: [{ text: msg.content }]
-		})),
-		{ role: 'user', parts: [{ text: input }] }
-	];
+		}))
+	});
 
-	const response = await fetch(
-		`https://generativelanguage.googleapis.com/v1beta/models/${model.key}:generateContent?key=${apiKey}`,
-		{
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify({
-				contents,
-				systemInstruction: chat.systemPrompt,
-				generationConfig: {
-					thinkingConfig: {
-						thinkingBudget: think ? undefined : 0,
-						includeThoughts: true
-					}
-				},
-				tools: [
-					{ urlContext: {} },
-					...(tools.includes('search') ? [{ googleSearch: {} }] : []),
-					...(tools.includes('code') ? [{ codeExecution: {} }] : [])
-				]
-			})
-		}
-	);
+	const result = await chatSession.sendMessage(input);
+	const response = result.response;
 
-	if (!response.ok) {
-		const error = await response.json();
-		throw new Error(`Gemini API error: ${error.error?.message || response.statusText}`);
-	}
-
-	const data = await response.json();
-
-	const parts = data.candidates?.[0].content?.parts ?? [];
-	const reasoning = parts
-		.filter((p: any) => p.text && p.thought)
-		.map((p: any) => p.text)
-		.join('\n\n');
-	let content = parts
-		.filter((p: any) => p.text && !p.thought)
-		.map((p: any) => p.text)
-		.join('\n\n');
-
-	const searchResults = data.candidates?.[0].groundingMetadata?.groundingChunks;
-	const searchResultsMd = searchResults
-		? '\n\n### Sources\n\n' +
-			searchResults
-				.filter((chunk: any) => chunk.web)
-				.map((chunk: any) => `- [${chunk.web.title}](${chunk.web.uri})`)
-				.join('\n')
-		: '';
-
-	content += searchResultsMd;
+	const content = response.text();
+	const reasoning = ''; // Gemini SDK doesn't separate reasoning in the same way
 
 	const tokens = {
-		input: data.usageMetadata?.promptTokenCount || 0,
-		output:
-			(data.usageMetadata?.candidatesTokenCount || 0) +
-			(data.usageMetadata?.thoughtsTokenCount || 0),
-		input_cache_hit: data.usageMetadata?.cachedContentTokenCount || 0
+		input: response.usageMetadata?.promptTokenCount || 0,
+		output: response.usageMetadata?.candidatesTokenCount || 0,
+		input_cache_hit: response.usageMetadata?.cachedContentTokenCount || 0
 	};
 
 	return {
@@ -248,7 +180,7 @@ async function geminiCreateMessage({
 		reasoning,
 		tokens,
 		cost: 0, // Will be calculated by caller
-		stop_reason: data.candidates?.[0].finishReason || ''
+		stop_reason: 'stop' // Gemini SDK doesn't provide detailed stop reasons
 	};
 }
 

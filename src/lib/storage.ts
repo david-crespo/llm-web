@@ -65,17 +65,18 @@ class Storage {
 			const transaction = this.db!.transaction(['chats'], 'readwrite');
 			const store = transaction.objectStore('chats');
 
-			// Convert Date to string for storage
-			const chatData = {
-				...chat,
+			// Create a plain object copy to avoid proxy serialization issues
+			const plainChat = {
 				createdAt: chat.createdAt.toISOString(),
-				messages: chat.messages.map((msg: any) => ({
-					...msg,
-					...(msg.role === 'assistant' && 'timeMs' in msg ? { timeMs: msg.timeMs } : {})
-				}))
+				systemPrompt: chat.systemPrompt,
+				summary: chat.summary,
+				messages: chat.messages
 			};
 
-			const request = store.add(chatData);
+			// Use JSON serialization to remove all proxy references
+			const chatData = JSON.parse(JSON.stringify(plainChat));
+
+			const request = store.put(chatData);
 
 			request.onerror = () => reject(request.error);
 			request.onsuccess = () => resolve(request.result as number);
@@ -88,15 +89,17 @@ class Storage {
 			const transaction = this.db!.transaction(['chats'], 'readwrite');
 			const store = transaction.objectStore('chats');
 
-			const chatData = {
+			// Create a plain object copy to avoid proxy serialization issues
+			const plainChat = {
 				id,
-				...chat,
 				createdAt: chat.createdAt.toISOString(),
-				messages: chat.messages.map((msg: any) => ({
-					...msg,
-					...(msg.role === 'assistant' && 'timeMs' in msg ? { timeMs: msg.timeMs } : {})
-				}))
+				systemPrompt: chat.systemPrompt,
+				summary: chat.summary,
+				messages: chat.messages
 			};
+
+			// Use JSON serialization to remove all proxy references
+			const chatData = JSON.parse(JSON.stringify(plainChat));
 
 			const request = store.put(chatData);
 
