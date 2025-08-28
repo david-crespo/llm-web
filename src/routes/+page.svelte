@@ -12,7 +12,7 @@
 	let selectedModel = $state(models.find((m) => m.default) || models[0]);
 	let isLoading = $state(false);
 	let webSearchEnabled = $state(false);
-	let reasoningEffort = $state<'low' | 'medium' | 'high'>('medium');
+	let reasoningEffort = $state<'none' | 'low' | 'medium' | 'high'>('low');
 	let showPopover = $state(false);
 	let chatToDelete = $state<number | null>(null);
 
@@ -75,11 +75,13 @@
 
 		try {
 			const startTime = performance.now();
+
 			const response = await createMessage(selectedModel.provider, {
 				chat: currentChat,
 				input,
 				model: selectedModel,
-				tools: [] // TODO: implement tools
+				search: webSearchEnabled,
+				think: reasoningEffort
 			});
 
 			const timeMs = performance.now() - startTime;
@@ -363,6 +365,7 @@
 										bind:value={reasoningEffort}
 										class="w-full rounded border border-gray-300 px-2 py-1 text-sm"
 									>
+										<option value="none">None</option>
 										<option value="low">Low</option>
 										<option value="medium">Medium</option>
 										<option value="high">High</option>

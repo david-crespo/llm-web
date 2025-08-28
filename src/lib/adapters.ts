@@ -17,7 +17,8 @@ export type ChatInput = {
 	input: string;
 	image_url?: string | undefined;
 	model: Model;
-	tools: string[];
+	search: boolean;
+	think: 'none' | 'low' | 'medium' | 'high';
 };
 
 // OpenAI API adapter using Responses API
@@ -25,7 +26,8 @@ async function openaiCreateMessage({
 	chat,
 	input,
 	model,
-	tools
+	search,
+	think
 }: ChatInput): Promise<ModelResponse> {
 	const apiKey = localStorage.getItem('openai_api_key');
 	if (!apiKey) throw new Error('OpenAI API key not found');
@@ -35,15 +37,19 @@ async function openaiCreateMessage({
 		dangerouslyAllowBrowser: true
 	});
 
+	// Map think levels to OpenAI reasoning effort
+	const reasoningEffort =
+		think === 'none' ? 'low' : think === 'low' ? 'low' : think === 'medium' ? 'medium' : 'high';
+
 	const response = await client.responses.create({
 		model: model.key,
 		input: [
 			...chat.messages.map((m) => ({ role: m.role, content: m.content })),
 			{ role: 'user' as const, content: input }
 		],
-		tools: tools.includes('search') ? [{ type: 'web_search_preview' as const }] : undefined,
+		tools: search ? [{ type: 'web_search_preview' as const }] : undefined,
 		reasoning: {
-			effort: tools.includes('think') || model.id === 'gpt-5-thinking' ? 'medium' : 'low'
+			effort: reasoningEffort
 		},
 		instructions: chat.systemPrompt
 	});
@@ -68,7 +74,8 @@ async function anthropicCreateMessage({
 	chat,
 	input,
 	model,
-	tools
+	search,
+	think
 }: ChatInput): Promise<ModelResponse> {
 	const apiKey = localStorage.getItem('anthropic_api_key');
 	if (!apiKey) throw new Error('Anthropic API key not found');
@@ -89,8 +96,24 @@ async function anthropicCreateMessage({
 		}
 	];
 
-	const requestTools = tools.includes('search')
-		? [{ type: 'web_search_20250305' as const, name: 'web_search' as const, max_uses: 5 }]
+	// Map think levels to Anthropic thinking budget
+	let thinking: { type: 'enabled'; budget_tokens: number } | undefined;
+	if (think === 'low') {
+		thinking = { type: 'enabled', budget_tokens: 512 };
+	} else if (think === 'medium') {
+		thinking = { type: 'enabled', budget_tokens: 1024 };
+	} else if (think === 'high') {
+		thinking = { type: 'enabled', budget_tokens: 2048 };
+	}
+
+	const requestTools = search
+		? [
+				{
+					type: 'web_search_20250305' as const,
+					name: 'web_search' as const,
+					max_uses: 5
+				} as any
+			]
 		: undefined;
 
 	const response = await client.messages.create({
@@ -98,6 +121,7 @@ async function anthropicCreateMessage({
 		system: chat.systemPrompt,
 		messages,
 		max_tokens: 4096,
+		thinking,
 		tools: requestTools
 	});
 
@@ -106,7 +130,10 @@ async function anthropicCreateMessage({
 		.map((msg) => (msg.type === 'text' ? msg.text : ''))
 		.join('\n\n');
 
-	const reasoning = ''; // Anthropic doesn't have separate reasoning in the same way
+	const reasoning = response.content
+		.filter((msg) => msg.type === 'thinking')
+		.map((msg) => (msg.type === 'thinking' ? msg.thinking : ''))
+		.join('\n\n');
 
 	const tokens = {
 		input: response.usage.input_tokens || 0,
@@ -128,16 +155,18 @@ async function geminiCreateMessage({
 	chat,
 	input,
 	model,
-	tools
+	search,
+	think
 }: ChatInput): Promise<ModelResponse> {
 	const apiKey = localStorage.getItem('google_api_key');
 	if (!apiKey) throw new Error('Google AI API key not found');
 
 	const genAI = new GoogleGenerativeAI(apiKey);
+
 	const geminiModel = genAI.getGenerativeModel({
 		model: model.key,
 		systemInstruction: chat.systemPrompt,
-		tools: tools.includes('search') ? [{ googleSearch: {} } as any] : undefined
+		tools: search ? [{ googleSearch: {} } as any] : undefined
 	});
 
 	const chatSession = geminiModel.startChat({
@@ -179,34 +208,6 @@ async function geminiCreateMessage({
 		cost: 0, // Will be calculated by caller
 		stop_reason: 'stop' // Gemini SDK doesn't provide detailed stop reasons
 	};
-}
-
-type Tool = 'search' | 'think';
-
-const providerTools: Record<string, Tool[]> = {
-	google: ['search', 'think'],
-	anthropic: ['search', 'think'],
-	openai: ['search', 'think']
-};
-
-function checkTools(provider: string, inputTools: string[]) {
-	const allowedTools = providerTools[provider];
-	const badTools = inputTools.filter((t) => !(allowedTools as string[]).includes(t));
-	if (badTools.length > 0) {
-		throw new Error(
-			`Invalid tools: ${badTools.join(', ')}. Valid tools for ${provider} models are: ${allowedTools.join(', ')}`
-		);
-	}
-}
-
-export function parseTools(provider: string, tools: string[]): Tool[] {
-	if (tools.length === 0) return [];
-
-	if (!(provider in providerTools)) {
-		throw new Error(`Tools can only be used with Google, Anthropic, and OpenAI models`);
-	}
-	checkTools(provider, tools);
-	return tools as Tool[];
 }
 
 export async function createMessage(provider: string, input: ChatInput): Promise<ModelResponse> {
