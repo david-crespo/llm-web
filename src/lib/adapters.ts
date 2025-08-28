@@ -20,7 +20,7 @@ export type ChatInput = {
 	tools: string[];
 };
 
-// OpenAI API adapter
+// OpenAI API adapter using Responses API
 async function openaiCreateMessage({
 	chat,
 	input,
@@ -35,63 +35,31 @@ async function openaiCreateMessage({
 		dangerouslyAllowBrowser: true
 	});
 
-	const systemMsg = chat.systemPrompt
-		? [{ role: 'system' as const, content: chat.systemPrompt }]
-		: [];
-
-	const messages = [
-		...systemMsg,
-		...chat.messages.map((m) => ({ role: m.role, content: m.content })),
-		{ role: 'user' as const, content: input }
-	];
-
-	const response = await client.chat.completions.create({
+	const response = await client.responses.create({
 		model: model.key,
-		messages,
-		tools: tools.includes('search')
-			? [
-					{
-						type: 'function',
-						function: {
-							name: 'web_search',
-							description: 'Search the web for information',
-							parameters: {
-								type: 'object',
-								properties: {
-									query: { type: 'string', description: 'Search query' }
-								},
-								required: ['query']
-							}
-						}
-					}
-				]
-			: undefined
+		input: [
+			...chat.messages.map((m) => ({ role: m.role, content: m.content })),
+			{ role: 'user' as const, content: input }
+		],
+		tools: tools.includes('search') ? [{ type: 'web_search_preview' as const }] : undefined,
+		reasoning: {
+			effort: tools.includes('think') ? 'medium' : 'low'
+		},
+		instructions: chat.systemPrompt
 	});
 
-	const message = response.choices[0].message;
-
-	let reasoning = '';
-	let content = message.content || '';
-
-	// Extract reasoning from think tags
-	const thinkMatch = /(<think>)?(.+)<\/think>\s+(.+)/ms.exec(content);
-	if (thinkMatch) {
-		reasoning = thinkMatch[2];
-		content = thinkMatch[3];
-	}
-
 	const tokens = {
-		input: response.usage?.prompt_tokens || 0,
-		output: response.usage?.completion_tokens || 0,
-		input_cache_hit: response.usage?.prompt_tokens_details?.cached_tokens || 0
+		input: response.usage?.input_tokens || 0,
+		output: response.usage?.output_tokens || 0,
+		input_cache_hit: response.usage?.input_tokens_details?.cached_tokens || 0
 	};
 
 	return {
-		content,
-		reasoning,
+		content: response.output_text,
+		reasoning: '', // Responses API integrates reasoning into output_text
 		tokens,
 		cost: 0, // Will be calculated by caller
-		stop_reason: response.choices[0].finish_reason
+		stop_reason: response.status || 'completed'
 	};
 }
 

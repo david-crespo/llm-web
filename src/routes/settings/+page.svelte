@@ -24,7 +24,7 @@
 			else localStorage.removeItem('google_api_key');
 
 			saveStatus = 'Keys saved successfully!';
-			setTimeout(() => saveStatus = '', 3000);
+			setTimeout(() => (saveStatus = ''), 3000);
 		} catch (error) {
 			saveStatus = 'Error saving keys';
 			console.error('Error saving keys:', error);
