@@ -338,7 +338,7 @@
 				</select>
 
 				<!-- Popover menu button -->
-				<div class="relative" use:clickOutside={() => (showPopover = false)}>
+				<div class="relative" use:clickOutside>
 					<button
 						onclick={() => (showPopover = !showPopover)}
 						class="rounded border border-gray-300 px-2 py-2 text-sm hover:bg-gray-50"
@@ -360,8 +360,11 @@
 
 								<!-- Reasoning Effort -->
 								<div>
-									<label class="mb-1 block text-sm font-medium">Reasoning Effort</label>
+									<label for="reasoning-effort" class="mb-1 block text-sm font-medium"
+										>Reasoning Effort</label
+									>
 									<select
+										id="reasoning-effort"
 										bind:value={reasoningEffort}
 										class="w-full rounded border border-gray-300 px-2 py-1 text-sm"
 									>

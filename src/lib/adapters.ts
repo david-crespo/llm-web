@@ -2,7 +2,7 @@ import type { Chat, TokenCounts } from './types';
 import type { Model } from './models';
 import OpenAI from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 
 export type ModelResponse = {
 	content: string;
@@ -99,11 +99,11 @@ async function anthropicCreateMessage({
 	// Map think levels to Anthropic thinking budget
 	let thinking: { type: 'enabled'; budget_tokens: number } | undefined;
 	if (think === 'low') {
-		thinking = { type: 'enabled', budget_tokens: 512 };
-	} else if (think === 'medium') {
 		thinking = { type: 'enabled', budget_tokens: 1024 };
-	} else if (think === 'high') {
+	} else if (think === 'medium') {
 		thinking = { type: 'enabled', budget_tokens: 2048 };
+	} else if (think === 'high') {
+		thinking = { type: 'enabled', budget_tokens: 4096 };
 	}
 
 	const requestTools = search
@@ -155,50 +155,64 @@ async function geminiCreateMessage({
 	chat,
 	input,
 	model,
-	search,
-	think
+	search
 }: ChatInput): Promise<ModelResponse> {
 	const apiKey = localStorage.getItem('google_api_key');
 	if (!apiKey) throw new Error('Google AI API key not found');
 
-	const genAI = new GoogleGenerativeAI(apiKey);
+	const genAI = new GoogleGenAI({ apiKey });
 
-	const geminiModel = genAI.getGenerativeModel({
+	const result = await genAI.models.generateContent({
+		config: {
+			thinkingConfig: {
+				thinkingBudget: undefined,
+				includeThoughts: true
+			},
+			systemInstruction: chat.systemPrompt,
+			tools: [
+				// always include URL context. it was designed to be used this way
+				{ urlContext: {} },
+				...(search ? [{ googleSearch: {} }] : [])
+			]
+		},
 		model: model.key,
-		systemInstruction: chat.systemPrompt,
-		tools: search ? [{ googleSearch: {} } as any] : undefined
+		contents: [
+			...chat.messages.map((msg) => ({
+				// gemini uses model instead of assistant
+				role: msg.role === 'assistant' ? 'model' : 'user',
+				parts: [{ text: msg.content }]
+			})),
+			{ role: 'user', parts: [{ text: input }] }
+		]
 	});
 
-	const chatSession = geminiModel.startChat({
-		history: chat.messages.map((msg) => ({
-			role: msg.role === 'assistant' ? 'model' : 'user',
-			parts: [{ text: msg.content }]
-		}))
-	});
+	const parts = result.candidates?.[0].content?.parts ?? [];
+	const reasoning = parts
+		.filter((p) => p.text && p.thought)
+		.map((p) => p.text!)
+		.join('\n\n');
+	let content = parts
+		.filter((p) => p.text && !p.thought)
+		.map((p) => p.text!)
+		.join('\n\n');
 
-	const result = await chatSession.sendMessage(input);
-	const response = result.response;
-
-	let content = response.text();
-	const reasoning = ''; // Gemini SDK doesn't separate reasoning in the same way
-
-	// Add search results as sources if available
-	const searchResults = (result.response.candidates?.[0]?.groundingMetadata as any)
-		?.groundingChunks;
-	if (searchResults) {
-		const searchResultsMd =
-			'\n\n### Sources\n\n' +
+	const searchResults = result.candidates?.[0].groundingMetadata?.groundingChunks;
+	const searchResultsMd = searchResults
+		? '\n\n### Sources\n\n' +
 			searchResults
-				.filter((chunk: any) => chunk.web)
-				.map((chunk: any) => `- [${chunk.web.title}](${chunk.web.uri})`)
-				.join('\n');
-		content += searchResultsMd;
-	}
+				.filter((chunk) => chunk.web)
+				.map((chunk) => `- [${chunk.web!.title}](${chunk.web!.uri})`)
+				.join('\n')
+		: '';
+
+	content += searchResultsMd;
 
 	const tokens = {
-		input: response.usageMetadata?.promptTokenCount || 0,
-		output: response.usageMetadata?.candidatesTokenCount || 0,
-		input_cache_hit: response.usageMetadata?.cachedContentTokenCount || 0
+		input: result.usageMetadata?.promptTokenCount || 0,
+		output:
+			(result.usageMetadata?.candidatesTokenCount || 0) +
+			(result.usageMetadata?.thoughtsTokenCount || 0),
+		input_cache_hit: result.usageMetadata?.cachedContentTokenCount || 0
 	};
 
 	return {
@@ -206,7 +220,7 @@ async function geminiCreateMessage({
 		reasoning,
 		tokens,
 		cost: 0, // Will be calculated by caller
-		stop_reason: 'stop' // Gemini SDK doesn't provide detailed stop reasons
+		stop_reason: result.candidates?.[0].finishReason || ''
 	};
 }
 
