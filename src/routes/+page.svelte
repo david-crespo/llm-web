@@ -15,6 +15,7 @@
 	let reasoningEffort = $state<'none' | 'low' | 'medium' | 'high'>('low');
 	let showPopover = $state(false);
 	let chatToDelete = $state<number | null>(null);
+	let showAboutModal = $state(false);
 	let messagesContainer = $state<HTMLElement | null>(null);
 
 	// Handle regeneration from a specific message
@@ -268,6 +269,9 @@
 	// Click outside handler for popover
 	function clickOutside(node: HTMLElement) {
 		const handleClick = (event: MouseEvent) => {
+			// Don't close popover if About modal is open
+			if (showAboutModal) return;
+
 			if (!node.contains(event.target as Node)) {
 				showPopover = false;
 			}
@@ -285,6 +289,9 @@
 	// Click outside handler for sidebar
 	function clickOutsideSidebar(node: HTMLElement) {
 		const handleClick = (event: MouseEvent) => {
+			// Don't close sidebar if About modal is open
+			if (showAboutModal) return;
+
 			if (!node.contains(event.target as Node)) {
 				sidebarOpen = false;
 			}
@@ -448,6 +455,14 @@
 
 				<!-- API Keys link -->
 				<a href="/settings" class="block text-sm text-blue-600 hover:text-blue-800"> API Keys </a>
+
+				<!-- About button -->
+				<button
+					onclick={() => (showAboutModal = true)}
+					class="block w-full text-left text-sm text-blue-600 hover:text-blue-800"
+				>
+					About
+				</button>
 			</div>
 		</div>
 
@@ -483,11 +498,54 @@
 		{/if}
 	{/if}
 
+	<!-- About modal -->
+	{#if showAboutModal}
+		<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+			<div class="w-96 max-w-[90vw] rounded-lg bg-white p-6 shadow-lg">
+				<h3 class="mb-4 text-lg font-medium">About this app</h3>
+				<div class="mb-6 space-y-3 text-sm text-gray-600">
+					<p>
+						This is a fully client-side LLM chat client built as a static site with <a
+							href="https://svelte.dev/docs/kit/introduction"
+						rel="noopener noreferrer"
+						class="text-blue-600 underline hover:text-blue-800"
+							target="_blank">SvelteKit</a
+						>. API keys and chat history are stored locally in this browser only. Keys are only sent
+						to model providers.
+					</p>
+					<p>
+						The app is designed to be hackable rather than configurable: if you want different
+						models or different behavior, fork the repo, change how it works, and deploy your own
+						copy.
+					</p>
+				</div>
+				<div class="mb-6">
+					<a
+						href="https://github.com/david-crespo/llm-web"
+						target="_blank"
+						rel="noopener noreferrer"
+						class="text-blue-600 underline hover:text-blue-800"
+					>
+						View on GitHub →
+					</a>
+				</div>
+				<div class="flex justify-end">
+					<button
+						onclick={() => (showAboutModal = false)}
+						class="rounded border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50"
+					>
+						Close
+					</button>
+				</div>
+			</div>
+		</div>
+	{/if}
+
 	<!-- Main chat area -->
 	<div class="flex flex-1 flex-col">
 		<!-- Chat messages area -->
 		<div class="flex-1 overflow-y-auto p-4" bind:this={messagesContainer}>
-			{#if currentChat}
+			{#if currentChat && currentChat.messages.length > 0}
 				{#each currentChat.messages as msg, index}
 					<ChatMessage
 						message={msg}
@@ -509,6 +567,18 @@
 						</div>
 					</div>
 				{/if}
+			{:else}
+				<div class="flex h-full items-center justify-center">
+					<div class="text-center text-gray-500">
+						<p class="mb-4 text-lg">Start a chat below</p>
+						<button
+							onclick={() => (showAboutModal = true)}
+							class="text-sm text-blue-600 underline hover:text-blue-800"
+						>
+							About this app
+						</button>
+					</div>
+				</div>
 			{/if}
 		</div>
 
