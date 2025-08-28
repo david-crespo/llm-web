@@ -58,7 +58,7 @@
 			<span>•</span>
 			<span>{formatCost(message.cost)}</span>
 			<span>•</span>
-			<span>Tokens: {formatTokens(message.tokens)}</span>
+			<span>{formatTokens(message.tokens)}</span>
 			{#if message.stop_reason && !['stop', 'end_turn', 'completed'].includes(message.stop_reason.toLowerCase())}
 				<span>•</span>
 				<span class="text-red-600">Stop: {message.stop_reason}</span>

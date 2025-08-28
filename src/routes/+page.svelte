@@ -15,6 +15,7 @@
 	let reasoningEffort = $state<'none' | 'low' | 'medium' | 'high'>('low');
 	let showPopover = $state(false);
 	let chatToDelete = $state<number | null>(null);
+	let messagesContainer = $state<HTMLElement | null>(null);
 
 	// Handle regeneration from a specific message
 	async function handleRegen(messageIndex: number) {
@@ -162,6 +163,9 @@
 		const id = await storage.saveChat(newChat);
 		currentChat = { ...newChat, id };
 		await loadChatHistory();
+
+		// Scroll to bottom for new chat
+		setTimeout(scrollToBottom, 100);
 	}
 
 	function toggleSidebar() {
@@ -180,6 +184,9 @@
 		const input = message;
 		message = '';
 		isLoading = true;
+
+		// Scroll to bottom after user message
+		setTimeout(scrollToBottom, 100);
 
 		try {
 			const startTime = performance.now();
@@ -239,6 +246,8 @@
 		const chat = chatHistory.find((c) => c.id === chatId);
 		if (chat) {
 			currentChat = chat;
+			// Scroll to bottom when switching chats
+			setTimeout(scrollToBottom, 100);
 		}
 	}
 
@@ -272,6 +281,32 @@
 			}
 		};
 	}
+
+	// Auto-scroll to bottom of chat
+	function scrollToBottom() {
+		if (messagesContainer) {
+			messagesContainer.scrollTop = messagesContainer.scrollHeight;
+		}
+	}
+
+	// Auto-scroll when messages change
+	$effect(() => {
+		if (currentChat?.messages) {
+			// Small delay to ensure DOM is updated
+			setTimeout(scrollToBottom, 50);
+		}
+	});
+
+	// Auto-scroll during streaming responses
+	$effect(() => {
+		if (isLoading && currentChat?.messages.length > 0) {
+			const lastMessage = currentChat.messages[currentChat.messages.length - 1];
+			if (lastMessage.role === 'assistant') {
+				// Scroll to bottom during streaming
+				scrollToBottom();
+			}
+		}
+	});
 
 	// Initialize on mount
 	init();
@@ -389,7 +424,7 @@
 	<!-- Main chat area -->
 	<div class="flex flex-1 flex-col">
 		<!-- Chat messages area -->
-		<div class="flex-1 overflow-y-auto p-4">
+		<div class="flex-1 overflow-y-auto p-4" bind:this={messagesContainer}>
 			{#if currentChat}
 				{#each currentChat.messages as msg, index}
 					<ChatMessage
