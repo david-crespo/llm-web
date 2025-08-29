@@ -15,12 +15,7 @@ const config = {
 			fallback: 'index.html',
 			precompress: false,
 			strict: true
-		}),
-
-		// Configure paths for static deployment
-		paths: {
-			base: process.env.NODE_ENV === 'production' ? '/llm-web' : ''
-		}
+		})
 	}
 };
 
