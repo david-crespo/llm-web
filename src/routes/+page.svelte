@@ -40,59 +40,7 @@
 		// Remove all messages after the specified index
 		currentChat.messages = messagesUpToIndex;
 
-		isLoading = true;
-
-		try {
-			const startTime = performance.now();
-			const response = await createMessage(selectedModel.provider, {
-				chat: truncatedChat,
-				input: targetMessage.content,
-				model: selectedModel,
-				search: webSearchEnabled,
-				think: reasoningEnabled
-			});
-
-			const timeMs = performance.now() - startTime;
-			const cost = getCost(selectedModel, response.tokens);
-
-			const assistantMessage: ChatMessageType = {
-				role: 'assistant',
-				model: selectedModel.id,
-				content: response.content,
-				reasoning: response.reasoning,
-				tokens: response.tokens,
-				stop_reason: response.stop_reason,
-				cost,
-				timeMs
-			};
-
-			currentChat.messages.push(assistantMessage);
-
-			// Save updated chat
-			if (currentChat.id) {
-				await storage.updateChat(currentChat.id, currentChat);
-			} else {
-				const id = await storage.saveChat(currentChat);
-				currentChat = { ...currentChat, id };
-			}
-
-			await loadChatHistory();
-		} catch (error) {
-			console.error('Error regenerating message:', error);
-			// Add error message to chat
-			const errorMessage: ChatMessageType = {
-				role: 'assistant',
-				model: selectedModel.id,
-				content: `Error regenerating: ${error instanceof Error ? error.message : 'Unknown error'}`,
-				tokens: { input: 0, output: 0 },
-				stop_reason: 'error',
-				cost: 0,
-				timeMs: 0
-			};
-			currentChat.messages.push(errorMessage);
-		} finally {
-			isLoading = false;
-		}
+		await sendMessageWithInput(truncatedChat, targetMessage.content);
 	}
 
 	// Handle forking from a specific message
@@ -177,27 +125,15 @@
 		sidebarOpen = !sidebarOpen;
 	}
 
-	async function sendMessage() {
-		if (!message.trim() || !currentChat || isLoading) return;
-
-		const userMessage: ChatMessageType = {
-			role: 'user',
-			content: message.trim()
-		};
-
-		currentChat.messages.push(userMessage);
-		const input = message;
-		message = '';
+	// Helper function to send a message and handle response
+	async function sendMessageWithInput(chat: Chat, input: string) {
 		isLoading = true;
-
-		// Scroll to bottom after user message
-		setTimeout(scrollToBottom, 100);
 
 		try {
 			const startTime = performance.now();
 
 			const response = await createMessage(selectedModel.provider, {
-				chat: currentChat,
+				chat,
 				input,
 				model: selectedModel,
 				search: webSearchEnabled,
@@ -218,14 +154,14 @@
 				timeMs
 			};
 
-			currentChat.messages.push(assistantMessage);
+			chat.messages.push(assistantMessage);
 
 			// Save updated chat
-			if (currentChat.id) {
-				await storage.updateChat(currentChat.id, currentChat);
+			if (chat.id) {
+				await storage.updateChat(chat.id, chat);
 			} else {
-				const id = await storage.saveChat(currentChat);
-				currentChat = { ...currentChat, id };
+				const id = await storage.saveChat(chat);
+				currentChat = { ...chat, id };
 			}
 
 			await loadChatHistory();
@@ -241,10 +177,28 @@
 				cost: 0,
 				timeMs: 0
 			};
-			currentChat.messages.push(errorMessage);
+			chat.messages.push(errorMessage);
 		} finally {
 			isLoading = false;
 		}
+	}
+
+	async function sendMessage() {
+		if (!message.trim() || !currentChat || isLoading) return;
+
+		const userMessage: ChatMessageType = {
+			role: 'user',
+			content: message.trim()
+		};
+
+		currentChat.messages.push(userMessage);
+		const input = message;
+		message = '';
+
+		// Scroll to bottom after user message
+		setTimeout(scrollToBottom, 100);
+
+		await sendMessageWithInput(currentChat, input);
 	}
 
 	async function selectChat(chatId: number) {
