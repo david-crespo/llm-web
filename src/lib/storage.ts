@@ -10,11 +10,6 @@ export interface ApiKeys {
 	openai?: string;
 	anthropic?: string;
 	google?: string;
-	groq?: string;
-	deepseek?: string;
-	cerebras?: string;
-	xai?: string;
-	openrouter?: string;
 }
 
 class Storage {

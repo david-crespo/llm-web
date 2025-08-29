@@ -129,7 +129,7 @@ async function geminiCreateMessage({
 	search
 }: ChatInput): Promise<ModelResponse> {
 	const apiKey = localStorage.getItem('google_api_key');
-	if (!apiKey) throw new Error('Google AI API key not found');
+	if (!apiKey) throw new Error('Gemini API key not found');
 
 	const genAI = new GoogleGenAI({ apiKey });
 

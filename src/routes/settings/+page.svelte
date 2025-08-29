@@ -70,7 +70,7 @@
 		</div>
 
 		<div>
-			<label for="google-key" class="mb-1 block text-sm font-medium">Google AI API Key</label>
+			<label for="google-key" class="mb-1 block text-sm font-medium">Gemini API Key</label>
 			<input
 				id="google-key"
 				bind:value={googleKey}

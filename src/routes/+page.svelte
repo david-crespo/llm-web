@@ -1,6 +1,6 @@
 <script lang="ts">
 	import ChatMessage from '$lib/ChatMessage.svelte';
-	import { storage } from '$lib/storage';
+	import { storage, type ApiKeys } from '$lib/storage';
 	import { models, getCost, systemBase } from '$lib/models';
 	import { createMessage } from '$lib/adapters';
 	import type { Chat, ChatMessage as ChatMessageType } from '$lib/types';
@@ -16,6 +16,11 @@
 	let chatToDelete = $state<number | null>(null);
 	let showAboutModal = $state(false);
 	let messagesContainer = $state<HTMLElement | null>(null);
+
+	const openaiKey = localStorage.getItem('openai_api_key') || '';
+	const anthropicKey = localStorage.getItem('anthropic_api_key') || '';
+	const googleKey = localStorage.getItem('google_api_key') || '';
+	const hasApiKeys = openaiKey || anthropicKey || googleKey;
 
 	// Handle regeneration from a specific message
 	async function handleRegen(messageIndex: number) {
@@ -130,7 +135,7 @@
 		await storage.init();
 		await loadChatHistory();
 
-		// Create new chat if none exists
+		// Create new chat if none exist
 		if (chatHistory.length === 0) {
 			await createNewChat();
 		} else {
@@ -286,6 +291,25 @@
 
 			if (!node.contains(event.target as Node)) {
 				sidebarOpen = false;
+			}
+		};
+
+		document.addEventListener('click', handleClick, true);
+
+		return {
+			destroy() {
+				document.removeEventListener('click', handleClick, true);
+			}
+		};
+	}
+
+	// Click outside handler for modals
+	function clickOutsideModal(node: HTMLElement) {
+		const handleClick = (event: MouseEvent) => {
+			// Close modal if clicked on the backdrop itself (not on modal content)
+			if (event.target === node) {
+				showAboutModal = false;
+				chatToDelete = null;
 			}
 		};
 
@@ -456,7 +480,9 @@
 			<!-- Bottom section -->
 			<div class="space-y-3 border-t border-gray-300 p-4">
 				<!-- API Keys link -->
-				<a href="/settings" class="block text-sm text-blue-600 hover:text-blue-800"> Configure API Keys </a>
+				<a href="/settings" class="block text-sm text-blue-600 hover:text-blue-800">
+					Configure API Keys
+				</a>
 
 				<!-- About button -->
 				<button
@@ -470,7 +496,10 @@
 
 		<!-- Delete confirmation dialog -->
 		{#if chatToDelete !== null}
-			<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+			<div
+				class="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
+				use:clickOutsideModal
+			>
 				<div class="w-80 rounded-lg bg-white p-6 shadow-lg">
 					<h3 class="mb-4 text-lg font-medium">Delete Chat</h3>
 					<p class="mb-6 text-sm text-gray-600">
@@ -502,42 +531,51 @@
 
 	<!-- About modal -->
 	{#if showAboutModal}
-		<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-			<div class="w-96 max-w-[90vw] rounded-lg bg-white p-6 shadow-lg">
-				<h3 class="mb-4 text-lg font-medium">About this app</h3>
-				<div class="mb-6 space-y-3 text-sm text-gray-600">
-					<p>
-						This is a fully client-side LLM chat client built as a static site with <a
-							href="https://svelte.dev/docs/kit/introduction"
-							rel="noopener noreferrer"
-							class="text-blue-600 underline hover:text-blue-800"
-							target="_blank">SvelteKit</a
-						>. API keys and chat history are stored locally in this browser only. Keys are only sent
-						to model providers.
-					</p>
-					<p>
-						The app is designed to be hackable rather than configurable: if you want different
-						models or different behavior, fork the repo, change how it works, and deploy your own
-						copy.
-					</p>
-				</div>
-				<div class="mb-6">
-					<a
-						href="https://github.com/david-crespo/llm-web"
-						target="_blank"
-						rel="noopener noreferrer"
-						class="text-blue-600 underline hover:text-blue-800"
-					>
-						View on GitHub →
-					</a>
-				</div>
-				<div class="flex justify-end">
+		<div
+			class="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
+			use:clickOutsideModal
+		>
+			<div class="w-96 max-w-[90vw] rounded-lg bg-white shadow-lg">
+				<!-- Header with title and close button -->
+				<div class="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+					<h3 class="text-lg font-medium">About this app</h3>
 					<button
 						onclick={() => (showAboutModal = false)}
-						class="rounded border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50"
+						class="text-gray-400 hover:text-gray-600"
+						aria-label="Close modal"
 					>
-						Close
+						✕
 					</button>
+				</div>
+
+				<!-- Content -->
+				<div class="p-6">
+					<div class="mb-6 space-y-3 text-sm text-gray-600">
+						<p>
+							This is a fully client-side LLM chat client built as a static site with <a
+								href="https://svelte.dev/docs/kit/introduction"
+								rel="noopener noreferrer"
+								class="text-blue-600 underline hover:text-blue-800"
+								target="_blank">SvelteKit</a
+							>. API keys and chat history are stored locally in this browser only. Keys are only
+							sent to model providers.
+						</p>
+						<p>
+							The app is designed to be hackable rather than configurable: if you want different
+							models or different behavior, fork the repo, change how it works, and deploy your own
+							copy.
+						</p>
+					</div>
+					<div>
+						<a
+							href="https://github.com/david-crespo/llm-web"
+							target="_blank"
+							rel="noopener noreferrer"
+							class="text-blue-600 underline hover:text-blue-800"
+						>
+							View on GitHub →
+						</a>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -571,8 +609,17 @@
 				{/if}
 			{:else}
 				<div class="flex h-full items-center justify-center">
-					<div class="text-center text-gray-500">
-						<p class="mb-4 text-lg">Start a chat below</p>
+					<div class="flex max-w-xs flex-col gap-2 rounded-lg p-4 text-center">
+						<p class="text-lg">Start a chat below</p>
+						{#if !hasApiKeys}
+							<p class="text-balance text-gray-700">
+								Go to <a href="/settings" class="text-blue-600 underline hover:text-blue-800"
+									>settings</a
+								>
+								to set an OpenAI, Anthropic, or Gemini API key. Keys are stored only in the browser.
+							</p>
+						{/if}
+
 						<button
 							onclick={() => (showAboutModal = true)}
 							class="text-sm text-blue-600 underline hover:text-blue-800"
