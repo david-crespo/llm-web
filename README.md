@@ -34,7 +34,7 @@ A very light LLM client like my [LLM CLI](https://github.com/david-crespo/llm-cl
 - [x] API keys set client-side
 - [x] Chats stored client-side
 - [ ] Model picker, model can be changed for each message in a chat
-- [ ] Reasoning effort picker
+- [x] Reasoning effort picker
 - [x] Web search toggle
 - [x] Everything that doesn't need to change per-chat should be hard-coded, like it is in my [CLI](https://github.com/david-crespo/llm-cli/blob/b9147829379257d726a93282cb0bee0595c28dc1/adapters.ts#L34-L41)
   - Per-model configuration and logic

@@ -370,7 +370,7 @@
 	init();
 </script>
 
-<div class="flex h-screen {sidebarOpen ? 'overflow-hidden' : ''}">
+<div class="flex {sidebarOpen ? 'overflow-hidden' : ''}" style="height: 100vh; height: 100dvh;">
 	<!-- Sidebar scrim -->
 	{#if sidebarOpen}
 		<div class="fixed inset-0 z-40 bg-black/20"></div>
@@ -379,7 +379,8 @@
 	<!-- Sidebar -->
 	{#if sidebarOpen}
 		<div
-			class="fixed top-0 left-0 z-50 flex h-screen w-4/5 flex-col overflow-hidden bg-gray-50"
+			class="fixed top-0 left-0 z-50 flex w-4/5 flex-col overflow-hidden bg-gray-50"
+			style="height: 100vh; height: 100dvh;"
 			use:clickOutsideSidebar
 		>
 			<!-- Header -->
@@ -507,8 +508,8 @@
 					<p>
 						This is a fully client-side LLM chat client built as a static site with <a
 							href="https://svelte.dev/docs/kit/introduction"
-						rel="noopener noreferrer"
-						class="text-blue-600 underline hover:text-blue-800"
+							rel="noopener noreferrer"
+							class="text-blue-600 underline hover:text-blue-800"
 							target="_blank">SvelteKit</a
 						>. API keys and chat history are stored locally in this browser only. Keys are only sent
 						to model providers.
