@@ -35,19 +35,19 @@ export const models: Model[] = [
 	},
 	{
 		provider: 'anthropic',
-		key: 'claude-sonnet-4-20250514',
-		id: 'Sonnet 4',
-		input: 3,
-		input_cached: 0.3,
-		output: 15
-	},
-	{
-		provider: 'anthropic',
 		key: 'claude-opus-4-1-20250805',
 		id: 'Opus 4.1',
 		input: 15,
 		input_cached: 1.5,
 		output: 75
+	},
+	{
+		provider: 'anthropic',
+		key: 'claude-sonnet-4-20250514',
+		id: 'Sonnet 4',
+		input: 3,
+		input_cached: 0.3,
+		output: 15
 	},
 	{
 		provider: 'google',
@@ -58,27 +58,6 @@ export const models: Model[] = [
 		output: 10.0
 	}
 ];
-
-/** Errors and exits if it can't resolve to a model */
-export function resolveModel(modelArg: string | undefined): Model {
-	if (modelArg === undefined) return models.find((m) => m.default)!;
-
-	// Find the first model containing the arg as a substring. See comment at
-	// allModels definition about ordering.
-	const lower = modelArg.toLowerCase();
-	// First look for an exact match, then find the first model containing the arg
-	// as a substring. See comment at allModels definition about ordering. Without
-	// this logic, you could never match o1 if o1-mini is present.
-	const match =
-		models.find((m) => m.key === lower || m.id === lower) ||
-		models.find((m) => m.key.includes(lower) || m.id.includes(lower));
-
-	if (!match) {
-		throw new Error(`Model '${modelArg}' not found. Use the models command to list models.`);
-	}
-
-	return match;
-}
 
 const M = 1_000_000;
 
@@ -99,7 +78,8 @@ export function getCost(
 	return cost / M;
 }
 
-export const systemBase = `- Answer the question precisely, without much elaboration
+export const systemBase = `
+- Answer the question precisely, without much elaboration
 - Write natural prose for a sophisticated reader, without unnecessary bullets or headings
 - Avoid referring to yourself in the first person. You are a computer program, not a person.
 - When asked to write code, primarily output code, with minimal explanation unless requested

@@ -57,6 +57,10 @@
 		color: #6b7280;
 	}
 
+	.prose :global(blockquote:last-child) {
+		margin-bottom: 0;
+	}
+
 	.prose :global(h1),
 	.prose :global(h2),
 	.prose :global(h3),
@@ -72,10 +76,19 @@
 		margin-bottom: 0.75rem;
 	}
 
+	.prose :global(p:last-child) {
+		margin-bottom: 0;
+	}
+
 	.prose :global(ul),
 	.prose :global(ol) {
 		margin-bottom: 0.75rem;
 		padding-left: 1.5rem;
+	}
+
+	.prose :global(ul:last-child),
+	.prose :global(ol:last-child) {
+		margin-bottom: 0;
 	}
 
 	.prose :global(li) {
@@ -86,6 +99,10 @@
 		border-collapse: collapse;
 		width: 100%;
 		margin-bottom: 1rem;
+	}
+
+	.prose :global(table:last-child) {
+		margin-bottom: 0;
 	}
 
 	.prose :global(th),
