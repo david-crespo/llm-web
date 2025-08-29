@@ -83,19 +83,49 @@
 		margin-bottom: 0;
 	}
 
-	.prose :global(ul),
+	.prose :global(ul) {
+		margin-bottom: 0.75rem;
+		padding-left: 1.5rem;
+		list-style-type: disc;
+	}
+
 	.prose :global(ol) {
 		margin-bottom: 0.75rem;
 		padding-left: 1.5rem;
+		list-style-type: decimal;
 	}
 
-	.prose :global(ul:last-child),
+	.prose :global(ul:last-child) {
+		margin-bottom: 0;
+	}
+
 	.prose :global(ol:last-child) {
 		margin-bottom: 0;
 	}
 
 	.prose :global(li) {
 		margin-bottom: 0.25rem;
+	}
+
+	/* Nested list styling */
+	.prose :global(ul ul) {
+		list-style-type: circle;
+		margin-bottom: 0;
+	}
+
+	.prose :global(ul ul ul) {
+		list-style-type: square;
+		margin-bottom: 0;
+	}
+
+	.prose :global(ol ol) {
+		list-style-type: lower-alpha;
+		margin-bottom: 0;
+	}
+
+	.prose :global(ol ol ol) {
+		list-style-type: lower-roman;
+		margin-bottom: 0;
 	}
 
 	.prose :global(table) {
