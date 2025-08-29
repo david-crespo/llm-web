@@ -23,29 +23,21 @@
     onOpenAbout
   }: Props = $props();
 
-  function getChatPreview(chat: Chat): { line1: string; line2: string } {
+  function getChatPreview(chat: Chat): string {
     const firstUserMessage = chat.messages.find((m) => m.role === 'user');
-    if (!firstUserMessage) return { line1: 'New Chat', line2: '' };
-    const content = firstUserMessage.content;
-    const words = content.split(' ');
-    let line1 = '';
-    let line2 = '';
-    let charCount = 0;
-    let wordIndex = 0;
-    while (wordIndex < words.length && charCount < 40 && wordIndex < 6) {
-      const word = words[wordIndex];
-      if (charCount + word.length + 1 > 40) break;
-      line1 += (line1 ? ' ' : '') + word;
-      charCount += word.length + 1;
-      wordIndex++;
-    }
-    if (wordIndex < words.length) {
-      line2 = words.slice(wordIndex).join(' ');
-      if (line2.length > 40) line2 = line2.slice(0, 37) + '...';
-    }
-    return { line1: line1 || content.slice(0, 40), line2 };
+    if (!firstUserMessage) return 'New Chat';
+    return firstUserMessage.content;
   }
 </script>
+<style>
+  .line-clamp-2 {
+    display: -webkit-box;
+    line-clamp: 2;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+</style>
 
 {#if open}
   <!-- Scrim -->
@@ -68,7 +60,7 @@
 
     <!-- New Chat button -->
     <div class="p-4">
-      <button onclick={onNewChat} class="w-full rounded-lg bg-gray-200 px-4 py-3 text-center font-medium transition-colors hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none">
+      <button onclick={onNewChat} class="w-full rounded-lg bg-gray-200 px-4 py-3 text-center font-medium transition-colors hover:bg-gray-300 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none">
         + New Chat
       </button>
     </div>
@@ -81,26 +73,26 @@
         {#each chatHistory as chat}
           {@const isActive = chat.id === currentChatId}
           {@const preview = getChatPreview(chat)}
-          <div class="mb-2 flex items-center gap-2">
-            <button
-              class="flex-1 rounded border px-3 py-2 text-left hover:bg-gray-50 {isActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}"
+          <div class="mb-2">
+            <div
+              role="button"
+              tabindex="0"
+              class="relative flex w-full rounded border px-3 py-2 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 {isActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}"
               onclick={() => onSelectChat(chat.id!)}
+              onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && onSelectChat(chat.id!)}
             >
-              <div class="flex items-center justify-between">
-                <div class="text-xs text-gray-500">{chat.createdAt.toLocaleString()}</div>
+              <div class="min-w-0 pr-10">
+                <div class="text-sm font-medium break-words line-clamp-2">{preview}</div>
+                <div class="mt-1 text-xs leading-4 text-gray-500">{chat.createdAt.toLocaleString()}</div>
               </div>
-              <div class="truncate text-sm font-medium">{preview.line1}</div>
-              {#if preview.line2}
-                <div class="truncate text-xs text-gray-600">{preview.line2}</div>
-              {/if}
-            </button>
-            <button
-              class="rounded border border-gray-300 px-2 py-2 text-xs hover:bg-gray-50"
-              aria-label="Delete chat"
-              onclick={() => onRequestDelete(chat.id!)}
-            >
-              🗑
-            </button>
+              <button
+                class="absolute right-2 top-1/2 -translate-y-1/2 rounded px-2 py-2 text-xs hover:bg-gray-100"
+                aria-label="Delete chat"
+                onclick={(e) => { e.stopPropagation(); onRequestDelete(chat.id!); }}
+              >
+                🗑
+              </button>
+            </div>
           </div>
         {/each}
       {/if}
