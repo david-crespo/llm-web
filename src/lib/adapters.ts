@@ -8,7 +8,6 @@ export type ModelResponse = {
 	content: string;
 	tokens: TokenCounts;
 	stop_reason: string;
-	cost: number;
 	reasoning?: string;
 };
 
@@ -41,7 +40,7 @@ async function openaiCreateMessage({
 			{ role: 'user' as const, content: input }
 		],
 		tools: search ? [{ type: 'web_search_preview' as const }] : undefined,
-		reasoning: { effort: think ? 'low' : 'minimal' },
+		reasoning: { effort: think || search ? 'low' : 'minimal' },
 		instructions: chat.systemPrompt
 	});
 
@@ -55,7 +54,6 @@ async function openaiCreateMessage({
 		content: response.output_text,
 		reasoning: '', // Responses API integrates reasoning into output_text
 		tokens,
-		cost: 0, // Will be calculated by caller
 		stop_reason: response.status || 'completed'
 	};
 }
@@ -119,7 +117,6 @@ async function anthropicCreateMessage({
 		content,
 		reasoning,
 		tokens,
-		cost: 0, // Will be calculated by caller
 		stop_reason: response.stop_reason || 'unknown'
 	};
 }
@@ -190,7 +187,6 @@ async function geminiCreateMessage({
 		content,
 		reasoning,
 		tokens,
-		cost: 0, // Will be calculated by caller
 		stop_reason: result.candidates?.[0].finishReason || ''
 	};
 }
