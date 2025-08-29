@@ -23,7 +23,6 @@ export type ChatInput = {
 // OpenAI API adapter using Responses API
 async function openaiCreateMessage({
 	chat,
-	input,
 	model,
 	search,
 	think
@@ -35,10 +34,7 @@ async function openaiCreateMessage({
 
 	const response = await client.responses.create({
 		model: model.key,
-		input: [
-			...chat.messages.map((m) => ({ role: m.role, content: m.content })),
-			{ role: 'user' as const, content: input }
-		],
+		input: chat.messages.map((m) => ({ role: m.role, content: m.content })),
 		tools: search ? [{ type: 'web_search_preview' as const }] : undefined,
 		reasoning: { effort: think || search ? 'low' : 'minimal' },
 		instructions: chat.systemPrompt
@@ -61,7 +57,6 @@ async function openaiCreateMessage({
 // Anthropic API adapter
 async function anthropicCreateMessage({
 	chat,
-	input,
 	model,
 	search,
 	think
@@ -77,13 +72,10 @@ async function anthropicCreateMessage({
 	const response = await client.messages.create({
 		model: model.key,
 		system: chat.systemPrompt,
-		messages: [
-			...chat.messages.map((m) => ({
-				role: m.role,
-				content: m.content
-			})),
-			{ role: 'user', content: input }
-		],
+		messages: chat.messages.map((m) => ({
+			role: m.role,
+			content: m.content
+		})),
 		max_tokens: 4096,
 		thinking: think ? { type: 'enabled', budget_tokens: 1024 } : undefined,
 		tools: search
@@ -122,12 +114,7 @@ async function anthropicCreateMessage({
 }
 
 // Google Gemini API adapter
-async function geminiCreateMessage({
-	chat,
-	input,
-	model,
-	search
-}: ChatInput): Promise<ModelResponse> {
+async function geminiCreateMessage({ chat, model, search }: ChatInput): Promise<ModelResponse> {
 	const apiKey = localStorage.getItem('google_api_key');
 	if (!apiKey) throw new Error('Gemini API key not found');
 
@@ -144,14 +131,11 @@ async function geminiCreateMessage({
 			]
 		},
 		model: model.key,
-		contents: [
-			...chat.messages.map((msg) => ({
-				// gemini uses model instead of assistant
-				role: msg.role === 'assistant' ? 'model' : 'user',
-				parts: [{ text: msg.content }]
-			})),
-			{ role: 'user', parts: [{ text: input }] }
-		]
+		contents: chat.messages.map((msg) => ({
+			// gemini uses model instead of assistant
+			role: msg.role === 'assistant' ? 'model' : 'user',
+			parts: [{ text: msg.content }]
+		}))
 	});
 
 	const parts = result.candidates?.[0].content?.parts ?? [];
