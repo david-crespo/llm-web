@@ -9,26 +9,11 @@
 		onFork: (index: number) => void;
 	}
 
-	let { message, messageIndex = -1, onRegen, onFork }: Props = $props();
+    import { clickOutside } from '$lib/actions/clickOutside';
 
-	let showMenu = $state(false);
+    let { message, messageIndex = -1, onRegen, onFork }: Props = $props();
 
-	// Click outside handler for menu
-	function clickOutside(node: HTMLElement) {
-		const handleClick = (event: MouseEvent) => {
-			if (!node.contains(event.target as Node)) {
-				showMenu = false;
-			}
-		};
-
-		document.addEventListener('click', handleClick, true);
-
-		return {
-			destroy() {
-				document.removeEventListener('click', handleClick, true);
-			}
-		};
-	}
+    let showMenu = $state(false);
 
 	function formatTime(ms: number): string {
 		return `${(ms / 1000).toFixed(2)}s`;
@@ -82,7 +67,7 @@
 	{#if message.role === 'user'}
 		<!-- User message bubble -->
 		<div class="flex justify-end">
-			<div class="relative max-w-[80%] rounded-lg bg-gray-200 px-4 py-3 pr-8" use:clickOutside>
+            <div class="relative max-w-[80%] rounded-lg bg-gray-200 px-4 py-3 pr-8" use:clickOutside={{ onOut: () => (showMenu = false) }}>
 				<!-- Kebab menu inside bubble -->
 				<div class="absolute top-2 right-2">
 					<button
