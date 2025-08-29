@@ -36,6 +36,9 @@
 		border-radius: 6px;
 		padding: 1rem;
 		overflow-x: auto;
+		max-width: 100%;
+		word-wrap: break-word;
+		white-space: pre-wrap;
 	}
 
 	.prose :global(code) {
@@ -99,6 +102,9 @@
 		border-collapse: collapse;
 		width: 100%;
 		margin-bottom: 1rem;
+		max-width: 100%;
+		overflow-x: auto;
+		display: block;
 	}
 
 	.prose :global(table:last-child) {

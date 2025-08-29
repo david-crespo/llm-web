@@ -582,9 +582,9 @@
 	{/if}
 
 	<!-- Main chat area -->
-	<div class="flex flex-1 flex-col">
+	<div class="flex flex-1 flex-col overflow-x-hidden">
 		<!-- Chat messages area -->
-		<div class="flex-1 overflow-y-auto p-4" bind:this={messagesContainer}>
+		<div class="flex-1 overflow-x-hidden overflow-y-auto p-4" bind:this={messagesContainer}>
 			{#if currentChat && currentChat.messages.length > 0}
 				{#each currentChat.messages as msg, index}
 					<ChatMessage
