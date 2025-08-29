@@ -247,6 +247,19 @@
 		const chat = chatHistory.find((c) => c.id === chatId);
 		if (chat) {
 			currentChat = chat;
+
+			// Close the sidebar
+			sidebarOpen = false;
+
+			// Set model picker to the model from the last assistant message
+			const lastAssistantMessage = chat.messages
+				.slice()
+				.reverse()
+				.find((msg) => msg.role === 'assistant');
+			if (lastAssistantMessage) {
+				selectedModel = models.find((m) => m.id === lastAssistantMessage.model) || selectedModel;
+			}
+
 			// Scroll to bottom when switching chats
 			setTimeout(scrollToBottom, 100);
 		}

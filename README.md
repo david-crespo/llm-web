@@ -33,7 +33,7 @@ A very light LLM client like my [LLM CLI](https://github.com/david-crespo/llm-cl
 - [x] GPT-5, Claude Sonnet 4, Opus 4, and Gemini Pro
 - [x] API keys set client-side
 - [x] Chats stored client-side
-- [ ] Model picker, model can be changed for each message in a chat
+- [x] Model picker, model can be changed for each message in a chat
 - [x] Reasoning effort picker
 - [x] Web search toggle
 - [x] Everything that doesn't need to change per-chat should be hard-coded, like it is in my [CLI](https://github.com/david-crespo/llm-cli/blob/b9147829379257d726a93282cb0bee0595c28dc1/adapters.ts#L34-L41)
@@ -44,7 +44,7 @@ A very light LLM client like my [LLM CLI](https://github.com/david-crespo/llm-cl
   - Fork action on assistant message just starts a new chat
 - [x] Every bot message remembers the model that generated it
 - [ ] Streaming when possible (i.e., not GPT-5)
-- [ ] Render markdown output
+- [x] Render markdown output
 - [ ] Disable models for provider if API key is missing
 - [ ] Dark mode (dark/light/system)
 
