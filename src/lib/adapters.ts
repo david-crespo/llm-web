@@ -18,7 +18,7 @@ export type ChatInput = {
 	image_url?: string | undefined;
 	model: Model;
 	search: boolean;
-	think: 'none' | 'low' | 'medium' | 'high';
+	think: boolean;
 };
 
 // OpenAI API adapter using Responses API
@@ -32,14 +32,7 @@ async function openaiCreateMessage({
 	const apiKey = localStorage.getItem('openai_api_key');
 	if (!apiKey) throw new Error('OpenAI API key not found');
 
-	const client = new OpenAI({
-		apiKey,
-		dangerouslyAllowBrowser: true
-	});
-
-	// Map think levels to OpenAI reasoning effort
-	const reasoningEffort =
-		think === 'none' ? 'low' : think === 'low' ? 'low' : think === 'medium' ? 'medium' : 'high';
+	const client = new OpenAI({ apiKey, dangerouslyAllowBrowser: true });
 
 	const response = await client.responses.create({
 		model: model.key,
@@ -48,9 +41,7 @@ async function openaiCreateMessage({
 			{ role: 'user' as const, content: input }
 		],
 		tools: search ? [{ type: 'web_search_preview' as const }] : undefined,
-		reasoning: {
-			effort: reasoningEffort
-		},
+		reasoning: { effort: think ? 'low' : 'minimal' },
 		instructions: chat.systemPrompt
 	});
 
@@ -85,44 +76,27 @@ async function anthropicCreateMessage({
 		dangerouslyAllowBrowser: true
 	});
 
-	const messages = [
-		...chat.messages.map((m) => ({
-			role: m.role,
-			content: m.content
-		})),
-		{
-			role: 'user' as const,
-			content: input
-		}
-	];
-
-	// Map think levels to Anthropic thinking budget
-	let thinking: { type: 'enabled'; budget_tokens: number } | undefined;
-	if (think === 'low') {
-		thinking = { type: 'enabled', budget_tokens: 1024 };
-	} else if (think === 'medium') {
-		thinking = { type: 'enabled', budget_tokens: 2048 };
-	} else if (think === 'high') {
-		thinking = { type: 'enabled', budget_tokens: 4096 };
-	}
-
-	const requestTools = search
-		? [
-				{
-					type: 'web_search_20250305' as const,
-					name: 'web_search' as const,
-					max_uses: 5
-				} as any
-			]
-		: undefined;
-
 	const response = await client.messages.create({
 		model: model.key,
 		system: chat.systemPrompt,
-		messages,
+		messages: [
+			...chat.messages.map((m) => ({
+				role: m.role,
+				content: m.content
+			})),
+			{ role: 'user', content: input }
+		],
 		max_tokens: 4096,
-		thinking,
-		tools: requestTools
+		thinking: think ? { type: 'enabled', budget_tokens: 1024 } : undefined,
+		tools: search
+			? [
+					{
+						type: 'web_search_20250305',
+						name: 'web_search',
+						max_uses: 5
+					}
+				]
+			: undefined
 	});
 
 	const content = response.content
@@ -164,10 +138,7 @@ async function geminiCreateMessage({
 
 	const result = await genAI.models.generateContent({
 		config: {
-			thinkingConfig: {
-				thinkingBudget: undefined,
-				includeThoughts: true
-			},
+			thinkingConfig: { thinkingBudget: -1, includeThoughts: true },
 			systemInstruction: chat.systemPrompt,
 			tools: [
 				// always include URL context. it was designed to be used this way

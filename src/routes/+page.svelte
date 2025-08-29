@@ -12,8 +12,7 @@
 	let selectedModel = $state(models.find((m) => m.default) || models[0]);
 	let isLoading = $state(false);
 	let webSearchEnabled = $state(false);
-	let reasoningEffort = $state<'none' | 'low' | 'medium' | 'high'>('low');
-	let showPopover = $state(false);
+	let reasoningEnabled = $state(false);
 	let chatToDelete = $state<number | null>(null);
 	let showAboutModal = $state(false);
 	let messagesContainer = $state<HTMLElement | null>(null);
@@ -45,7 +44,7 @@
 				input: targetMessage.content,
 				model: selectedModel,
 				search: webSearchEnabled,
-				think: reasoningEffort
+				think: reasoningEnabled
 			});
 
 			const timeMs = performance.now() - startTime;
@@ -197,7 +196,7 @@
 				input,
 				model: selectedModel,
 				search: webSearchEnabled,
-				think: reasoningEffort
+				think: reasoningEnabled
 			});
 
 			const timeMs = performance.now() - startTime;
@@ -279,26 +278,6 @@
 		}
 	}
 
-	// Click outside handler for popover
-	function clickOutside(node: HTMLElement) {
-		const handleClick = (event: MouseEvent) => {
-			// Don't close popover if About modal is open
-			if (showAboutModal) return;
-
-			if (!node.contains(event.target as Node)) {
-				showPopover = false;
-			}
-		};
-
-		document.addEventListener('click', handleClick, true);
-
-		return {
-			destroy() {
-				document.removeEventListener('click', handleClick, true);
-			}
-		};
-	}
-
 	// Click outside handler for sidebar
 	function clickOutsideSidebar(node: HTMLElement) {
 		const handleClick = (event: MouseEvent) => {
@@ -342,6 +321,13 @@
 				// Scroll to bottom during streaming
 				scrollToBottom();
 			}
+		}
+	});
+
+	// Handle Gemini reasoning (always enabled)
+	$effect(() => {
+		if (selectedModel.provider === 'google') {
+			reasoningEnabled = true;
 		}
 	});
 
@@ -634,47 +620,37 @@
 					{/each}
 				</select>
 
-				<!-- Popover menu button -->
-				<div class="relative" use:clickOutside>
-					<button
-						onclick={() => (showPopover = !showPopover)}
-						class="rounded border border-gray-300 px-2 py-2 text-sm hover:bg-gray-50"
-					>
-						⚙️
-					</button>
+				<!-- Web Search Toggle Button -->
+				<button
+					onclick={() => (webSearchEnabled = !webSearchEnabled)}
+					class="rounded border px-2 py-2 text-sm transition-colors {webSearchEnabled
+						? 'border-blue-500 bg-blue-500 text-white hover:bg-blue-600'
+						: 'border-gray-300 bg-white text-gray-500 hover:bg-gray-50'}"
+					title="Web Search"
+				>
+					🌐
+				</button>
 
-					<!-- Popover -->
-					{#if showPopover}
-						<div
-							class="absolute right-0 bottom-full z-30 mb-2 w-48 rounded border border-gray-300 bg-white p-3 shadow-lg"
-						>
-							<div class="space-y-3">
-								<!-- Web Search Toggle -->
-								<label class="flex items-center gap-2 text-sm">
-									<input type="checkbox" bind:checked={webSearchEnabled} class="rounded" />
-									Web Search
-								</label>
-
-								<!-- Reasoning Effort -->
-								<div>
-									<label for="reasoning-effort" class="mb-1 block text-sm font-medium"
-										>Reasoning Effort</label
-									>
-									<select
-										id="reasoning-effort"
-										bind:value={reasoningEffort}
-										class="w-full rounded border border-gray-300 px-2 py-1 text-sm"
-									>
-										<option value="none">None</option>
-										<option value="low">Low</option>
-										<option value="medium">Medium</option>
-										<option value="high">High</option>
-									</select>
-								</div>
-							</div>
-						</div>
-					{/if}
-				</div>
+				<!-- Reasoning Toggle Button -->
+				<button
+					onclick={() => {
+						if (selectedModel.provider !== 'google') {
+							reasoningEnabled = !reasoningEnabled;
+						}
+					}}
+					class="rounded border px-2 py-2 text-sm transition-colors {selectedModel.provider ===
+					'google'
+						? 'border-blue-300 bg-blue-300 text-white'
+						: reasoningEnabled
+							? 'border-blue-500 bg-blue-500 text-white hover:bg-blue-600'
+							: 'border-gray-300 bg-white text-gray-500 hover:bg-gray-50'}"
+					title={selectedModel.provider === 'google'
+						? 'Reasoning (always enabled for Gemini)'
+						: 'Reasoning'}
+					disabled={selectedModel.provider === 'google'}
+				>
+					🤔
+				</button>
 
 				<button
 					onclick={sendMessage}

@@ -54,7 +54,6 @@
 			<input
 				id="openai-key"
 				bind:value={openaiKey}
-				type="password"
 				placeholder="sk-..."
 				class="w-full rounded border border-gray-300 px-3 py-2"
 			/>
@@ -65,7 +64,6 @@
 			<input
 				id="anthropic-key"
 				bind:value={anthropicKey}
-				type="password"
 				placeholder="sk-ant-..."
 				class="w-full rounded border border-gray-300 px-3 py-2"
 			/>
@@ -76,7 +74,6 @@
 			<input
 				id="google-key"
 				bind:value={googleKey}
-				type="password"
 				placeholder="AIza..."
 				class="w-full rounded border border-gray-300 px-3 py-2"
 			/>
