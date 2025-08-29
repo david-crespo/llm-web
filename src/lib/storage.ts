@@ -156,41 +156,6 @@ class Storage {
 			request.onsuccess = () => resolve();
 		});
 	}
-
-	// API Keys methods
-	async saveApiKeys(keys: ApiKeys): Promise<void> {
-		await this.ensureInit();
-		return new Promise((resolve, reject) => {
-			const transaction = this.db!.transaction(['apiKeys'], 'readwrite');
-			const store = transaction.objectStore('apiKeys');
-
-			const request = store.put({ id: 'keys', ...keys });
-
-			request.onerror = () => reject(request.error);
-			request.onsuccess = () => resolve();
-		});
-	}
-
-	async getApiKeys(): Promise<ApiKeys> {
-		await this.ensureInit();
-		return new Promise((resolve, reject) => {
-			const transaction = this.db!.transaction(['apiKeys'], 'readonly');
-			const store = transaction.objectStore('apiKeys');
-			const request = store.get('keys');
-
-			request.onerror = () => reject(request.error);
-			request.onsuccess = () => {
-				const result = request.result;
-				if (result) {
-					// Remove the id field
-					const { id, ...keys } = result;
-					resolve(keys);
-				} else {
-					resolve({});
-				}
-			};
-		});
-	}
 }
 
 export const storage = new Storage();
