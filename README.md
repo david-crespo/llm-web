@@ -43,14 +43,14 @@ A very light LLM client like my [LLM CLI](https://github.com/david-crespo/llm-cl
   - Fork action on user message prompts for new model, starts a new chat, and regens with new model
   - Fork action on assistant message just starts a new chat
 - [x] Every bot message remembers the model that generated it
-- [ ] Streaming when possible (i.e., not GPT-5)
 - [x] Render markdown output
+- [x] Dark mode (dark/light/system)
 - [ ] Disable models for provider if API key is missing
-- [ ] Dark mode (dark/light/system)
+- [ ] Streaming when possible (i.e., not GPT-5)
 
 ### Nice to haves
 
-- [ ] Expandable reasoning trace
+- [x] Expandable reasoning trace
 - [ ] Images upload
 
 ## Implementation plan

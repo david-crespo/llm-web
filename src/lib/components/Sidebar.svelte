@@ -80,7 +80,7 @@
 
     <!-- New Chat button -->
     <div class="p-4">
-      <button onclick={onNewChat} class="w-full rounded-lg bg-gray-200 px-4 py-3 text-center font-medium transition-colors hover:bg-gray-300 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none">
+      <button onclick={onNewChat} class="w-full rounded-lg bg-gray-200 px-4 py-3 text-center font-medium hover:bg-gray-300 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none">
         + New Chat
       </button>
     </div>

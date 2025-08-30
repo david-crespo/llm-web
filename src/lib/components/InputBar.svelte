@@ -58,7 +58,7 @@
       <!-- Web Search Toggle Button -->
       <button
         onclick={() => (webSearchEnabled = !webSearchEnabled)}
-        class="flex size-10 items-center justify-center rounded border p-0 text-base transition-colors {webSearchEnabled ? 'border-blue-500 bg-blue-500 text-white hover:bg-blue-600' : 'border-gray-300 bg-white text-gray-500 hover:bg-gray-50'}"
+        class="flex size-10 items-center justify-center rounded border p-0 text-base {webSearchEnabled ? 'border-blue-500 bg-blue-500 text-white hover:bg-blue-600' : 'border-gray-300 bg-white text-gray-500 hover:bg-gray-50'}"
         title="Web Search"
         aria-pressed={webSearchEnabled}
       >
@@ -72,7 +72,7 @@
             reasoningEnabled = !reasoningEnabled;
           }
         }}
-        class="flex h-10 w-10 items-center justify-center rounded border p-0 text-base transition-colors {selectedModel.provider === 'google' ? 'border-blue-300 bg-blue-300 text-white' : reasoningEnabled ? 'border-blue-500 bg-blue-500 text-white hover:bg-blue-600' : 'border-gray-300 bg-white text-gray-500 hover:bg-gray-50'}"
+        class="flex h-10 w-10 items-center justify-center rounded border p-0 text-base {selectedModel.provider === 'google' ? 'border-blue-300 bg-blue-300 text-white' : reasoningEnabled ? 'border-blue-500 bg-blue-500 text-white hover:bg-blue-600' : 'border-gray-300 bg-white text-gray-500 hover:bg-gray-50'}"
         title={selectedModel.provider === 'google' ? 'Reasoning (always enabled for Gemini)' : 'Reasoning'}
         disabled={selectedModel.provider === 'google'}
         aria-pressed={selectedModel.provider === 'google' ? true : reasoningEnabled}

@@ -72,7 +72,7 @@
 				<div class="absolute top-2 right-2">
 					<button
 						onclick={() => (showMenu = !showMenu)}
-						class="ml-6 rounded-full px-1.5 pt-px text-lg font-bold text-gray-600 transition-colors hover:bg-gray-300 hover:text-gray-800"
+						class="ml-6 rounded-full px-1.5 pt-px text-lg font-bold text-gray-600 hover:bg-gray-300 hover:text-gray-800"
 						aria-label="Message options"
 					>
 						⋮
