@@ -1,0 +1,9 @@
+/*
+  Content-Security-Policy: default-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com; manifest-src 'self'; worker-src 'self'; frame-src 'none'; upgrade-insecure-requests
+  Referrer-Policy: no-referrer
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), magnetometer=(), gyroscope=(), usb=(), payment=()
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: same-origin
