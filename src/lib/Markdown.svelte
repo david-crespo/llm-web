@@ -4,12 +4,13 @@
 	interface Props {
 		content: string;
 		class?: string;
+		compact?: boolean;
 	}
 
-	let { content, class: className }: Props = $props();
+	let { content, class: className, compact = false }: Props = $props();
 	let html = $state('');
 
-	let divClass = $derived(`prose prose-sm max-w-none${className ? ' ' + className : ''}`);
+	let divClass = $derived(`prose prose-sm max-w-none${compact ? ' compact-prose' : ''}${className ? ' ' + className : ''}`);
 
 	// Configure marked to open links in new tabs
 	$effect(() => {
@@ -161,4 +162,30 @@
 	.prose :global(a:hover) {
 		color: #1d4ed8;
 	}
+  /* Compact variant scales down common text elements slightly */
+  .compact-prose :global(p),
+  .compact-prose :global(li),
+  .compact-prose :global(td),
+  .compact-prose :global(th) {
+    font-size: 0.9375em;
+    line-height: 1.35;
+  }
+
+  /* Inline code a touch smaller in compact */
+  .compact-prose :global(code) {
+    font-size: 0.85em;
+  }
+
+  /* Code blocks a notch smaller + tighter line-height */
+  .compact-prose :global(pre),
+  .compact-prose :global(pre code) {
+    font-size: 0.9em;
+    line-height: 1.3;
+  }
+
+  .compact-prose :global(h1),
+  .compact-prose :global(h2),
+  .compact-prose :global(h3) {
+    font-size: 0.95em;
+  }
 </style>

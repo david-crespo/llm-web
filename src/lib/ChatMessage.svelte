@@ -36,7 +36,7 @@
 <div class="mb-6">
 	{#if message.role === 'assistant'}
 		<!-- Assistant message header -->
-		<div class="mb-2 flex items-center gap-2 text-sm text-gray-600">
+		<div class="mb-2 flex items-center gap-2 text-xs text-gray-600">
 			<span class="font-medium">{message.model}</span>
 			<span>•</span>
 			<span>{formatTime(message.timeMs)}</span>
@@ -57,7 +57,7 @@
 					Reasoning
 				</summary>
 				<div class="mt-2 rounded border-l-4 border-gray-300 bg-gray-50 p-3 text-sm">
-					<Markdown content={message.reasoning} />
+				<Markdown content={message.reasoning} compact={true} />
 				</div>
 			</details>
 		{/if}
@@ -104,7 +104,7 @@
 					</div>
 				{/if}
 
-				<Markdown content={message.content} />
+				<Markdown content={message.content} compact={true} />
 
 				{#if message.image_url}
 					<div class="mt-3">
@@ -115,8 +115,8 @@
 		</div>
 	{:else}
 		<!-- Assistant message -->
-		<div class="border-l-2 border-gray-200 pl-4">
-			<Markdown content={message.content} />
+		<div>
+			<Markdown content={message.content} compact={true} />
 		</div>
 	{/if}
 </div>

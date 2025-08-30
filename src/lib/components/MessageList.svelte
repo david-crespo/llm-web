@@ -34,14 +34,14 @@
     {/each}
     {#if isLoading}
       <div class="mb-6">
-        <div class="mb-2 flex items-center gap-2 text-sm text-gray-600">
+        <div class="mb-2 flex items-center gap-2 text-xs text-gray-600">
           <span class="font-medium">{selectedModel.id}</span>
           <span>•</span>
           <span>Thinking...</span>
         </div>
-        <div class="border-l-2 border-gray-200 pl-4">
-          <div class="mb-2 h-4 w-3/4 animate-pulse rounded bg-gray-200"></div>
-          <div class="h-4 w-1/2 animate-pulse rounded bg-gray-200"></div>
+        <div>
+          <div class="mb-2 h-3.5 w-3/4 animate-pulse rounded bg-gray-200"></div>
+          <div class="h-3.5 w-1/2 animate-pulse rounded bg-gray-200"></div>
         </div>
       </div>
     {/if}
