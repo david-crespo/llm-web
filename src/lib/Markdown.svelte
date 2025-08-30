@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { marked } from 'marked';
+	// Sanitize rendered HTML safely in the browser
+	import DOMPurify from 'dompurify';
 	// Use highlight.js core and explicitly register only needed languages
 	import hljs from 'highlight.js/lib/core';
 	import javascript from 'highlight.js/lib/languages/javascript';
@@ -34,7 +36,6 @@
 			return link.replace('<a ', '<a target="_blank" rel="noopener noreferrer" ');
 		};
 
-
 		    // Render code blocks with highlight.js
 		    renderer.code = (token: any) => {
 		      const lang = token.lang ?? '';
@@ -54,7 +55,12 @@
 		    };
 
 		    (async () => {
-	      html = await marked.parse(content, { renderer });
+	      const rendered = await marked.parse(content, { renderer });
+	      html = DOMPurify.sanitize(rendered, {
+	        // Allow common safe URL schemes and root-relative paths
+	        ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel):|\/)/i,
+	        FORBID_TAGS: ['style', 'iframe', 'object', 'embed', 'form', 'input', 'button']
+	      });
 	    })();
 		});
 </script>
