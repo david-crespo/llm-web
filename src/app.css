@@ -45,12 +45,12 @@ button {
 
 /* Minimal dark mode overrides */
 .dark body {
-  background-color: #0b1020; /* deep slate */
+  background-color: #18181b; /* zinc-900: slightly lighter neutral */
   color: #e5e7eb; /* gray-200 */
 }
 
 .dark ::-webkit-scrollbar-track {
-  background: #0f172a; /* slate-900 */
+  background: #18181b; /* match neutral body */
 }
 .dark ::-webkit-scrollbar-thumb {
   background: #334155; /* slate-700 */
@@ -60,13 +60,16 @@ button {
 }
 
 /* Utility class overrides for commonly used colors in components */
-.dark .bg-white { background-color: #0f172a !important; }
-.dark .bg-gray-50 { background-color: #0b1020 !important; }
-.dark .bg-gray-200 { background-color: #1f2937 !important; }
-.dark .bg-gray-300 { background-color: #374151 !important; }
-.dark .hover\:bg-gray-50:hover { background-color: #111827 !important; }
-.dark .hover\:bg-gray-100:hover { background-color: #111827 !important; }
-.dark .border-gray-300 { border-color: #334155 !important; }
+.dark .bg-white { background-color: #1f1f22 !important; } /* neutral card/bg */
+.dark .bg-gray-50 { background-color: #27272a !important; } /* sidebar panel */
+.dark .bg-gray-100 { background-color: #34343a !important; } /* selected item */
+.dark .bg-gray-200 { background-color: #27272a !important; } /* bubbles/buttons */
+.dark .bg-gray-300 { background-color: #3f3f46 !important; }
+.dark .hover\:bg-gray-50:hover { background-color: #262626 !important; }
+.dark .hover\:bg-gray-100:hover { background-color: #262626 !important; }
+.dark .border-gray-300 { border-color: #3f3f46 !important; } /* neutral border */
+.dark .border-gray-400 { border-color: #52525b !important; }
+.dark .border-gray-500 { border-color: #6b7280 !important; }
 .dark .text-gray-500 { color: #9ca3af !important; }
 .dark .text-gray-600 { color: #94a3b8 !important; }
 .dark .text-gray-700 { color: #cbd5e1 !important; }
@@ -81,9 +84,9 @@ button {
 .dark input[type="password"],
 .dark textarea,
 .dark select {
-  background-color: #111827 !important; /* gray-900 */
+  background-color: #1f1f22 !important; /* neutral card/bg */
   color: #e5e7eb !important; /* gray-200 */
-  border-color: #374151 !important; /* gray-700 */
+  border-color: #3f3f46 !important; /* neutral border */
 }
 .dark input::placeholder,
 .dark textarea::placeholder { color: #9ca3af !important; }
@@ -94,9 +97,7 @@ button {
   border-color: #60a5fa !important; /* blue-400 */
   box-shadow: 0 0 0 1.5px rgba(96, 165, 250, 0.45);
 }
-.dark select option {
-  background-color: #111827; color: #e5e7eb;
-}
+.dark select option { background-color: #1f1f22; color: #e5e7eb; }
 
 /* Highlight.js theme is swapped, no overrides here */
 

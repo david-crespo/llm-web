@@ -97,7 +97,7 @@
             <div
               role="button"
               tabindex="0"
-              class="relative flex w-full rounded border px-3 py-2 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 {isActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}"
+              class="relative flex w-full rounded border px-3 py-2 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 {isActive ? 'border-gray-500 bg-gray-100' : 'border-gray-300'}"
               onclick={() => onSelectChat(chat.id!)}
               onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && onSelectChat(chat.id!)}
             >

@@ -90,9 +90,9 @@
     .prose :global(pre code) {
         white-space: pre;
     }
-    /* Slightly more padding for code blocks */
+    /* Slightly more padding for code blocks (reduced) */
     .prose :global(pre code.hljs) {
-      padding: 1.1em 1.25em;
+      padding: 0.75em 0.85em;
     }
     /* Code block visuals: background + subtle border */
     .prose :global(pre code.hljs) {
@@ -100,8 +100,8 @@
       border: 1px solid #e5e7eb; /* light border */
     }
     :global(.dark .prose pre code.hljs) {
-      background-color: #161b22; /* slightly lighter than main bg */
-      border: 1px solid #30363d; /* subtle light border on dark */
+      background-color: #1f1f22; /* neutral card tone, less blue */
+      border: 1px solid #3f3f46; /* neutral zinc-700 border */
     }
 
 	.prose :global(blockquote) {
