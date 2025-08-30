@@ -33,7 +33,7 @@
       bind:value={message}
       onkeydown={(e) => e.key === 'Enter' && !e.shiftKey && onSend()}
       placeholder="Type your message..."
-      class="w-full resize-none rounded border border-gray-300 px-3 py-2 text-sm"
+      class="w-full resize-none rounded border border-gray-300 px-3 py-2"
       rows="2"
       disabled={isLoading}
     ></textarea>
@@ -41,7 +41,7 @@
 
   <!-- Button row -->
   <div class="flex items-center gap-1">
-    <button onclick={onToggleSidebar} class="rounded border border-gray-300 px-3 py-2 hover:bg-gray-50" aria-label="Toggle sidebar">
+    <button onclick={onToggleSidebar} class="rounded border border-gray-300 size-10 hover:bg-gray-50" aria-label="Toggle sidebar">
       {sidebarOpen ? '✕' : '☰'}
     </button>
 
@@ -49,7 +49,7 @@
 
     <div class="flex items-center gap-2">
       <!-- Model selector -->
-      <select bind:value={selectedModel} class="w-36 rounded border border-gray-300 px-2 py-2 text-sm" aria-label="Select model">
+      <select bind:value={selectedModel} class="w-36 h-10 rounded border border-gray-300 px-2 py-2 text-sm" aria-label="Select model">
         {#each models as model}
           <option value={model}>{model.id}</option>
         {/each}
@@ -58,7 +58,7 @@
       <!-- Web Search Toggle Button -->
       <button
         onclick={() => (webSearchEnabled = !webSearchEnabled)}
-        class="flex h-10 w-10 items-center justify-center rounded border p-0 text-base transition-colors {webSearchEnabled ? 'border-blue-500 bg-blue-500 text-white hover:bg-blue-600' : 'border-gray-300 bg-white text-gray-500 hover:bg-gray-50'}"
+        class="flex size-10 items-center justify-center rounded border p-0 text-base transition-colors {webSearchEnabled ? 'border-blue-500 bg-blue-500 text-white hover:bg-blue-600' : 'border-gray-300 bg-white text-gray-500 hover:bg-gray-50'}"
         title="Web Search"
         aria-pressed={webSearchEnabled}
       >
