@@ -1,5 +1,17 @@
 <script lang="ts">
 	import { marked } from 'marked';
+	// Use highlight.js core and explicitly register only needed languages
+	import hljs from 'highlight.js/lib/core';
+	import javascript from 'highlight.js/lib/languages/javascript';
+	import typescript from 'highlight.js/lib/languages/typescript';
+	import bash from 'highlight.js/lib/languages/bash';
+	import rust from 'highlight.js/lib/languages/rust';
+
+	// Register a minimal set of languages to keep bundle size small
+	hljs.registerLanguage('javascript', javascript);
+	hljs.registerLanguage('typescript', typescript);
+	hljs.registerLanguage('bash', bash);
+	hljs.registerLanguage('rust', rust);
 
 	interface Props {
 		content: string;
@@ -11,18 +23,40 @@
 
 	let divClass = $derived(`prose prose-sm max-w-none${className ? ' ' + className : ''}`);
 
-	// Configure marked to open links in new tabs
-	$effect(() => {
-		// Configure marked renderer to add target="_blank" to links
-		const renderer = new marked.Renderer();
+  // Simple highlight.js integration via custom code renderer
+
+		// Configure marked to open links in new tabs and render
+		$effect(() => {
+			const renderer = new marked.Renderer();
 		const originalLink = renderer.link.bind(renderer);
 		renderer.link = (token) => {
 			const link = originalLink(token);
 			return link.replace('<a ', '<a target="_blank" rel="noopener noreferrer" ');
 		};
 
-		html = marked.parse(content, { renderer }) as string;
-	});
+
+		    // Render code blocks with highlight.js
+		    renderer.code = (token: any) => {
+		      const lang = token.lang ?? '';
+		      let inner = token.text as string;
+		      try {
+		        if (lang && hljs.getLanguage(lang)) inner = hljs.highlight(inner, { language: lang }).value;
+		        else inner = hljs.highlightAuto(inner).value;
+		      } catch {
+		        inner = inner
+		          .replace(/&/g, '&amp;')
+		          .replace(/</g, '&lt;')
+		          .replace(/>/g, '&gt;')
+		          .replace(/"/g, '&quot;');
+		      }
+		      const cls = `hljs${lang ? ` language-${lang}` : ''}`;
+		      return `<pre><code class=\"${cls}\">${inner}\n</code></pre>`;
+		    };
+
+		    (async () => {
+	      html = await marked.parse(content, { renderer });
+	    })();
+		});
 </script>
 
 <div class={divClass}>
@@ -34,11 +68,19 @@
 	.prose :global(pre) {
 		background-color: #f8f9fa;
 		border-radius: 6px;
-		padding: 1rem;
+		border: 1px solid #e5e7eb;
+		padding: 0.75rem;
 		overflow-x: auto;
+		overflow-y: hidden;
 		max-width: 100%;
-		word-wrap: break-word;
-		white-space: pre-wrap;
+		white-space: pre;
+		word-break: normal;
+		-webkit-overflow-scrolling: touch;
+		margin-bottom: 0.75rem;
+	}
+
+	.prose :global(pre:last-child) {
+		margin-bottom: 0;
 	}
 
 	.prose :global(code) {
@@ -51,6 +93,7 @@
 	.prose :global(pre code) {
 		background-color: transparent;
 		padding: 0;
+		white-space: pre;
 	}
 
 	.prose :global(blockquote) {

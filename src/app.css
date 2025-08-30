@@ -18,6 +18,9 @@ body {
 	}
 }
 
+/* Syntax highlighting theme */
+@import 'highlight.js/styles/github.css';
+
 /* Remove default button styles */
 button {
 	font-family: inherit;
