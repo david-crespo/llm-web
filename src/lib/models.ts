@@ -1,16 +1,16 @@
 // prices are per million tokens
 export type Model = {
-	provider: string;
-	/** Key provided to API call */
-	key: string;
-	/** ID for display and usability purposes */
-	id: string;
-	default?: true;
-	// prices
-	input: number;
-	output: number;
-	input_cached?: number;
-};
+  provider: string
+  /** Key provided to API call */
+  key: string
+  /** ID for display and usability purposes */
+  id: string
+  default?: true
+  // prices
+  input: number
+  output: number
+  input_cached?: number
+}
 
 /**
  * The order matters: preferred models go first.
@@ -24,58 +24,58 @@ export type Model = {
  * id is doing double duty as both a human-readable nickname and a unique ID.
  */
 export const models: Model[] = [
-	{
-		provider: 'openai',
-		key: 'gpt-5',
-		id: 'GPT-5',
-		input: 1.25,
-		input_cached: 0.125,
-		output: 10,
-		default: true
-	},
-	{
-		provider: 'anthropic',
-		key: 'claude-opus-4-1-20250805',
-		id: 'Opus 4.1',
-		input: 15,
-		input_cached: 1.5,
-		output: 75
-	},
-	{
-		provider: 'anthropic',
-		key: 'claude-sonnet-4-20250514',
-		id: 'Sonnet 4',
-		input: 3,
-		input_cached: 0.3,
-		output: 15
-	},
-	{
-		provider: 'google',
-		key: 'gemini-2.5-pro',
-		id: 'Gemini 2.5 Pro',
-		input: 1.25,
-		input_cached: 0.31,
-		output: 10.0
-	}
-];
+  {
+    provider: 'openai',
+    key: 'gpt-5',
+    id: 'GPT-5',
+    input: 1.25,
+    input_cached: 0.125,
+    output: 10,
+    default: true,
+  },
+  {
+    provider: 'anthropic',
+    key: 'claude-opus-4-1-20250805',
+    id: 'Opus 4.1',
+    input: 15,
+    input_cached: 1.5,
+    output: 75,
+  },
+  {
+    provider: 'anthropic',
+    key: 'claude-sonnet-4-20250514',
+    id: 'Sonnet 4',
+    input: 3,
+    input_cached: 0.3,
+    output: 15,
+  },
+  {
+    provider: 'google',
+    key: 'gemini-2.5-pro',
+    id: 'Gemini 2.5 Pro',
+    input: 1.25,
+    input_cached: 0.31,
+    output: 10.0,
+  },
+]
 
-const M = 1_000_000;
+const M = 1_000_000
 
 export function getCost(
-	model: Model,
-	tokens: { input: number; input_cache_hit?: number; output: number }
+  model: Model,
+  tokens: { input: number; input_cache_hit?: number; output: number },
 ): number {
-	const { input, output, input_cached } = model;
+  const { input, output, input_cached } = model
 
-	// when there is caching and we have cache pricing, take it into account
-	const cost =
-		input_cached && tokens.input_cache_hit
-			? input_cached * tokens.input_cache_hit +
-				input * (tokens.input - tokens.input_cache_hit) +
-				output * tokens.output
-			: input * tokens.input + output * tokens.output;
+  // when there is caching and we have cache pricing, take it into account
+  const cost =
+    input_cached && tokens.input_cache_hit
+      ? input_cached * tokens.input_cache_hit +
+        input * (tokens.input - tokens.input_cache_hit) +
+        output * tokens.output
+      : input * tokens.input + output * tokens.output
 
-	return cost / M;
+  return cost / M
 }
 
 export const systemBase = `
@@ -94,4 +94,4 @@ Tailor answers to the user:
 - Text editor: Helix
 - Shell: zsh
 - Programming languages: TypeScript and Rust
-- Today's date is ${new Date().toISOString().slice(0, 10)}`;
+- Today's date is ${new Date().toISOString().slice(0, 10)}`

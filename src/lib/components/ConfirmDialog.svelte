@@ -1,12 +1,12 @@
 <script lang="ts">
   interface Props {
-    open: boolean;
-    title?: string;
-    message: string;
-    confirmLabel?: string;
-    cancelLabel?: string;
-    onConfirm: () => void | Promise<void>;
-    onCancel: () => void;
+    open: boolean
+    title?: string
+    message: string
+    confirmLabel?: string
+    cancelLabel?: string
+    onConfirm: () => void | Promise<void>
+    onCancel: () => void
   }
 
   let {
@@ -16,8 +16,8 @@
     confirmLabel = 'Confirm',
     cancelLabel = 'Cancel',
     onConfirm,
-    onCancel
-  }: Props = $props();
+    onCancel,
+  }: Props = $props()
 </script>
 
 {#if open}
@@ -33,8 +33,16 @@
       <h3 class="mb-4 text-lg font-medium">{title}</h3>
       <p class="mb-6 text-sm text-gray-600">{message}</p>
       <div class="flex justify-end gap-3">
-        <button onclick={onCancel} class="rounded border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50">{cancelLabel}</button>
-        <button onclick={onConfirm} class="rounded bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-700">{confirmLabel}</button>
+        <button
+          onclick={onCancel}
+          class="rounded border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50"
+          >{cancelLabel}</button
+        >
+        <button
+          onclick={onConfirm}
+          class="rounded bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-700"
+          >{confirmLabel}</button
+        >
       </div>
     </div>
   </div>

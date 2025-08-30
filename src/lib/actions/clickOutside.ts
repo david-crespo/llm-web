@@ -1,40 +1,39 @@
 export type ClickOutsideOptions = {
-  enabled?: boolean;
-  onOut?: (event: MouseEvent | TouchEvent) => void;
-};
+  enabled?: boolean
+  onOut?: (event: MouseEvent | TouchEvent) => void
+}
 
 // Generic click outside action
 export function clickOutside(node: HTMLElement, options: ClickOutsideOptions = {}) {
-  let { enabled = true, onOut } = options;
+  let { enabled = true, onOut } = options
 
   const handle = (event: MouseEvent | TouchEvent) => {
-    if (!enabled) return;
-    const target = event.target as Node | null;
+    if (!enabled) return
+    const target = event.target as Node | null
     if (target && !node.contains(target)) {
-      onOut?.(event);
-      node.dispatchEvent(new CustomEvent('outclick'));
+      onOut?.(event)
+      node.dispatchEvent(new CustomEvent('outclick'))
     }
-  };
+  }
 
   const add = () => {
-    document.addEventListener('click', handle, true);
-    document.addEventListener('touchstart', handle, true);
-  };
+    document.addEventListener('click', handle, true)
+    document.addEventListener('touchstart', handle, true)
+  }
   const remove = () => {
-    document.removeEventListener('click', handle, true);
-    document.removeEventListener('touchstart', handle, true);
-  };
+    document.removeEventListener('click', handle, true)
+    document.removeEventListener('touchstart', handle, true)
+  }
 
-  add();
+  add()
 
   return {
     update(next?: ClickOutsideOptions) {
-      enabled = next?.enabled ?? true;
-      onOut = next?.onOut;
+      enabled = next?.enabled ?? true
+      onOut = next?.onOut
     },
     destroy() {
-      remove();
-    }
-  };
+      remove()
+    },
+  }
 }
-

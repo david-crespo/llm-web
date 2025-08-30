@@ -1,36 +1,29 @@
 <script lang="ts">
-  import type { Chat } from '$lib/types';
-  import type { Model } from '$lib/models';
-  import ChatMessage from '$lib/ChatMessage.svelte';
-  import { autoScroll } from '$lib/actions/autoScroll';
+  import type { Chat } from '$lib/types'
+  import type { Model } from '$lib/models'
+  import ChatMessage from '$lib/ChatMessage.svelte'
+  import { autoScroll } from '$lib/actions/autoScroll'
 
   interface Props {
-    currentChat: Chat | null;
-    isLoading: boolean;
-    selectedModel: Model;
-    hasApiKeys: boolean;
-    onRegen: (index: number) => void;
-    onFork: (index: number) => void;
-    onOpenAbout: () => void;
+    currentChat: Chat | null
+    isLoading: boolean
+    selectedModel: Model
+    hasApiKeys: boolean
+    onRegen: (index: number) => void
+    onFork: (index: number) => void
+    onOpenAbout: () => void
   }
 
-  let {
-    currentChat,
-    isLoading,
-    selectedModel,
-    hasApiKeys,
-    onRegen,
-    onFork,
-    onOpenAbout
-  }: Props = $props();
+  let { currentChat, isLoading, selectedModel, hasApiKeys, onRegen, onFork, onOpenAbout }: Props =
+    $props()
 
-  let container: HTMLDivElement | null = null;
+  let container: HTMLDivElement | null = null
 </script>
 
 <div class="flex-1 overflow-x-hidden overflow-y-auto p-4" bind:this={container} use:autoScroll>
   {#if currentChat && currentChat.messages.length > 0}
     {#each currentChat.messages as msg, index}
-      <ChatMessage message={msg} messageIndex={index} onRegen={onRegen} onFork={onFork} />
+      <ChatMessage message={msg} messageIndex={index} {onRegen} {onFork} />
     {/each}
     {#if isLoading}
       <div class="mb-6">
@@ -51,12 +44,16 @@
         <p class="text-lg">Start a chat below</p>
         {#if !hasApiKeys}
           <p class="text-balance text-gray-700">
-            Go to <a href="/settings" class="text-blue-600 underline hover:text-blue-800">settings</a>
+            Go to <a href="/settings" class="text-blue-600 underline hover:text-blue-800"
+              >settings</a
+            >
             to set an OpenAI, Anthropic, or Gemini API key. Keys are stored only in the browser.
           </p>
         {/if}
-        <button onclick={onOpenAbout} class="text-sm text-blue-600 underline hover:text-blue-800">About this app</button>
+        <button onclick={onOpenAbout} class="text-sm text-blue-600 underline hover:text-blue-800"
+          >About this app</button
+        >
       </div>
     </div>
   {/if}
-  </div>
+</div>

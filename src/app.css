@@ -3,44 +3,44 @@
 
 /* Minimal and elegant styling */
 body {
-	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-	line-height: 1.5;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.5;
 }
 
 /* Dynamic viewport height for mobile browsers */
 :root {
-	--vh: 1vh;
+  --vh: 1vh;
 }
 
 @supports (height: 100dvh) {
-	:root {
-		--vh: 1dvh;
-	}
+  :root {
+    --vh: 1dvh;
+  }
 }
 
 /* Syntax highlighting theme handled via link tags in app.html */
 
 /* Remove default button styles */
 button {
-	font-family: inherit;
+  font-family: inherit;
 }
 
 /* Custom scrollbar for webkit browsers */
 ::-webkit-scrollbar {
-	width: 6px;
+  width: 6px;
 }
 
 ::-webkit-scrollbar-track {
-	background: #f1f1f1;
+  background: #f1f1f1;
 }
 
 ::-webkit-scrollbar-thumb {
-	background: #c1c1c1;
-	border-radius: 3px;
+  background: #c1c1c1;
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-	background: #a8a8a8;
+  background: #a8a8a8;
 }
 
 /* Minimal dark mode overrides */
@@ -60,28 +60,60 @@ button {
 }
 
 /* Utility class overrides for commonly used colors in components */
-.dark .bg-white { background-color: #1f1f22 !important; } /* neutral card/bg */
-.dark .bg-gray-50 { background-color: #27272a !important; } /* sidebar panel */
-.dark .bg-gray-100 { background-color: #34343a !important; } /* selected item */
-.dark .bg-gray-200 { background-color: #27272a !important; } /* bubbles/buttons */
-.dark .bg-gray-300 { background-color: #3f3f46 !important; }
-.dark .hover\:bg-gray-50:hover { background-color: #262626 !important; }
-.dark .hover\:bg-gray-100:hover { background-color: #262626 !important; }
-.dark .border-gray-300 { border-color: #3f3f46 !important; } /* neutral border */
-.dark .border-gray-400 { border-color: #52525b !important; }
-.dark .border-gray-500 { border-color: #6b7280 !important; }
-.dark .text-gray-500 { color: #9ca3af !important; }
-.dark .text-gray-600 { color: #94a3b8 !important; }
-.dark .text-gray-700 { color: #cbd5e1 !important; }
-.dark .text-blue-600 { color: #60a5fa !important; }
-.dark .text-blue-800 { color: #93c5fd !important; }
-.dark .bg-blue-50 { background-color: #0b2447 !important; }
+.dark .bg-white {
+  background-color: #1f1f22 !important;
+} /* neutral card/bg */
+.dark .bg-gray-50 {
+  background-color: #27272a !important;
+} /* sidebar panel */
+.dark .bg-gray-100 {
+  background-color: #34343a !important;
+} /* selected item */
+.dark .bg-gray-200 {
+  background-color: #27272a !important;
+} /* bubbles/buttons */
+.dark .bg-gray-300 {
+  background-color: #3f3f46 !important;
+}
+.dark .hover\:bg-gray-50:hover {
+  background-color: #262626 !important;
+}
+.dark .hover\:bg-gray-100:hover {
+  background-color: #262626 !important;
+}
+.dark .border-gray-300 {
+  border-color: #3f3f46 !important;
+} /* neutral border */
+.dark .border-gray-400 {
+  border-color: #52525b !important;
+}
+.dark .border-gray-500 {
+  border-color: #6b7280 !important;
+}
+.dark .text-gray-500 {
+  color: #9ca3af !important;
+}
+.dark .text-gray-600 {
+  color: #94a3b8 !important;
+}
+.dark .text-gray-700 {
+  color: #cbd5e1 !important;
+}
+.dark .text-blue-600 {
+  color: #60a5fa !important;
+}
+.dark .text-blue-800 {
+  color: #93c5fd !important;
+}
+.dark .bg-blue-50 {
+  background-color: #0b2447 !important;
+}
 
 /* Dark forms: inputs, textareas, selects */
-.dark input[type="text"],
-.dark input[type="search"],
-.dark input[type="email"],
-.dark input[type="password"],
+.dark input[type='text'],
+.dark input[type='search'],
+.dark input[type='email'],
+.dark input[type='password'],
 .dark textarea,
 .dark select {
   background-color: #1f1f22 !important; /* neutral card/bg */
@@ -89,7 +121,9 @@ button {
   border-color: #3f3f46 !important; /* neutral border */
 }
 .dark input::placeholder,
-.dark textarea::placeholder { color: #9ca3af !important; }
+.dark textarea::placeholder {
+  color: #9ca3af !important;
+}
 .dark input:focus,
 .dark textarea:focus,
 .dark select:focus {
@@ -97,7 +131,10 @@ button {
   border-color: #60a5fa !important; /* blue-400 */
   box-shadow: 0 0 0 1.5px rgba(96, 165, 250, 0.45);
 }
-.dark select option { background-color: #1f1f22; color: #e5e7eb; }
+.dark select option {
+  background-color: #1f1f22;
+  color: #e5e7eb;
+}
 
 /* Highlight.js theme is swapped, no overrides here */
 

@@ -1,16 +1,16 @@
 <script lang="ts">
-  import type { Model } from '$lib/models';
+  import type { Model } from '$lib/models'
 
   interface Props {
-    message: string;
-    isLoading: boolean;
-    models: Model[];
-    selectedModel: Model;
-    webSearchEnabled: boolean;
-    reasoningEnabled: boolean;
-    sidebarOpen: boolean;
-    onToggleSidebar: () => void;
-    onSend: () => void;
+    message: string
+    isLoading: boolean
+    models: Model[]
+    selectedModel: Model
+    webSearchEnabled: boolean
+    reasoningEnabled: boolean
+    sidebarOpen: boolean
+    onToggleSidebar: () => void
+    onSend: () => void
   }
 
   let {
@@ -22,8 +22,8 @@
     reasoningEnabled = $bindable(),
     sidebarOpen,
     onToggleSidebar,
-    onSend
-  }: Props = $props();
+    onSend,
+  }: Props = $props()
 </script>
 
 <div class="relative z-20 border-t border-gray-300 bg-gray-50 p-3">
@@ -41,7 +41,11 @@
 
   <!-- Button row -->
   <div class="flex items-center gap-1">
-    <button onclick={onToggleSidebar} class="rounded border border-gray-300 size-10 hover:bg-gray-50" aria-label="Toggle sidebar">
+    <button
+      onclick={onToggleSidebar}
+      class="size-10 rounded border border-gray-300 hover:bg-gray-50"
+      aria-label="Toggle sidebar"
+    >
       {sidebarOpen ? '✕' : '☰'}
     </button>
 
@@ -49,7 +53,11 @@
 
     <div class="flex items-center gap-2">
       <!-- Model selector -->
-      <select bind:value={selectedModel} class="w-36 h-10 rounded border border-gray-300 px-2 py-2 text-sm" aria-label="Select model">
+      <select
+        bind:value={selectedModel}
+        class="h-10 w-36 rounded border border-gray-300 px-2 py-2 text-sm"
+        aria-label="Select model"
+      >
         {#each models as model}
           <option value={model}>{model.id}</option>
         {/each}
@@ -58,7 +66,9 @@
       <!-- Web Search Toggle Button -->
       <button
         onclick={() => (webSearchEnabled = !webSearchEnabled)}
-        class="flex size-10 items-center justify-center rounded border p-0 text-base {webSearchEnabled ? 'border-blue-500 bg-blue-500 text-white hover:bg-blue-600' : 'border-gray-300 bg-white text-gray-500 hover:bg-gray-50'}"
+        class="flex size-10 items-center justify-center rounded border p-0 text-base {webSearchEnabled
+          ? 'border-blue-500 bg-blue-500 text-white hover:bg-blue-600'
+          : 'border-gray-300 bg-white text-gray-500 hover:bg-gray-50'}"
         title="Web Search"
         aria-pressed={webSearchEnabled}
       >
@@ -69,18 +79,29 @@
       <button
         onclick={() => {
           if (selectedModel.provider !== 'google') {
-            reasoningEnabled = !reasoningEnabled;
+            reasoningEnabled = !reasoningEnabled
           }
         }}
-        class="flex h-10 w-10 items-center justify-center rounded border p-0 text-base {selectedModel.provider === 'google' ? 'border-blue-300 bg-blue-300 text-white' : reasoningEnabled ? 'border-blue-500 bg-blue-500 text-white hover:bg-blue-600' : 'border-gray-300 bg-white text-gray-500 hover:bg-gray-50'}"
-        title={selectedModel.provider === 'google' ? 'Reasoning (always enabled for Gemini)' : 'Reasoning'}
+        class="flex h-10 w-10 items-center justify-center rounded border p-0 text-base {selectedModel.provider ===
+        'google'
+          ? 'border-blue-300 bg-blue-300 text-white'
+          : reasoningEnabled
+            ? 'border-blue-500 bg-blue-500 text-white hover:bg-blue-600'
+            : 'border-gray-300 bg-white text-gray-500 hover:bg-gray-50'}"
+        title={selectedModel.provider === 'google'
+          ? 'Reasoning (always enabled for Gemini)'
+          : 'Reasoning'}
         disabled={selectedModel.provider === 'google'}
         aria-pressed={selectedModel.provider === 'google' ? true : reasoningEnabled}
       >
         🤔
       </button>
 
-      <button onclick={onSend} disabled={isLoading || !message.trim()} class="send-btn rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-400">
+      <button
+        onclick={onSend}
+        disabled={isLoading || !message.trim()}
+        class="send-btn rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-400"
+      >
         {isLoading ? 'Sending...' : 'Send'}
       </button>
     </div>

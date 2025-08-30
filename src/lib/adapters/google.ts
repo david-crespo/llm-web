@@ -1,57 +1,62 @@
-import { GoogleGenAI } from '@google/genai';
-import type { ChatInput, ModelResponse } from './index';
+import { GoogleGenAI } from '@google/genai'
+import type { ChatInput, ModelResponse } from './index'
 
-export async function geminiCreateMessage({ chat, model, search }: ChatInput): Promise<ModelResponse> {
-  const apiKey = localStorage.getItem('google_api_key');
-  if (!apiKey) throw new Error('Gemini API key not found');
+export async function geminiCreateMessage({
+  chat,
+  model,
+  search,
+}: ChatInput): Promise<ModelResponse> {
+  const apiKey = localStorage.getItem('google_api_key')
+  if (!apiKey) throw new Error('Gemini API key not found')
 
-  const genAI = new GoogleGenAI({ apiKey });
+  const genAI = new GoogleGenAI({ apiKey })
 
   const result = await genAI.models.generateContent({
     config: {
       thinkingConfig: { thinkingBudget: -1, includeThoughts: true },
       systemInstruction: chat.systemPrompt,
-      tools: [{ urlContext: {} }, ...(search ? [{ googleSearch: {} }] : [])]
+      tools: [{ urlContext: {} }, ...(search ? [{ googleSearch: {} }] : [])],
     },
     model: model.key,
     contents: chat.messages.map((msg) => ({
       role: msg.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: msg.content }]
-    }))
-  });
+      parts: [{ text: msg.content }],
+    })),
+  })
 
-  const parts = result.candidates?.[0].content?.parts ?? [];
+  const parts = result.candidates?.[0].content?.parts ?? []
   const reasoning = parts
     .filter((p) => (p as any).text && (p as any).thought)
     .map((p: any) => p.text as string)
-    .join('\n\n');
+    .join('\n\n')
   let content = parts
     .filter((p) => (p as any).text && !(p as any).thought)
     .map((p: any) => p.text as string)
-    .join('\n\n');
+    .join('\n\n')
 
-  const searchResults = (result.candidates?.[0] as any).groundingMetadata?.groundingChunks;
+  const searchResults = (result.candidates?.[0] as any).groundingMetadata?.groundingChunks
   const searchResultsMd = searchResults
     ? '\n\n### Sources\n\n' +
       searchResults
         .filter((chunk: any) => chunk.web)
         .map((chunk: any) => `- [${chunk.web!.title}](${chunk.web!.uri})`)
         .join('\n')
-    : '';
+    : ''
 
-  content += searchResultsMd;
+  content += searchResultsMd
 
   const tokens = {
     input: result.usageMetadata?.promptTokenCount || 0,
-    output: (result.usageMetadata?.candidatesTokenCount || 0) + (result.usageMetadata?.thoughtsTokenCount || 0),
-    input_cache_hit: result.usageMetadata?.cachedContentTokenCount || 0
-  };
+    output:
+      (result.usageMetadata?.candidatesTokenCount || 0) +
+      (result.usageMetadata?.thoughtsTokenCount || 0),
+    input_cache_hit: result.usageMetadata?.cachedContentTokenCount || 0,
+  }
 
   return {
     content,
     reasoning,
     tokens,
-    stop_reason: (result.candidates?.[0] as any).finishReason || ''
-  };
+    stop_reason: (result.candidates?.[0] as any).finishReason || '',
+  }
 }
-
