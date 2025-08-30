@@ -56,8 +56,8 @@
 				<summary class="cursor-pointer text-sm text-gray-600 hover:text-gray-800">
 					Reasoning
 				</summary>
-				<div class="mt-2 rounded border-l-4 border-gray-300 bg-gray-50 p-3 text-sm">
-				<Markdown content={message.reasoning} compact={true} />
+				<div class="mt-2 rounded border-l-4 border-gray-300 bg-gray-50 p-3">
+				<Markdown content={message.reasoning} />
 				</div>
 			</details>
 		{/if}
@@ -104,7 +104,7 @@
 					</div>
 				{/if}
 
-				<Markdown content={message.content} compact={true} />
+				<Markdown content={message.content} />
 
 				{#if message.image_url}
 					<div class="mt-3">
@@ -116,7 +116,7 @@
 	{:else}
 		<!-- Assistant message -->
 		<div>
-			<Markdown content={message.content} compact={true} />
+			<Markdown content={message.content} />
 		</div>
 	{/if}
 </div>
