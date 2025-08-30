@@ -78,7 +78,7 @@
     <div class="p-4">
       <button
         onclick={onNewChat}
-        class="w-full rounded-lg bg-gray-200 px-4 py-3 text-center font-medium hover:bg-gray-300 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
+        class="btn-new-chat w-full rounded-lg px-4 py-3 text-center font-medium shadow-sm focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-zinc-400 dark:focus:ring-offset-zinc-900"
       >
         + New Chat
       </button>
@@ -154,5 +154,20 @@
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+  }
+  /* Explicit themed styles to avoid global utility overrides */
+  .btn-new-chat {
+    background-color: #e5e7eb; /* gray-200 */
+    color: #111827; /* gray-900 */
+  }
+  .btn-new-chat:hover {
+    background-color: #d1d5db; /* gray-300 */
+  }
+  :global(.dark) .btn-new-chat {
+    background-color: #34343a; /* a shade lighter than panel */
+    color: #f4f4f5; /* zinc-100 */
+  }
+  :global(.dark) .btn-new-chat:hover {
+    background-color: #3f3f46; /* zinc-700 */
   }
 </style>
