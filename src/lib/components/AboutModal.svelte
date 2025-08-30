@@ -16,11 +16,15 @@
     onclick={(e) => e.currentTarget === e.target && onClose()}
     onkeydown={(e) => (e.key === 'Escape' || e.key === 'Enter') && onClose()}
   >
-    <div class="w-96 max-w-[90vw] rounded-lg bg-white shadow-lg">
-      <div class="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+    <div class="w-96 max-w-[90vw] rounded-lg bg-white shadow-lg dark:bg-gray-800">
+      <div
+        class="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-600"
+      >
         <h3 class="text-lg font-medium">About this app</h3>
-        <button onclick={onClose} class="text-gray-400 hover:text-gray-600" aria-label="Close modal"
-          >✕</button
+        <button
+          onclick={onClose}
+          class="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+          aria-label="Close modal">✕</button
         >
       </div>
       <div class="p-6">
@@ -32,13 +36,30 @@
               rel="noopener noreferrer"
               class="text-blue-600 underline hover:text-blue-800"
               target="_blank">SvelteKit</a
-            >. API keys and chat history are stored locally in this browser only. Keys are only sent
-            to model providers.
+            >. It's designed to be hackable rather than configurable: if you want different models
+            or different behavior, fork the repo, change how it works, and deploy your own copy.
           </p>
           <p>
-            The app is designed to be hackable rather than configurable: if you want different
-            models or different behavior, fork the repo, change how it works, and deploy your own
-            copy.
+            API keys and chat history are stored locally in this browser only (keys in
+            <a
+              href="https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage"
+              rel="noopener noreferrer"
+              class="text-blue-600 underline hover:text-blue-800"
+              target="_blank">localStorage</a
+            >
+            and chats in
+            <a
+              href="https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API"
+              rel="noopener noreferrer"
+              class="text-blue-600 underline hover:text-blue-800"
+              target="_blank">IndexedDB</a
+            >). Strictly speaking, this is an
+            <a
+              href="https://medium.com/@stanislavbabenko/just-stop-using-localstorage-for-secrets-honestly-ea9ef9af9022"
+              rel="noopener noreferrer"
+              class="text-blue-600 underline hover:text-blue-800"
+              target="_blank">obvious XSS vulnerability</a
+            >, so only use this if you understand and accept that risk.
           </p>
         </div>
         <div>
@@ -46,7 +67,8 @@
             href="https://github.com/david-crespo/llm-web"
             target="_blank"
             rel="noopener noreferrer"
-            class="text-blue-600 underline hover:text-blue-800">View on GitHub →</a
+            class="text-blue-600 underline hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+            >View on GitHub →</a
           >
         </div>
       </div>
