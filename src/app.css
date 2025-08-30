@@ -18,8 +18,7 @@ body {
 	}
 }
 
-/* Syntax highlighting theme */
-@import 'highlight.js/styles/github.css';
+/* Syntax highlighting theme handled via link tags in app.html */
 
 /* Remove default button styles */
 button {
@@ -42,4 +41,67 @@ button {
 
 ::-webkit-scrollbar-thumb:hover {
 	background: #a8a8a8;
+}
+
+/* Minimal dark mode overrides */
+.dark body {
+  background-color: #0b1020; /* deep slate */
+  color: #e5e7eb; /* gray-200 */
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #0f172a; /* slate-900 */
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155; /* slate-700 */
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #475569; /* slate-600 */
+}
+
+/* Utility class overrides for commonly used colors in components */
+.dark .bg-white { background-color: #0f172a !important; }
+.dark .bg-gray-50 { background-color: #0b1020 !important; }
+.dark .bg-gray-200 { background-color: #1f2937 !important; }
+.dark .bg-gray-300 { background-color: #374151 !important; }
+.dark .hover\:bg-gray-50:hover { background-color: #111827 !important; }
+.dark .hover\:bg-gray-100:hover { background-color: #111827 !important; }
+.dark .border-gray-300 { border-color: #334155 !important; }
+.dark .text-gray-500 { color: #9ca3af !important; }
+.dark .text-gray-600 { color: #94a3b8 !important; }
+.dark .text-gray-700 { color: #cbd5e1 !important; }
+.dark .text-blue-600 { color: #60a5fa !important; }
+.dark .text-blue-800 { color: #93c5fd !important; }
+.dark .bg-blue-50 { background-color: #0b2447 !important; }
+
+/* Dark forms: inputs, textareas, selects */
+.dark input[type="text"],
+.dark input[type="search"],
+.dark input[type="email"],
+.dark input[type="password"],
+.dark textarea,
+.dark select {
+  background-color: #111827 !important; /* gray-900 */
+  color: #e5e7eb !important; /* gray-200 */
+  border-color: #374151 !important; /* gray-700 */
+}
+.dark input::placeholder,
+.dark textarea::placeholder { color: #9ca3af !important; }
+.dark input:focus,
+.dark textarea:focus,
+.dark select:focus {
+  outline: none;
+  border-color: #60a5fa !important; /* blue-400 */
+  box-shadow: 0 0 0 1.5px rgba(96, 165, 250, 0.45);
+}
+.dark select option {
+  background-color: #111827; color: #e5e7eb;
+}
+
+/* Highlight.js theme is swapped, no overrides here */
+
+/* Dark disabled primary button (Send) */
+.dark .send-btn:disabled {
+  background-color: #374151 !important; /* gray-700 */
+  color: #9ca3af !important; /* gray-400 */
 }

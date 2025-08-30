@@ -8,6 +8,7 @@
     import InputBar from '$lib/components/InputBar.svelte';
     import AboutModal from '$lib/components/AboutModal.svelte';
     import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
+    import { initTheme } from '$lib/theme';
 
 	let sidebarOpen = $state(false);
 	let message = $state('');
@@ -279,6 +280,8 @@
 
     // Initialize on mount
     init();
+    // Initialize theme early so it's applied regardless of sidebar state
+    initTheme();
 </script>
 
 <div class="flex {sidebarOpen ? 'overflow-hidden' : ''}" style="height: 100vh; height: 100dvh;">

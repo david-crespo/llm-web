@@ -28,6 +28,26 @@
     if (!firstUserMessage) return 'New Chat';
     return firstUserMessage.content;
   }
+
+  // Theme toggle (Light / Dark / System)
+  import { initTheme, getThemeMode, cycleThemeMode, themeLabel } from '$lib/theme';
+  type ThemeMode = import('$lib/theme').ThemeMode;
+  let themeMode: ThemeMode = $state('system');
+
+  $effect(() => {
+    initTheme();
+    themeMode = getThemeMode();
+    const onChange = (e: Event) => {
+      const detail = (e as CustomEvent<{ mode: ThemeMode }>).detail;
+      if (detail?.mode) themeMode = detail.mode;
+    };
+    window.addEventListener('theme-change', onChange as EventListener);
+    return () => window.removeEventListener('theme-change', onChange as EventListener);
+  });
+
+  function onCycleTheme() {
+    themeMode = cycleThemeMode();
+  }
 </script>
 <style>
   .line-clamp-2 {
@@ -103,5 +123,15 @@
       <a href="/settings" class="block text-sm text-blue-600 hover:text-blue-800">Configure API Keys</a>
       <button onclick={onOpenAbout} class="block w-full text-left text-sm text-blue-600 hover:text-blue-800">About</button>
     </div>
+
+    <!-- Theme toggle button, bottom-right of sidebar -->
+    <button
+      class="absolute bottom-4 right-4 flex size-10 items-center justify-center rounded border border-gray-300 bg-white text-gray-700 shadow-sm hover:bg-gray-50"
+      title="Cycle theme (Light / Dark / System)"
+      aria-label="Cycle theme"
+      onclick={onCycleTheme}
+    >
+      {themeLabel(themeMode)}
+    </button>
   </div>
 {/if}

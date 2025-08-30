@@ -64,20 +64,17 @@
 </div>
 
 <style>
-	/* Custom styles for markdown content */
-	.prose :global(pre) {
-		background-color: #f8f9fa;
-		border-radius: 6px;
-		border: 1px solid #e5e7eb;
-		padding: 0.75rem;
-		overflow-x: auto;
-		overflow-y: hidden;
-		max-width: 100%;
-		white-space: pre;
-		word-break: normal;
-		-webkit-overflow-scrolling: touch;
-		margin-bottom: 0.75rem;
-	}
+    /* Custom styles for markdown content */
+    .prose :global(pre) {
+        /* Let the highlight theme style the code block visuals */
+        overflow-x: auto;
+        overflow-y: hidden;
+        max-width: 100%;
+        white-space: pre;
+        word-break: normal;
+        -webkit-overflow-scrolling: touch;
+        margin-bottom: 0.75rem;
+    }
 
 	.prose :global(pre:last-child) {
 		margin-bottom: 0;
@@ -90,11 +87,22 @@
 		font-size: 0.875em;
 	}
 
-	.prose :global(pre code) {
-		background-color: transparent;
-		padding: 0;
-		white-space: pre;
-	}
+    .prose :global(pre code) {
+        white-space: pre;
+    }
+    /* Slightly more padding for code blocks */
+    .prose :global(pre code.hljs) {
+      padding: 1.1em 1.25em;
+    }
+    /* Code block visuals: background + subtle border */
+    .prose :global(pre code.hljs) {
+      background-color: #f6f8fa; /* lighter than default */
+      border: 1px solid #e5e7eb; /* light border */
+    }
+    :global(.dark .prose pre code.hljs) {
+      background-color: #161b22; /* slightly lighter than main bg */
+      border: 1px solid #30363d; /* subtle light border on dark */
+    }
 
 	.prose :global(blockquote) {
 		border-left: 4px solid #e5e7eb;
@@ -204,6 +212,29 @@
 	.prose :global(a:hover) {
 		color: #1d4ed8;
 	}
+
+  /* Dark mode overrides for markdown (non-code elements) */
+  :global(.dark .prose :not(pre) > code) {
+    background-color: #0f172a;
+    color: #e5e7eb;
+  }
+  :global(.dark .prose blockquote) {
+    border-left-color: #374151; /* gray-700 */
+    color: #9ca3af; /* gray-400 */
+  }
+  :global(.dark .prose th),
+  :global(.dark .prose td) {
+    border-color: #374151; /* gray-700 */
+  }
+  :global(.dark .prose th) {
+    background-color: #111827; /* gray-900 */
+  }
+  :global(.dark .prose a) {
+    color: #93c5fd; /* blue-300 */
+  }
+  :global(.dark .prose a:hover) {
+    color: #bfdbfe; /* blue-200 */
+  }
   /* Default to compact sizing */
   .prose :global(p),
   .prose :global(li),
