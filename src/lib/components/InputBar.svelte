@@ -26,7 +26,7 @@
   }: Props = $props()
 </script>
 
-<div class="relative z-20 border-t border-gray-300 bg-gray-50 p-3">
+<div class="fixed bottom-0 left-0 right-0 z-20 border-t border-gray-300 bg-gray-50 p-3 max-w-full">
   <!-- Text input at top -->
   <div class="mb-2">
     <textarea

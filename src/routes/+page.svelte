@@ -293,7 +293,7 @@
   initTheme()
 </script>
 
-<div class="flex {sidebarOpen ? 'overflow-hidden' : ''}" style="height: 100vh; height: 100dvh;">
+<div class="flex min-h-screen overflow-x-hidden {sidebarOpen ? 'overflow-y-hidden' : ''}">
   <Sidebar
     open={sidebarOpen}
     {chatHistory}
@@ -323,7 +323,7 @@
   <AboutModal open={showAboutModal} onClose={() => (showAboutModal = false)} />
 
   <!-- Main chat area -->
-  <div class="flex flex-1 flex-col overflow-x-hidden overflow-y-auto">
+  <div class="flex-1 min-w-0">
     <MessageList
       {currentChat}
       {isLoading}
@@ -333,17 +333,17 @@
       onFork={handleFork}
       onOpenAbout={() => (showAboutModal = true)}
     />
-
-    <InputBar
-      bind:message
-      {isLoading}
-      {models}
-      bind:selectedModel
-      bind:webSearchEnabled
-      bind:reasoningEnabled
-      {sidebarOpen}
-      onToggleSidebar={toggleSidebar}
-      onSend={sendMessage}
-    />
   </div>
 </div>
+
+<InputBar
+  bind:message
+  {isLoading}
+  {models}
+  bind:selectedModel
+  bind:webSearchEnabled
+  bind:reasoningEnabled
+  {sidebarOpen}
+  onToggleSidebar={toggleSidebar}
+  onSend={sendMessage}
+/>

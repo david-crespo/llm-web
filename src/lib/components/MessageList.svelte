@@ -16,7 +16,7 @@
     $props()
 </script>
 
-<div class="flex-1 overflow-x-hidden p-4">
+<div class="min-h-0 flex-1 overflow-x-hidden p-4 pb-36">
   {#if currentChat && currentChat.messages.length > 0}
     {#each currentChat.messages as msg, index}
       <ChatMessage message={msg} messageIndex={index} {onRegen} {onFork} />
