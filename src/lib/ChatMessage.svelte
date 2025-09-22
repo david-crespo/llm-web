@@ -33,7 +33,7 @@
   }
 </script>
 
-<div class="mb-6">
+<div class="mb-6" data-message>
   {#if message.role === 'assistant'}
     <!-- Assistant message header -->
     <div class="mb-2 flex items-center gap-2 text-xs text-gray-600">

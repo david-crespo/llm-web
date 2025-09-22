@@ -2,6 +2,7 @@
   import { storage, type ApiKeys } from '$lib/storage'
   import { models, getCost, systemBase } from '$lib/models'
   import { createMessage } from '$lib/adapters'
+  import { scrollToBottom } from '$lib/actions/autoScroll'
   import type { Chat, ChatMessage as ChatMessageType } from '$lib/types'
   import Sidebar from '$lib/components/Sidebar.svelte'
   import MessageList from '$lib/components/MessageList.svelte'
@@ -125,7 +126,7 @@
     // Close the sidebar when creating a new chat
     sidebarOpen = false
 
-    // Message list auto-scrolls itself
+    // Scroll to bottom after adding message
   }
 
   function toggleSidebar() {
@@ -163,6 +164,8 @@
 
       chat.messages.push(assistantMessage)
 
+      scrollToBottom()
+
       // Save updated chat
       if (chat.id) {
         await storage.updateChat(chat.id, chat)
@@ -185,6 +188,8 @@
         timeMs: 0,
       }
       chat.messages.push(errorMessage)
+
+      scrollToBottom()
     } finally {
       isLoading = false
     }
@@ -202,7 +207,7 @@
     const input = message
     message = ''
 
-    // Message list auto-scrolls itself
+    scrollToBottom()
 
     await sendMessageWithInput(currentChat, input)
   }
@@ -223,7 +228,7 @@
       if (lastAssistantMessage) {
         selectedModel = models.find((m) => m.id === lastAssistantMessage.model) || selectedModel
       }
-      // Message list auto-scrolls itself
+      // Scroll to bottom after adding message
     }
   }
 
@@ -318,7 +323,7 @@
   <AboutModal open={showAboutModal} onClose={() => (showAboutModal = false)} />
 
   <!-- Main chat area -->
-  <div class="flex flex-1 flex-col overflow-x-hidden">
+  <div class="flex flex-1 flex-col overflow-x-hidden overflow-y-auto">
     <MessageList
       {currentChat}
       {isLoading}

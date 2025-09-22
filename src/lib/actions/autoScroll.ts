@@ -1,26 +1,10 @@
-// Auto-scroll to bottom when content changes and when enabled
-export function autoScroll(node: HTMLElement, enabled = true) {
-  function scroll() {
-    if (!enabled) return
-    // Allow layout to settle
-    requestAnimationFrame(() => {
-      node.scrollTop = node.scrollHeight
-    })
-  }
-
-  const observer = new MutationObserver(() => scroll())
-  observer.observe(node, { childList: true, subtree: true })
-
-  // initial
-  scroll()
-
-  return {
-    update(value: boolean) {
-      enabled = !!value
-      scroll()
-    },
-    destroy() {
-      observer.disconnect()
-    },
-  }
+// Scroll to the bottom of the page by scrolling the last message into view
+export function scrollToBottom() {
+  // Allow layout to settle
+  requestAnimationFrame(() => {
+    const lastMessage = document.querySelector('[data-message]:last-child') as HTMLElement
+    if (lastMessage) {
+      lastMessage.scrollIntoView({ behavior: 'smooth', block: 'end' })
+    }
+  })
 }

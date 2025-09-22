@@ -2,8 +2,6 @@
   import type { Chat } from '$lib/types'
   import type { Model } from '$lib/models'
   import ChatMessage from '$lib/ChatMessage.svelte'
-  import { autoScroll } from '$lib/actions/autoScroll'
-
   interface Props {
     currentChat: Chat | null
     isLoading: boolean
@@ -16,17 +14,15 @@
 
   let { currentChat, isLoading, selectedModel, hasApiKeys, onRegen, onFork, onOpenAbout }: Props =
     $props()
-
-  let container: HTMLDivElement | null = null
 </script>
 
-<div class="flex-1 overflow-x-hidden overflow-y-auto p-4" bind:this={container} use:autoScroll>
+<div class="flex-1 overflow-x-hidden p-4">
   {#if currentChat && currentChat.messages.length > 0}
     {#each currentChat.messages as msg, index}
       <ChatMessage message={msg} messageIndex={index} {onRegen} {onFork} />
     {/each}
     {#if isLoading}
-      <div class="mb-6">
+      <div class="mb-6" data-message>
         <div class="mb-2 flex items-center gap-2 text-xs text-gray-600">
           <span class="font-medium">{selectedModel.id}</span>
           <span>•</span>
