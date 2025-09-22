@@ -121,6 +121,9 @@
     currentChat = { ...newChat, id }
     await loadChatHistory()
 
+    // Close the sidebar when creating a new chat
+    sidebarOpen = false
+
     // Message list auto-scrolls itself
   }
 
