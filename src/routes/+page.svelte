@@ -17,8 +17,8 @@
   let chatHistory = $state<(Chat & { id: number })[]>([])
   let selectedModel = $state(models.find((m) => m.default) || models[0])
   let isLoading = $state(false)
-  let webSearchEnabled = $state(false)
-  let reasoningEnabled = $state(false)
+  let webSearchEnabled = $state(true)
+  let reasoningEnabled = $state(true)
   let chatToDelete = $state<number | null>(null)
   let showAboutModal = $state(false)
 
@@ -323,7 +323,7 @@
   <AboutModal open={showAboutModal} onClose={() => (showAboutModal = false)} />
 
   <!-- Main chat area -->
-  <div class="flex-1 min-w-0">
+  <div class="min-w-0 flex-1">
     <MessageList
       {currentChat}
       {isLoading}
