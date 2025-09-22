@@ -87,12 +87,13 @@
     await storage.init()
     await loadChatHistory()
 
-    // Create new chat if none exist
-    if (chatHistory.length === 0) {
-      await createNewChat()
-    } else {
-      // Load the most recent chat
+    // Check if there's an empty chat at the top of the stack to reuse
+    if (chatHistory.length > 0 && chatHistory[0].messages.length === 0) {
+      // Reuse the existing empty chat
       currentChat = chatHistory[0]
+    } else {
+      // Create new chat if none exist or top chat has messages
+      await createNewChat()
     }
   }
 
