@@ -26,12 +26,12 @@
   }: Props = $props()
 </script>
 
-<div class="fixed bottom-0 left-0 right-0 z-20 border-t border-gray-300 bg-gray-50 p-3 max-w-full">
+<div class="fixed right-0 bottom-0 left-0 z-20 max-w-full border-t border-gray-300 bg-gray-50 p-3">
   <!-- Text input at top -->
   <div class="mb-2">
     <textarea
       bind:value={message}
-      onkeydown={(e) => e.key === 'Enter' && !e.shiftKey && onSend()}
+      onkeydown={(e) => e.key === 'Enter' && (e.metaKey || e.ctrlKey) && onSend()}
       placeholder="Type your message..."
       class="w-full resize-none rounded border border-gray-300 px-3 py-2"
       rows="2"
