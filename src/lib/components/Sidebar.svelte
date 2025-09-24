@@ -78,7 +78,7 @@
     <div class="p-4">
       <button
         onclick={onNewChat}
-        class="btn-new-chat w-full rounded-lg px-4 py-3 text-center font-medium shadow-sm focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-zinc-400 dark:focus:ring-offset-zinc-900"
+        class="btn-new-chat w-full rounded-lg px-4 py-3 text-center font-medium shadow-sm focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 focus:ring-offset-white focus:outline-none dark:focus:ring-zinc-400 dark:focus:ring-offset-zinc-900"
       >
         + New Chat
       </button>
