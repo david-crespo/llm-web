@@ -1,4 +1,9 @@
 import Anthropic from '@anthropic-ai/sdk'
+import type {
+  TextBlock,
+  ThinkingBlock,
+  CitationsWebSearchResultLocation,
+} from '@anthropic-ai/sdk/resources/messages'
 import type { ChatInput, ModelResponse } from './index'
 
 export async function anthropicCreateMessage({
@@ -29,14 +34,43 @@ export async function anthropicCreateMessage({
       : undefined,
   })
 
+  console.log(response.content)
+
   const content = response.content
-    .filter((msg) => msg.type === 'text')
-    .map((msg) => (msg.type === 'text' ? msg.text : ''))
-    .join('\n\n')
+    .filter((block): block is TextBlock => block.type === 'text')
+    .map((block) => {
+      let text = block.text
+
+      // Add citations as inline links if they exist
+      if (block.citations && block.citations.length > 0) {
+        const links = block.citations
+          .filter(
+            (citation): citation is CitationsWebSearchResultLocation =>
+              citation.type === 'web_search_result_location',
+          )
+          .map((citation) => {
+            try {
+              const domain = new URL(citation.url).hostname.replace(/^www\./, '')
+              return `[${domain}](${citation.url})`
+            } catch {
+              return null
+            }
+          })
+          .filter((link): link is string => link !== null)
+          .join(', ')
+
+        if (links) {
+          text += ` (${links})`
+        }
+      }
+
+      return text
+    })
+    .join('')
 
   const reasoning = response.content
-    .filter((msg) => msg.type === 'thinking')
-    .map((msg) => (msg.type === 'thinking' ? msg.thinking : ''))
+    .filter((block): block is ThinkingBlock => block.type === 'thinking')
+    .map((block) => block.thinking)
     .join('\n\n')
 
   const tokens = {
