@@ -3,6 +3,7 @@ import type {
   TextBlock,
   ThinkingBlock,
   CitationsWebSearchResultLocation,
+  ToolUseBlock,
 } from '@anthropic-ai/sdk/resources/messages'
 import type { ChatInput, ModelResponse } from './index'
 
@@ -37,34 +38,45 @@ export async function anthropicCreateMessage({
   console.log(response.content)
 
   const content = response.content
-    .filter((block): block is TextBlock => block.type === 'text')
-    .map((block) => {
-      let text = block.text
+    .map((block): string | null => {
+      if (block.type === 'text') {
+        let text = block.text
 
-      // Add citations as inline links if they exist
-      if (block.citations && block.citations.length > 0) {
-        const links = block.citations
-          .filter(
-            (citation): citation is CitationsWebSearchResultLocation =>
-              citation.type === 'web_search_result_location',
-          )
-          .map((citation) => {
-            try {
-              const domain = new URL(citation.url).hostname.replace(/^www\./, '')
-              return `[${domain}](${citation.url})`
-            } catch {
-              return null
-            }
-          })
-          .filter((link): link is string => link !== null)
-          .join(', ')
+        // Add citations as inline links if they exist
+        if (block.citations && block.citations.length > 0) {
+          const links = block.citations
+            .filter(
+              (citation): citation is CitationsWebSearchResultLocation =>
+                citation.type === 'web_search_result_location',
+            )
+            .map((citation) => {
+              try {
+                const domain = new URL(citation.url).hostname.replace(/^www\./, '')
+                return `[${domain}](${citation.url})`
+              } catch {
+                return null
+              }
+            })
+            .filter((link): link is string => link !== null)
+            .join(', ')
 
-        if (links) {
-          text += ` (${links})`
+          if (links) {
+            text += ` (${links})`
+          }
+        }
+
+        return text
+      }
+
+      // Handle web search tool uses
+      if (block.type === 'tool_use' || (block as any).type === 'server_tool_use') {
+        const toolBlock = block as ToolUseBlock
+        if (toolBlock.name === 'web_search') {
+          return `🔍 **Search:** ${(toolBlock.input as { query: string }).query}\n\n`
         }
       }
 
-      return text
+      return ''
     })
     .join('')
 
@@ -72,6 +84,10 @@ export async function anthropicCreateMessage({
     .filter((block): block is ThinkingBlock => block.type === 'thinking')
     .map((block) => block.thinking)
     .join('\n\n')
+
+  // TODO: include cost of these, 1 cent per search
+  // https://claude.com/pricing#api
+  // usage.server_tool_use: { web_search_requests: 2, web_fetch_requests: 0 }
 
   const tokens = {
     input: response.usage.input_tokens || 0,
