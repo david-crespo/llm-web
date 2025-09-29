@@ -25,21 +25,21 @@ export type Model = {
  */
 export const models: Model[] = [
   {
-    provider: 'anthropic',
-    key: 'claude-sonnet-4-5',
-    id: 'Sonnet 4.5',
-    input: 3,
-    input_cached: 0.3,
-    output: 15,
-    default: true,
-  },
-  {
     provider: 'openai',
     key: 'gpt-5',
     id: 'GPT-5',
     input: 1.25,
     input_cached: 0.125,
     output: 10,
+    default: true,
+  },
+  {
+    provider: 'anthropic',
+    key: 'claude-sonnet-4-5',
+    id: 'Sonnet 4.5',
+    input: 3,
+    input_cached: 0.3,
+    output: 15,
   },
   {
     provider: 'google',
