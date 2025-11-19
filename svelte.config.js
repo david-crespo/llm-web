@@ -16,6 +16,29 @@ const config = {
       precompress: false,
       strict: true,
     }),
+    csp: {
+      mode: 'hash',
+      directives: {
+        'default-src': ["'self'"],
+        'base-uri': ["'none'"],
+        'object-src': ["'none'"],
+        'form-action': ["'self'"],
+        'frame-ancestors': ["'none'"],
+        'script-src': ["'self'"],
+        'style-src': ["'self'", "'unsafe-inline'"], // Svelte requires unsafe-inline for styles currently
+        'img-src': ["'self'", 'data:', 'blob:'],
+        'font-src': ["'self'"],
+        'connect-src': [
+          "'self'",
+          'https://api.openai.com',
+          'https://api.anthropic.com',
+          'https://generativelanguage.googleapis.com',
+        ],
+        'manifest-src': ["'self'"],
+        'worker-src': ["'self'"],
+        'upgrade-insecure-requests': true,
+      },
+    },
   },
 }
 
