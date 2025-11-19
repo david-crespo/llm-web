@@ -4,6 +4,8 @@
   import SunIcon from './icons/SunIcon.svelte'
   import MoonIcon from './icons/MoonIcon.svelte'
   import MonitorIcon from './icons/MonitorIcon.svelte'
+  import PlusIcon from './icons/PlusIcon.svelte'
+  import SettingsIcon from './icons/SettingsIcon.svelte'
 
   interface Props {
     open: boolean
@@ -71,55 +73,43 @@
     style="height: 100vh; height: 100dvh;"
   >
     <!-- Header -->
-    <div class="flex items-center justify-between border-b border-gray-300 p-4">
+    <div class="flex items-center justify-between border-b border-gray-300 p-3">
       <h3 class="text-sm font-medium">Chat History</h3>
     </div>
 
-    <!-- New Chat button -->
-    <div class="p-4">
-      <button
-        onclick={onNewChat}
-        class="btn-new-chat w-full rounded-lg px-4 py-3 text-center font-medium shadow-sm focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 focus:ring-offset-white focus:outline-none dark:focus:ring-zinc-400 dark:focus:ring-offset-zinc-900"
-      >
-        + New Chat
-      </button>
-    </div>
-
     <!-- Chat history -->
-    <div class="flex-1 overflow-y-auto px-4 pb-4">
+    <div class="flex-1 overflow-y-auto pt-2">
       {#if chatHistory.length === 0}
         <div class="p-4 text-sm text-gray-600">No chats yet</div>
       {:else}
         {#each chatHistory as chat}
           {@const isActive = chat.id === currentChatId}
           {@const preview = getChatPreview(chat)}
-          <div class="mb-2">
-            <div
-              role="button"
-              tabindex="0"
-              class="relative flex w-full rounded border px-3 py-2 hover:bg-gray-50 focus:ring-2 focus:ring-gray-500 focus:outline-none {isActive
-                ? 'border-gray-500 bg-gray-100'
-                : 'border-gray-300'}"
-              onclick={() => onSelectChat(chat.id!)}
-              onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && onSelectChat(chat.id!)}
-            >
-              <div class="min-w-0 pr-10">
-                <div class="line-clamp-2 text-sm font-medium break-words">{preview}</div>
-                <div class="mt-1 text-xs leading-4 text-gray-500">
-                  {chat.createdAt.toLocaleString()}
-                </div>
+          <div
+            role="button"
+            tabindex="0"
+            class="relative flex w-full border-b border-gray-200 px-3 py-3 hover:bg-gray-50 focus:ring-2 focus:ring-gray-500 focus:outline-none focus:ring-inset dark:border-gray-700 dark:hover:bg-zinc-700 {isActive
+              ? 'bg-gray-100 dark:bg-zinc-700'
+              : ''}"
+            onclick={() => onSelectChat(chat.id!)}
+            onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && onSelectChat(chat.id!)}
+          >
+            <div class="min-w-0 pr-10">
+              <div class="line-clamp-2 text-sm font-medium break-words">{preview}</div>
+              <div class="mt-1 text-xs leading-4 text-gray-500">
+                {chat.createdAt.toLocaleString()}
               </div>
-              <button
-                class="absolute top-1/2 right-2 -translate-y-1/2 rounded px-2 py-2 text-xs hover:bg-gray-100"
-                aria-label="Delete chat"
-                onclick={(e) => {
-                  e.stopPropagation()
-                  onRequestDelete(chat.id!)
-                }}
-              >
-                🗑
-              </button>
             </div>
+            <button
+              class="absolute top-1/2 right-2 -translate-y-1/2 rounded px-2 py-2 text-xs hover:bg-gray-200 dark:hover:bg-gray-700"
+              aria-label="Delete chat"
+              onclick={(e) => {
+                e.stopPropagation()
+                onRequestDelete(chat.id!)
+              }}
+            >
+              🗑
+            </button>
           </div>
         {/each}
       {/if}
@@ -130,7 +120,7 @@
       <!-- Close button (left) -->
       <button
         onclick={onClose}
-        class="size-10 rounded border border-gray-300 hover:bg-gray-50"
+        class="size-10 rounded border border-gray-300 bg-gray-50 hover:bg-gray-100 dark:border-gray-600 dark:bg-zinc-800 dark:hover:bg-zinc-700"
         aria-label="Close sidebar"
       >
         <CloseIcon class="mx-auto" />
@@ -138,33 +128,50 @@
 
       <div class="flex-1"></div>
 
-      <!-- Settings and About links -->
-      <a
-        href="/settings"
-        class="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-        >API Keys</a
-      >
+      <!-- About link -->
       <button
         onclick={onOpenAbout}
         class="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
         >About</button
       >
 
-      <!-- Theme toggle button -->
-      <button
-        class="flex size-10 items-center justify-center rounded border border-gray-300 bg-white text-gray-700 shadow-sm hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
-        title="Cycle theme (Light / Dark / System)"
-        aria-label="Cycle theme"
-        onclick={onCycleTheme}
-      >
-        {#if themeMode === 'light'}
-          <SunIcon />
-        {:else if themeMode === 'dark'}
-          <MoonIcon />
-        {:else}
-          <MonitorIcon />
-        {/if}
-      </button>
+      <!-- Settings button -->
+      <div class="flex gap-2">
+        <a
+          href="/settings"
+          class="flex size-10 items-center justify-center rounded border border-gray-300 bg-gray-50 text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:bg-zinc-800 dark:text-gray-100 dark:hover:bg-zinc-700"
+          title="Settings"
+          aria-label="Settings"
+        >
+          <SettingsIcon />
+        </a>
+
+        <!-- Theme toggle button -->
+        <button
+          class="flex size-10 items-center justify-center rounded border border-gray-300 bg-gray-50 text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:bg-zinc-800 dark:text-gray-100 dark:hover:bg-zinc-700"
+          title="Cycle theme (Light / Dark / System)"
+          aria-label="Cycle theme"
+          onclick={onCycleTheme}
+        >
+          {#if themeMode === 'light'}
+            <SunIcon />
+          {:else if themeMode === 'dark'}
+            <MoonIcon />
+          {:else}
+            <MonitorIcon />
+          {/if}
+        </button>
+
+        <!-- New Chat button -->
+        <button
+          class="flex size-10 items-center justify-center rounded border border-gray-300 bg-gray-50 text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:bg-zinc-800 dark:text-gray-100 dark:hover:bg-zinc-700"
+          title="New Chat"
+          aria-label="New Chat"
+          onclick={onNewChat}
+        >
+          <PlusIcon />
+        </button>
+      </div>
     </div>
   </div>
 {/if}
