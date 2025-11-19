@@ -75,7 +75,7 @@
         <div class="absolute top-2 right-2">
           <button
             onclick={() => (showMenu = !showMenu)}
-            class="ml-6 rounded-full px-1.5 pt-px text-lg font-bold text-gray-600 hover:bg-gray-300 hover:text-gray-800"
+            class="flex size-6 items-center justify-center rounded-full text-lg font-bold text-gray-600 hover:bg-gray-300 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-zinc-600 dark:hover:text-gray-200"
             aria-label="Message options"
           >
             ⋮
@@ -86,6 +86,15 @@
           <div
             class="absolute top-8 right-2 z-10 w-32 rounded border border-gray-300 bg-white py-1 shadow-lg"
           >
+            <button
+              onclick={async () => {
+                showMenu = false
+                await navigator.clipboard.writeText(message.content)
+              }}
+              class="w-full px-3 py-2 text-left text-sm hover:bg-gray-100"
+            >
+              📋 Copy
+            </button>
             <button
               onclick={() => {
                 showMenu = false
