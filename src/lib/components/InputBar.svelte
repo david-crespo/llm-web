@@ -29,10 +29,17 @@
   <div class="mb-2">
     <textarea
       bind:value={message}
+      oninput={function (e) {
+        // Resize on input up to 200px high
+        const target = e.target
+        target.style.height = 'auto'
+        target.style.height = `${Math.min(target.scrollHeight, 200)}px`
+      }}
       onkeydown={(e) => e.key === 'Enter' && (e.metaKey || e.ctrlKey) && onSend()}
       placeholder="Type your message..."
-      class="w-full resize-none rounded border border-gray-300 px-3 py-2"
-      rows="2"
+      class="w-full resize-none overflow-y-auto rounded border border-gray-300 px-3 py-2"
+      style="min-height: 42px; max-height: 200px;"
+      rows="1"
       disabled={isLoading}
     ></textarea>
   </div>
