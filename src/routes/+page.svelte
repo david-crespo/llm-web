@@ -77,7 +77,7 @@
 
   <AboutModal open={showAboutModal} onClose={() => (showAboutModal = false)} />
 
-  <div class="min-w-0 flex-1">
+  <div class="flex min-w-0 flex-1 flex-col pb-32">
     <MessageList
       currentChat={chatState.current}
       isLoading={chatState.isLoading}

@@ -16,7 +16,7 @@
     $props()
 </script>
 
-<div class="min-h-0 flex-1 overflow-x-hidden p-4 pb-36">
+<div class="min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-4">
   {#if currentChat && currentChat.messages.length > 0}
     {#each currentChat.messages as msg, index}
       <ChatMessage message={msg} messageIndex={index} {onRegen} {onFork} />
@@ -36,7 +36,7 @@
     {/if}
   {:else}
     <div class="flex h-full items-center justify-center">
-      <div class="mt-20 flex max-w-xs flex-col gap-2 rounded-lg p-4 text-center">
+      <div class="flex max-w-xs flex-col gap-2 rounded-lg p-4 text-center">
         <p class="text-lg">Start a chat below</p>
         {#if !hasApiKeys}
           <p class="text-balance text-gray-700">
