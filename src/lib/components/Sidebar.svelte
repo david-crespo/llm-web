@@ -184,19 +184,4 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
-  /* Explicit themed styles to avoid global utility overrides */
-  .btn-new-chat {
-    background-color: #e5e7eb; /* gray-200 */
-    color: #111827; /* gray-900 */
-  }
-  .btn-new-chat:hover {
-    background-color: #d1d5db; /* gray-300 */
-  }
-  :global(.dark) .btn-new-chat {
-    background-color: #34343a; /* a shade lighter than panel */
-    color: #f4f4f5; /* zinc-100 */
-  }
-  :global(.dark) .btn-new-chat:hover {
-    background-color: #3f3f46; /* zinc-700 */
-  }
 </style>

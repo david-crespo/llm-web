@@ -31,9 +31,9 @@
   <div class="mb-2">
     <textarea
       bind:value={message}
-      oninput={function (e) {
+      oninput={(e) => {
         // Resize on input up to 200px high
-        const target = e.target
+        const target = e.currentTarget
         target.style.height = 'auto'
         target.style.height = `${Math.min(target.scrollHeight, 200)}px`
       }}
