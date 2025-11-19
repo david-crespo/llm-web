@@ -24,12 +24,21 @@
     onToggleSidebar,
     onSend,
   }: Props = $props()
+
+  let textarea: HTMLTextAreaElement | undefined = $state()
+
+  $effect(() => {
+    if (message === '' && textarea) {
+      textarea.style.height = 'auto'
+    }
+  })
 </script>
 
-<div class="fixed right-0 bottom-0 left-0 z-20 max-w-full border-t border-gray-300 bg-gray-50 p-3">
+<div class="w-full border-t border-gray-300 bg-gray-50 p-3">
   <!-- Text input at top -->
   <div class="mb-2">
     <textarea
+      bind:this={textarea}
       bind:value={message}
       oninput={(e) => {
         // Resize on input up to 200px high

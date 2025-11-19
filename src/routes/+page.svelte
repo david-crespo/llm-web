@@ -77,7 +77,7 @@
 
   <AboutModal open={showAboutModal} onClose={() => (showAboutModal = false)} />
 
-  <div class="flex min-w-0 flex-1 flex-col pb-32">
+  <div class="flex min-w-0 flex-1 flex-col">
     <MessageList
       currentChat={chatState.current}
       isLoading={chatState.isLoading}
@@ -87,16 +87,16 @@
       onFork={handleFork}
       onOpenAbout={() => (showAboutModal = true)}
     />
+
+    <InputBar
+      bind:message
+      isLoading={chatState.isLoading}
+      bind:selectedModel={chatState.selectedModel}
+      bind:webSearchEnabled={chatState.webSearch}
+      bind:reasoningEnabled={chatState.reasoning}
+      sidebarOpen={chatState.sidebarOpen}
+      onToggleSidebar={() => (chatState.sidebarOpen = !chatState.sidebarOpen)}
+      onSend={handleSend}
+    />
   </div>
 </div>
-
-<InputBar
-  bind:message
-  isLoading={chatState.isLoading}
-  bind:selectedModel={chatState.selectedModel}
-  bind:webSearchEnabled={chatState.webSearch}
-  bind:reasoningEnabled={chatState.reasoning}
-  sidebarOpen={chatState.sidebarOpen}
-  onToggleSidebar={() => (chatState.sidebarOpen = !chatState.sidebarOpen)}
-  onSend={handleSend}
-/>
