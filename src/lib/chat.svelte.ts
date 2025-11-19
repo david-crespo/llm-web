@@ -29,7 +29,7 @@ export class ChatManager {
   // Settings
   selectedModel = $state<Model>(this.getDefaultModel())
   webSearch = $state(true)
-  reasoning = $state(true)
+  reasoning = $state(false)
 
   /**
    * Get the first available model based on configured API keys

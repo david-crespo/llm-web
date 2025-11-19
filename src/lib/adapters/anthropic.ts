@@ -22,7 +22,7 @@ export async function anthropicCreateMessage({
     system: chat.systemPrompt,
     messages: chat.messages.map((m) => ({ role: m.role, content: m.content })),
     max_tokens: 4096,
-    thinking: think ? { type: 'enabled', budget_tokens: 1024 } : undefined,
+    thinking: { type: 'enabled', budget_tokens: think ? 4096 : 1024 },
     tools: search
       ? [
           {

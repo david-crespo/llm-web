@@ -125,22 +125,12 @@
 
       <!-- Reasoning Toggle Button -->
       <button
-        onclick={() => {
-          if (selectedModel.provider !== 'google') {
-            reasoningEnabled = !reasoningEnabled
-          }
-        }}
-        class="flex h-10 w-10 items-center justify-center rounded border p-0 text-base {selectedModel.provider ===
-        'google'
-          ? 'border-blue-300 bg-blue-300 text-white'
-          : reasoningEnabled
-            ? 'border-blue-500 bg-blue-500 text-white hover:bg-blue-600'
-            : 'border-gray-300 bg-gray-50 text-gray-500 hover:bg-gray-100 dark:border-gray-600 dark:bg-zinc-800 dark:text-gray-100 dark:hover:bg-zinc-700'}"
-        title={selectedModel.provider === 'google'
-          ? 'Reasoning (always enabled for Gemini)'
-          : 'Reasoning'}
-        disabled={selectedModel.provider === 'google'}
-        aria-pressed={selectedModel.provider === 'google' ? true : reasoningEnabled}
+        onclick={() => (reasoningEnabled = !reasoningEnabled)}
+        class="flex h-10 w-10 items-center justify-center rounded border p-0 text-base {reasoningEnabled
+          ? 'border-blue-500 bg-blue-500 text-white hover:bg-blue-600'
+          : 'border-gray-300 bg-gray-50 text-gray-500 hover:bg-gray-100 dark:border-gray-600 dark:bg-zinc-800 dark:text-gray-100 dark:hover:bg-zinc-700'}"
+        title="Reasoning"
+        aria-pressed={reasoningEnabled}
       >
         🤔
       </button>

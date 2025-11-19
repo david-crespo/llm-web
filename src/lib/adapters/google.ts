@@ -1,10 +1,11 @@
-import { GoogleGenAI } from '@google/genai'
+import { GoogleGenAI, ThinkingLevel } from '@google/genai'
 import type { ChatInput, ModelResponse } from './index'
 
 export async function geminiCreateMessage({
   chat,
   model,
   search,
+  think,
 }: ChatInput): Promise<ModelResponse> {
   const apiKey = localStorage.getItem('google_api_key')
   if (!apiKey) throw new Error('Gemini API key not found')
@@ -13,7 +14,9 @@ export async function geminiCreateMessage({
 
   const result = await genAI.models.generateContent({
     config: {
-      thinkingConfig: { thinkingBudget: -1, includeThoughts: true },
+      thinkingConfig: {
+        thinkingLevel: think ? ThinkingLevel.HIGH : ThinkingLevel.LOW,
+      },
       systemInstruction: chat.systemPrompt,
       tools: [{ urlContext: {} }, ...(search ? [{ googleSearch: {} }] : [])],
     },

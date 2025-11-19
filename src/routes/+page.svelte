@@ -39,13 +39,6 @@
 
   // Initialize theme on mount
   initTheme()
-
-  // Effect: Force reasoning on for Google models
-  $effect(() => {
-    if (chatState.selectedModel.provider === 'google') {
-      chatState.reasoning = true
-    }
-  })
 </script>
 
 <div class="flex h-dvh overflow-x-hidden overflow-y-hidden">
