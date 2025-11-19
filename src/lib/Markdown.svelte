@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { marked } from 'marked'
+  import { marked, type Tokens } from 'marked'
   // Sanitize rendered HTML safely in the browser
   import DOMPurify from 'dompurify'
   // Use highlight.js core and explicitly register only needed languages
@@ -31,9 +31,9 @@
     const renderer = new marked.Renderer()
 
     // Render code blocks with highlight.js
-    renderer.code = (token: any) => {
+    renderer.code = (token: Tokens.Code) => {
       const lang = token.lang ?? ''
-      let inner = token.text as string
+      let inner = token.text
       try {
         if (lang && hljs.getLanguage(lang)) inner = hljs.highlight(inner, { language: lang }).value
         else inner = hljs.highlightAuto(inner).value
@@ -45,7 +45,7 @@
           .replace(/"/g, '&quot;')
       }
       const cls = `hljs${lang ? ` language-${lang}` : ''}`
-      return `<pre><code class=\"${cls}\">${inner}\n</code></pre>`
+      return `<pre><code class="${cls}">${inner}\n</code></pre>`
     }
     ;(async () => {
       const rendered = await marked.parse(content, { renderer })
@@ -69,6 +69,7 @@
 </script>
 
 <div class={divClass}>
+  <!-- eslint-disable-next-line svelte/no-at-html-tags -->
   {@html html}
 </div>
 

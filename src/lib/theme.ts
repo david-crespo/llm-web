@@ -19,7 +19,9 @@ function loadStoredMode(): ThemeMode {
 function saveStoredMode(mode: ThemeMode) {
   try {
     if (typeof localStorage !== 'undefined') localStorage.setItem('theme', mode)
-  } catch {}
+  } catch (e: unknown) {
+    console.error('Error saving theme', e)
+  }
 }
 
 function apply(mode: ThemeMode) {
@@ -78,8 +80,4 @@ export function cycleThemeMode(): ThemeMode {
     currentMode === 'light' ? 'dark' : currentMode === 'dark' ? 'system' : 'light'
   setThemeMode(next)
   return next
-}
-
-export function themeLabel(mode: ThemeMode): 'L' | 'D' | 'S' {
-  return mode === 'light' ? 'L' : mode === 'dark' ? 'D' : 'S'
 }

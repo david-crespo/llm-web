@@ -18,7 +18,7 @@
 
 <div class="min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-4">
   {#if currentChat && currentChat.messages.length > 0}
-    {#each currentChat.messages as msg, index}
+    {#each currentChat.messages as msg, index (index)}
       <ChatMessage message={msg} messageIndex={index} {onRegen} {onFork} />
     {/each}
     {#if isLoading}

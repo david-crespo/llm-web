@@ -68,7 +68,7 @@ export async function anthropicCreateMessage({
       }
 
       // Handle web search tool uses
-      if (block.type === 'tool_use' || (block as any).type === 'server_tool_use') {
+      if (block.type === 'tool_use' || block.type === 'server_tool_use') {
         const toolBlock = block as ToolUseBlock
         if (toolBlock.name === 'web_search') {
           return `🔍 **Search:** ${(toolBlock.input as { query: string }).query}\n\n`

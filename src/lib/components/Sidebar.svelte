@@ -37,7 +37,7 @@
   }
 
   // Theme toggle (Light / Dark / System)
-  import { initTheme, getThemeMode, cycleThemeMode, themeLabel } from '$lib/theme'
+  import { initTheme, getThemeMode, cycleThemeMode } from '$lib/theme'
   type ThemeMode = import('$lib/theme').ThemeMode
   let themeMode: ThemeMode = $state('system')
 
@@ -73,7 +73,7 @@
   <div
     transition:fly={{ x: -320, duration: 150 }}
     class="fixed top-0 left-0 z-50 flex w-4/5 max-w-sm flex-col overflow-hidden border-r border-gray-400/60 bg-gray-50 dark:border-zinc-700 dark:bg-zinc-900"
-    style="height: 100vh; height: 100dvh;"
+    style="height: 100dvh;"
   >
     <!-- Header -->
     <div class="flex items-center justify-between border-b border-gray-300 p-3">
@@ -85,7 +85,7 @@
       {#if chatHistory.length === 0}
         <div class="p-4 text-sm text-gray-600">No chats yet</div>
       {:else}
-        {#each chatHistory as chat}
+        {#each chatHistory as chat (chat.id)}
           {@const isActive = chat.id === currentChatId}
           {@const preview = getChatPreview(chat)}
           <div

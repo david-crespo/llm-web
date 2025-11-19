@@ -105,7 +105,7 @@
         {#if !hasAnyKeys}
           <option selected>No API keys</option>
         {:else}
-          {#each availableModels as model}
+          {#each availableModels as model (model.key)}
             <option value={model}>{model.id}</option>
           {/each}
         {/if}

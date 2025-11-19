@@ -29,20 +29,20 @@ export async function geminiCreateMessage({
 
   const parts = result.candidates?.[0].content?.parts ?? []
   const reasoning = parts
-    .filter((p) => (p as any).text && (p as any).thought)
-    .map((p: any) => p.text as string)
+    .filter((p) => p.text && p.thought)
+    .map((p) => p.text!)
     .join('\n\n')
   let content = parts
-    .filter((p) => (p as any).text && !(p as any).thought)
-    .map((p: any) => p.text as string)
+    .filter((p) => p.text && !p.thought)
+    .map((p) => p.text!)
     .join('\n\n')
 
-  const searchResults = (result.candidates?.[0] as any).groundingMetadata?.groundingChunks
+  const searchResults = result.candidates?.[0]?.groundingMetadata?.groundingChunks
   const searchResultsMd = searchResults
     ? '\n\n### Sources\n\n' +
       searchResults
-        .filter((chunk: any) => chunk.web)
-        .map((chunk: any) => `- [${chunk.web!.title}](${chunk.web!.uri})`)
+        .filter((chunk) => chunk.web)
+        .map((chunk) => `- [${chunk.web!.title}](${chunk.web!.uri})`)
         .join('\n')
     : ''
 
@@ -60,6 +60,6 @@ export async function geminiCreateMessage({
     content,
     reasoning,
     tokens,
-    stop_reason: (result.candidates?.[0] as any).finishReason || '',
+    stop_reason: result.candidates?.[0]?.finishReason || '',
   }
 }
