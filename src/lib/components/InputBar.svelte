@@ -2,6 +2,8 @@
   import { models, type Model } from '$lib/models'
   import CloseIcon from './icons/CloseIcon.svelte'
   import MenuIcon from './icons/MenuIcon.svelte'
+  import SearchIcon from './icons/SearchIcon.svelte'
+  import ThinkingIcon from './icons/ThinkingIcon.svelte'
 
   interface Props {
     message: string
@@ -114,25 +116,25 @@
       <!-- Web Search Toggle Button -->
       <button
         onclick={() => (webSearchEnabled = !webSearchEnabled)}
-        class="flex size-10 items-center justify-center rounded border p-0 text-base {webSearchEnabled
+        class="flex size-10 items-center justify-center rounded border p-0 {webSearchEnabled
           ? 'border-blue-500 bg-blue-500 text-white hover:bg-blue-600'
           : 'border-gray-300 bg-gray-50 text-gray-500 hover:bg-gray-100 dark:border-gray-600 dark:bg-zinc-800 dark:text-gray-100 dark:hover:bg-zinc-700'}"
         title="Web Search"
         aria-pressed={webSearchEnabled}
       >
-        🌐
+        <SearchIcon />
       </button>
 
       <!-- Reasoning Toggle Button -->
       <button
         onclick={() => (reasoningEnabled = !reasoningEnabled)}
-        class="flex h-10 w-10 items-center justify-center rounded border p-0 text-base {reasoningEnabled
+        class="flex h-10 w-10 items-center justify-center rounded border p-0 {reasoningEnabled
           ? 'border-blue-500 bg-blue-500 text-white hover:bg-blue-600'
           : 'border-gray-300 bg-gray-50 text-gray-500 hover:bg-gray-100 dark:border-gray-600 dark:bg-zinc-800 dark:text-gray-100 dark:hover:bg-zinc-700'}"
         title="Reasoning"
         aria-pressed={reasoningEnabled}
       >
-        🤔
+        <ThinkingIcon />
       </button>
 
       <button

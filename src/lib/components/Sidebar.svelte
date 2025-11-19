@@ -7,6 +7,7 @@
   import MonitorIcon from './icons/MonitorIcon.svelte'
   import PlusIcon from './icons/PlusIcon.svelte'
   import SettingsIcon from './icons/SettingsIcon.svelte'
+  import InfoIcon from './icons/InfoIcon.svelte'
 
   interface Props {
     open: boolean
@@ -119,7 +120,7 @@
     </div>
 
     <!-- Bottom section -->
-    <div class="flex items-center gap-3 border-t border-gray-300 p-3">
+    <div class="flex items-center gap-4 border-t border-gray-300 p-3">
       <!-- Close button (left) -->
       <button
         onclick={onClose}
@@ -131,15 +132,17 @@
 
       <div class="flex-1"></div>
 
-      <!-- About link -->
-      <button
-        onclick={onOpenAbout}
-        class="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-        >About</button
-      >
-
       <!-- Settings button -->
       <div class="flex gap-2">
+        <!-- About button -->
+        <button
+          onclick={onOpenAbout}
+          class="flex size-10 items-center justify-center rounded border border-gray-300 bg-gray-50 text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:bg-zinc-800 dark:text-gray-100 dark:hover:bg-zinc-700"
+          title="About"
+          aria-label="About"
+        >
+          <InfoIcon />
+        </button>
         <a
           href="/settings"
           class="flex size-10 items-center justify-center rounded border border-gray-300 bg-gray-50 text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:bg-zinc-800 dark:text-gray-100 dark:hover:bg-zinc-700"

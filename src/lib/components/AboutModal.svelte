@@ -1,4 +1,6 @@
 <script lang="ts">
+  import Link from './Link.svelte'
+
   interface Props {
     open: boolean
     onClose: () => void
@@ -31,45 +33,27 @@
         <div class="mb-6 space-y-3 text-sm text-gray-600">
           <p>
             This is a fully client-side LLM chat client built as a static site with
-            <a
-              href="https://svelte.dev/docs/kit/introduction"
-              rel="noopener noreferrer"
-              class="text-blue-600 underline hover:text-blue-800"
-              target="_blank">SvelteKit</a
-            >. It's designed to be hackable rather than configurable: if you want different models
-            or different behavior, fork the repo, change how it works, and deploy your own copy.
+            <Link href="https://svelte.dev/docs/kit/introduction">SvelteKit</Link>. It's designed to
+            be hackable rather than configurable: if you want different models or different
+            behavior, fork the repo, change how it works, and deploy your own copy.
           </p>
           <p>
             API keys and chat history are stored locally in this browser only (keys in
-            <a
-              href="https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage"
-              rel="noopener noreferrer"
-              class="text-blue-600 underline hover:text-blue-800"
-              target="_blank">localStorage</a
+            <Link href="https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage"
+              >localStorage</Link
             >
             and chats in
-            <a
-              href="https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API"
-              rel="noopener noreferrer"
-              class="text-blue-600 underline hover:text-blue-800"
-              target="_blank">IndexedDB</a
-            >). Strictly speaking, this is an
-            <a
+            <Link href="https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API"
+              >IndexedDB</Link
+            >). While we sanitize the LLM output and use a good CSP, strictly speaking this is an
+            <Link
               href="https://medium.com/@stanislavbabenko/just-stop-using-localstorage-for-secrets-honestly-ea9ef9af9022"
-              rel="noopener noreferrer"
-              class="text-blue-600 underline hover:text-blue-800"
-              target="_blank">obvious XSS vulnerability</a
+              >XSS vulnerability</Link
             >, so only use this if you understand and accept that risk.
           </p>
         </div>
         <div>
-          <a
-            href="https://github.com/david-crespo/llm-web"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="text-blue-600 underline hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-            >View on GitHub →</a
-          >
+          <Link href="https://github.com/david-crespo/llm-web" darkMode>View on GitHub →</Link>
         </div>
       </div>
     </div>
