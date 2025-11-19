@@ -1,5 +1,7 @@
 <script lang="ts">
   import { models, type Model } from '$lib/models'
+  import CloseIcon from './icons/CloseIcon.svelte'
+  import MenuIcon from './icons/MenuIcon.svelte'
 
   interface Props {
     message: string
@@ -51,7 +53,11 @@
       class="size-10 rounded border border-gray-300 hover:bg-gray-50"
       aria-label="Toggle sidebar"
     >
-      {sidebarOpen ? '✕' : '☰'}
+      {#if sidebarOpen}
+        <CloseIcon class="mx-auto" />
+      {:else}
+        <MenuIcon class="mx-auto" />
+      {/if}
     </button>
 
     <div class="flex-1"></div>
@@ -60,7 +66,7 @@
       <!-- Model selector -->
       <select
         bind:value={selectedModel}
-        class="h-10 w-36 rounded border border-gray-300 px-2 py-2 text-sm"
+        class="h-10 w-36 rounded border border-gray-300 bg-gray-50 px-2 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
         aria-label="Select model"
       >
         {#each models as model}
@@ -73,7 +79,7 @@
         onclick={() => (webSearchEnabled = !webSearchEnabled)}
         class="flex size-10 items-center justify-center rounded border p-0 text-base {webSearchEnabled
           ? 'border-blue-500 bg-blue-500 text-white hover:bg-blue-600'
-          : 'border-gray-300 bg-white text-gray-500 hover:bg-gray-50'}"
+          : 'border-gray-300 bg-gray-50 text-gray-500 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700'}"
         title="Web Search"
         aria-pressed={webSearchEnabled}
       >
@@ -92,7 +98,7 @@
           ? 'border-blue-300 bg-blue-300 text-white'
           : reasoningEnabled
             ? 'border-blue-500 bg-blue-500 text-white hover:bg-blue-600'
-            : 'border-gray-300 bg-white text-gray-500 hover:bg-gray-50'}"
+            : 'border-gray-300 bg-gray-50 text-gray-500 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700'}"
         title={selectedModel.provider === 'google'
           ? 'Reasoning (always enabled for Gemini)'
           : 'Reasoning'}

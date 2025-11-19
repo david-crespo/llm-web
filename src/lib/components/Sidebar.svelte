@@ -1,5 +1,9 @@
 <script lang="ts">
   import type { Chat } from '$lib/types'
+  import CloseIcon from './icons/CloseIcon.svelte'
+  import SunIcon from './icons/SunIcon.svelte'
+  import MoonIcon from './icons/MoonIcon.svelte'
+  import MonitorIcon from './icons/MonitorIcon.svelte'
 
   interface Props {
     open: boolean
@@ -69,9 +73,6 @@
     <!-- Header -->
     <div class="flex items-center justify-between border-b border-gray-300 p-4">
       <h3 class="text-sm font-medium">Chat History</h3>
-      <button onclick={onClose} class="text-gray-500 hover:text-gray-700" aria-label="Close sidebar"
-        >✕</button
-      >
     </div>
 
     <!-- New Chat button -->
@@ -125,25 +126,46 @@
     </div>
 
     <!-- Bottom section -->
-    <div class="space-y-3 border-t border-gray-300 p-4">
-      <a href="/settings" class="block text-sm text-blue-600 hover:text-blue-800"
-        >Configure API Keys</a
+    <div class="flex items-center gap-3 border-t border-gray-300 p-3">
+      <!-- Close button (left) -->
+      <button
+        onclick={onClose}
+        class="size-10 rounded border border-gray-300 hover:bg-gray-50"
+        aria-label="Close sidebar"
+      >
+        <CloseIcon class="mx-auto" />
+      </button>
+
+      <div class="flex-1"></div>
+
+      <!-- Settings and About links -->
+      <a
+        href="/settings"
+        class="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+        >API Keys</a
       >
       <button
         onclick={onOpenAbout}
-        class="block w-full text-left text-sm text-blue-600 hover:text-blue-800">About</button
+        class="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+        >About</button
       >
-    </div>
 
-    <!-- Theme toggle button, bottom-right of sidebar -->
-    <button
-      class="absolute right-4 bottom-4 flex size-10 items-center justify-center rounded border border-gray-300 bg-white text-gray-700 shadow-sm hover:bg-gray-50"
-      title="Cycle theme (Light / Dark / System)"
-      aria-label="Cycle theme"
-      onclick={onCycleTheme}
-    >
-      {themeLabel(themeMode)}
-    </button>
+      <!-- Theme toggle button -->
+      <button
+        class="flex size-10 items-center justify-center rounded border border-gray-300 bg-gray-50 text-gray-700 shadow-sm hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
+        title="Cycle theme (Light / Dark / System)"
+        aria-label="Cycle theme"
+        onclick={onCycleTheme}
+      >
+        {#if themeMode === 'light'}
+          <SunIcon />
+        {:else if themeMode === 'dark'}
+          <MoonIcon />
+        {:else}
+          <MonitorIcon />
+        {/if}
+      </button>
+    </div>
   </div>
 {/if}
 

@@ -61,10 +61,11 @@ button {
 }
 
 /* Utility class overrides for commonly used colors in components */
-.dark .bg-white {
+/* Allow elements with explicit dark:bg-* classes to override */
+.dark .bg-white:not([class*='dark:bg-']) {
   background-color: #1f1f22 !important;
 } /* neutral card/bg */
-.dark .bg-gray-50 {
+.dark .bg-gray-50:not([class*='dark:bg-']) {
   background-color: #27272a !important;
 } /* sidebar panel */
 .dark .bg-gray-100 {
@@ -115,11 +116,16 @@ button {
 .dark input[type='search'],
 .dark input[type='email'],
 .dark input[type='password'],
-.dark textarea,
-.dark select {
+.dark textarea {
   background-color: #1f1f22 !important; /* neutral card/bg */
   color: #e5e7eb !important; /* gray-200 */
   border-color: #3f3f46 !important; /* neutral border */
+}
+/* Let selects use Tailwind dark mode classes for more control */
+.dark select:not([class*='dark:bg-']) {
+  background-color: #1f1f22 !important;
+  color: #e5e7eb !important;
+  border-color: #3f3f46 !important;
 }
 .dark input::placeholder,
 .dark textarea::placeholder {

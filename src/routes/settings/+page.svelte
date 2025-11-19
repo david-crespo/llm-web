@@ -55,7 +55,7 @@
         id="openai-key"
         bind:value={openaiKey}
         placeholder="sk-..."
-        class="w-full rounded border border-gray-300 px-3 py-2"
+        class="w-full rounded border border-gray-300 bg-white px-3 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
       />
     </div>
 
@@ -65,7 +65,7 @@
         id="anthropic-key"
         bind:value={anthropicKey}
         placeholder="sk-ant-..."
-        class="w-full rounded border border-gray-300 px-3 py-2"
+        class="w-full rounded border border-gray-300 bg-white px-3 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
       />
     </div>
 
@@ -75,7 +75,7 @@
         id="google-key"
         bind:value={googleKey}
         placeholder="AIza..."
-        class="w-full rounded border border-gray-300 px-3 py-2"
+        class="w-full rounded border border-gray-300 bg-white px-3 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
       />
     </div>
 
