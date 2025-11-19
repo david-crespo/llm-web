@@ -25,13 +25,21 @@ export type Model = {
  */
 export const models: Model[] = [
   {
+    provider: 'google',
+    key: 'gemini-3-pro-preview',
+    id: 'Gemini 3 Pro',
+    input: 2.0,
+    input_cached: 0.5,
+    output: 12.0,
+    default: true,
+  },
+  {
     provider: 'openai',
-    key: 'gpt-5',
-    id: 'GPT-5',
+    key: 'gpt-5.1',
+    id: 'GPT-5.1',
     input: 1.25,
     input_cached: 0.125,
     output: 10,
-    default: true,
   },
   {
     provider: 'anthropic',
@@ -40,14 +48,6 @@ export const models: Model[] = [
     input: 3,
     input_cached: 0.3,
     output: 15,
-  },
-  {
-    provider: 'google',
-    key: 'gemini-2.5-pro',
-    id: 'Gemini 2.5 Pro',
-    input: 1.25,
-    input_cached: 0.31,
-    output: 10.0,
   },
 ]
 
