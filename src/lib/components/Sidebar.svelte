@@ -69,7 +69,7 @@
 
   <!-- Panel -->
   <div
-    class="fixed top-0 left-0 z-50 flex w-4/5 max-w-sm flex-col overflow-hidden bg-gray-50"
+    class="fixed top-0 left-0 z-50 flex w-4/5 max-w-sm flex-col overflow-hidden border-r border-gray-400/60 bg-gray-50 dark:border-zinc-700 dark:bg-zinc-900"
     style="height: 100vh; height: 100dvh;"
   >
     <!-- Header -->
@@ -88,8 +88,8 @@
           <div
             role="button"
             tabindex="0"
-            class="relative flex w-full border-b border-gray-200 px-3 py-3 hover:bg-gray-50 focus:ring-2 focus:ring-gray-500 focus:outline-none focus:ring-inset dark:border-gray-700 dark:hover:bg-zinc-700 {isActive
-              ? 'bg-gray-100 dark:bg-zinc-700'
+            class="relative flex w-full border-b border-gray-200 py-3 pr-3 pl-3.5 hover:bg-gray-100 focus:ring-2 focus:ring-gray-500 focus:outline-none focus:ring-inset dark:border-white/5 dark:hover:!bg-zinc-700 {isActive
+              ? 'bg-blue-100 dark:!bg-zinc-700'
               : ''}"
             onclick={() => onSelectChat(chat.id!)}
             onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && onSelectChat(chat.id!)}
