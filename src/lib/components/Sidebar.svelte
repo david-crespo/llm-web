@@ -69,7 +69,7 @@
 
   <!-- Panel -->
   <div
-    class="fixed top-0 left-0 z-50 flex w-4/5 flex-col overflow-hidden bg-gray-50"
+    class="fixed top-0 left-0 z-50 flex w-4/5 max-w-sm flex-col overflow-hidden bg-gray-50"
     style="height: 100vh; height: 100dvh;"
   >
     <!-- Header -->

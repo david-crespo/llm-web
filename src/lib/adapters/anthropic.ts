@@ -1,6 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
 import type {
-  TextBlock,
   ThinkingBlock,
   CitationsWebSearchResultLocation,
   ToolUseBlock,

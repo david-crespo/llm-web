@@ -48,7 +48,7 @@
   })
 </script>
 
-<div class="flex min-h-screen overflow-x-hidden {chatState.sidebarOpen ? 'overflow-y-hidden' : ''}">
+<div class="flex h-dvh overflow-x-hidden overflow-y-hidden">
   <Sidebar
     open={chatState.sidebarOpen}
     chatHistory={chatState.history}

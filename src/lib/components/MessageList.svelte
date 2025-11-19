@@ -36,7 +36,7 @@
     {/if}
   {:else}
     <div class="flex h-full items-center justify-center">
-      <div class="flex max-w-xs flex-col gap-2 rounded-lg p-4 text-center">
+      <div class="mt-20 flex max-w-xs flex-col gap-2 rounded-lg p-4 text-center">
         <p class="text-lg">Start a chat below</p>
         {#if !hasApiKeys}
           <p class="text-balance text-gray-700">
