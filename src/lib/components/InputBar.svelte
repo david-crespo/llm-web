@@ -27,6 +27,23 @@
 
   let textarea: HTMLTextAreaElement | undefined = $state()
 
+  // Check which API keys are available
+  const hasOpenAI = $derived(!!localStorage.getItem('openai_api_key'))
+  const hasAnthropic = $derived(!!localStorage.getItem('anthropic_api_key'))
+  const hasGoogle = $derived(!!localStorage.getItem('google_api_key'))
+
+  // Filter models based on available API keys
+  const availableModels = $derived(
+    models.filter((model) => {
+      if (model.provider === 'openai') return hasOpenAI
+      if (model.provider === 'anthropic') return hasAnthropic
+      if (model.provider === 'google') return hasGoogle
+      return false
+    }),
+  )
+
+  const hasAnyKeys = $derived(hasOpenAI || hasAnthropic || hasGoogle)
+
   $effect(() => {
     if (message === '' && textarea) {
       textarea.style.height = 'auto'
@@ -74,13 +91,24 @@
     <div class="flex items-center gap-2">
       <!-- Model selector -->
       <select
-        bind:value={selectedModel}
-        class="h-10 w-36 rounded border border-gray-300 bg-gray-50 px-2 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-zinc-800 dark:text-gray-100"
+        value={hasAnyKeys ? selectedModel : undefined}
+        onchange={(e) => {
+          if (hasAnyKeys) {
+            const index = e.currentTarget.selectedIndex
+            selectedModel = availableModels[index]
+          }
+        }}
+        disabled={!hasAnyKeys}
+        class="h-10 w-36 rounded border border-gray-300 bg-gray-50 px-2 py-2 text-sm text-gray-900 disabled:cursor-not-allowed disabled:text-gray-500 dark:border-gray-600 dark:bg-zinc-800 dark:text-gray-100 dark:disabled:text-gray-500"
         aria-label="Select model"
       >
-        {#each models as model}
-          <option value={model}>{model.id}</option>
-        {/each}
+        {#if !hasAnyKeys}
+          <option selected>No API keys</option>
+        {:else}
+          {#each availableModels as model}
+            <option value={model}>{model.id}</option>
+          {/each}
+        {/if}
       </select>
 
       <!-- Web Search Toggle Button -->

@@ -85,6 +85,12 @@
     >
       Save Keys
     </button>
+
+    <div
+      class="rounded border border-gray-300 bg-gray-100 p-3 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+    >
+      Only providers with keys set will appear in the model picker.
+    </div>
   </div>
 
   <div class="mt-6">

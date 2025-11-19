@@ -5,7 +5,6 @@ export type Model = {
   key: string
   /** ID for display and usability purposes */
   id: string
-  default?: true
   // prices
   input: number
   output: number
@@ -31,7 +30,6 @@ export const models: Model[] = [
     input: 2.0,
     input_cached: 0.5,
     output: 12.0,
-    default: true,
   },
   {
     provider: 'openai',

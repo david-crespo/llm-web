@@ -27,9 +27,27 @@ export class ChatManager {
   history = $state<(Chat & { id: number })[]>([])
 
   // Settings
-  selectedModel = $state<Model>(models.find((m) => m.default) || models[0])
+  selectedModel = $state<Model>(this.getDefaultModel())
   webSearch = $state(true)
   reasoning = $state(true)
+
+  /**
+   * Get the first available model based on configured API keys
+   */
+  private getDefaultModel(): Model {
+    const hasOpenAI = !!localStorage.getItem('openai_api_key')
+    const hasAnthropic = !!localStorage.getItem('anthropic_api_key')
+    const hasGoogle = !!localStorage.getItem('google_api_key')
+
+    const availableModel = models.find((model) => {
+      if (model.provider === 'openai') return hasOpenAI
+      if (model.provider === 'anthropic') return hasAnthropic
+      if (model.provider === 'google') return hasGoogle
+      return false
+    })
+
+    return availableModel || models[0]
+  }
 
   constructor() {
     // Automatically initialize when created
