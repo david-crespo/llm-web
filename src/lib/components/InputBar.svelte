@@ -50,7 +50,7 @@
   <div class="flex items-center gap-1">
     <button
       onclick={onToggleSidebar}
-      class="size-10 rounded border border-gray-300 hover:bg-gray-50"
+      class="size-10 rounded border border-gray-300 bg-gray-50 hover:bg-gray-100 dark:border-gray-600 dark:bg-zinc-800 dark:hover:bg-zinc-700"
       aria-label="Toggle sidebar"
     >
       {#if sidebarOpen}
