@@ -27,14 +27,8 @@
 
   // Simple highlight.js integration via custom code renderer
 
-  // Configure marked to open links in new tabs and render
   $effect(() => {
     const renderer = new marked.Renderer()
-    const originalLink = renderer.link.bind(renderer)
-    renderer.link = (token) => {
-      const link = originalLink(token)
-      return link.replace('<a ', '<a target="_blank" rel="noopener noreferrer" ')
-    }
 
     // Render code blocks with highlight.js
     renderer.code = (token: any) => {
@@ -55,11 +49,21 @@
     }
     ;(async () => {
       const rendered = await marked.parse(content, { renderer })
+
+      DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+        if (node.tagName === 'A') {
+          node.setAttribute('target', '_blank')
+          node.setAttribute('rel', 'noopener noreferrer')
+        }
+      })
+
       html = DOMPurify.sanitize(rendered, {
         // Allow common safe URL schemes and root-relative paths
         ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel):|\/)/i,
         FORBID_TAGS: ['style', 'iframe', 'object', 'embed', 'form', 'input', 'button'],
       })
+
+      DOMPurify.removeHook('afterSanitizeAttributes')
     })()
   })
 </script>
