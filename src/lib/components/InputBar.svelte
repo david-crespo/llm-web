@@ -1,10 +1,9 @@
 <script lang="ts">
-  import type { Model } from '$lib/models'
+  import { models, type Model } from '$lib/models'
 
   interface Props {
     message: string
     isLoading: boolean
-    models: Model[]
     selectedModel: Model
     webSearchEnabled: boolean
     reasoningEnabled: boolean
@@ -16,7 +15,6 @@
   let {
     message = $bindable(),
     isLoading,
-    models,
     selectedModel = $bindable(),
     webSearchEnabled = $bindable(),
     reasoningEnabled = $bindable(),
