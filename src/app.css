@@ -1,6 +1,8 @@
 @import 'tailwindcss';
 @plugin '@tailwindcss/forms';
 
+@variant dark (.dark &);
+
 /* Minimal and elegant styling */
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -60,12 +62,11 @@ button {
   background: #475569; /* slate-600 */
 }
 
-/* Utility class overrides for commonly used colors in components */
-/* Allow elements with explicit dark:bg-* classes to override */
-.dark .bg-white:not([class*='dark:bg-']) {
+/* Utility class overrides for commonly used colors in components (but not buttons/selects with explicit dark classes) */
+.dark .bg-white:not(button):not(select) {
   background-color: #1f1f22 !important;
 } /* neutral card/bg */
-.dark .bg-gray-50:not([class*='dark:bg-']) {
+.dark .bg-gray-50:not(button):not(select) {
   background-color: #27272a !important;
 } /* sidebar panel */
 .dark .bg-gray-100 {
@@ -77,10 +78,10 @@ button {
 .dark .bg-gray-300 {
   background-color: #3f3f46 !important;
 }
-.dark .hover\:bg-gray-50:hover {
+.dark .hover\:bg-gray-50:hover:not(button) {
   background-color: #262626 !important;
 }
-.dark .hover\:bg-gray-100:hover {
+.dark .hover\:bg-gray-100:hover:not(button) {
   background-color: #262626 !important;
 }
 .dark .border-gray-300 {
@@ -111,7 +112,7 @@ button {
   background-color: #0b2447 !important;
 }
 
-/* Dark forms: inputs, textareas, selects */
+/* Dark forms: inputs, textareas (but not all selects - some need manual control) */
 .dark input[type='text'],
 .dark input[type='search'],
 .dark input[type='email'],
@@ -120,12 +121,6 @@ button {
   background-color: #1f1f22 !important; /* neutral card/bg */
   color: #e5e7eb !important; /* gray-200 */
   border-color: #3f3f46 !important; /* neutral border */
-}
-/* Let selects use Tailwind dark mode classes for more control */
-.dark select:not([class*='dark:bg-']) {
-  background-color: #1f1f22 !important;
-  color: #e5e7eb !important;
-  border-color: #3f3f46 !important;
 }
 .dark input::placeholder,
 .dark textarea::placeholder {

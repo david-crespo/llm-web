@@ -152,7 +152,7 @@
 
       <!-- Theme toggle button -->
       <button
-        class="flex size-10 items-center justify-center rounded border border-gray-300 bg-gray-50 text-gray-700 shadow-sm hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
+        class="flex size-10 items-center justify-center rounded border border-gray-300 bg-white text-gray-700 shadow-sm hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
         title="Cycle theme (Light / Dark / System)"
         aria-label="Cycle theme"
         onclick={onCycleTheme}
