@@ -15,13 +15,23 @@
 
   let showMenu = $state(false)
 
-  function formatTime(ms: number): string {
-    return `${(ms / 1000).toFixed(2)}s`
+  const timeFmt = new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 })
+
+  // turn time into `1m20s` string
+  function formatTime(ms: number) {
+    const totalSeconds = ms / 1000
+    const minutes = Math.floor(totalSeconds / 60)
+    const seconds = totalSeconds % 60
+    if (minutes === 0) return `${timeFmt.format(seconds)}s`
+    return `${minutes}m${Math.floor(seconds)}s`
   }
 
-  function formatCost(cost: number): string {
-    return `$${cost.toFixed(5)}`
-  }
+  const moneyFmt = Intl.NumberFormat(undefined, {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 4,
+  })
 
   function formatTokens(tokens: {
     input: number
@@ -41,7 +51,7 @@
       <span>•</span>
       <span>{formatTime(message.timeMs)}</span>
       <span>•</span>
-      <span>{formatCost(message.cost)}</span>
+      <span>{moneyFmt.format(message.cost)}</span>
       <span>•</span>
       <span title="Input → Output">{formatTokens(message.tokens)}</span>
       {#if message.stop_reason && !['stop', 'end_turn', 'completed'].includes(message.stop_reason.toLowerCase())}

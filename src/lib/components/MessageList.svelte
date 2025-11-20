@@ -25,7 +25,7 @@
     {#if chatState.isLoading}
       <div class="mb-6" data-message>
         <div class="mb-2 flex items-center gap-2 text-xs text-gray-600">
-          <span class="font-medium">{chatState.selectedModel.id}</span>
+          <span class="font-medium">{chatState.selectedModel?.id || 'Unknown model'}</span>
           <span>•</span>
           <span>Thinking...</span>
         </div>
