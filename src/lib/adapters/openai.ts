@@ -1,5 +1,6 @@
 import OpenAI from 'openai'
 import type { ChatInput, ModelResponse } from './index'
+import { settings } from '$lib/settings.svelte'
 
 // OpenAI API adapter using Responses API
 export async function openaiCreateMessage({
@@ -8,7 +9,7 @@ export async function openaiCreateMessage({
   search,
   think,
 }: ChatInput): Promise<ModelResponse> {
-  const apiKey = localStorage.getItem('openai_api_key')
+  const apiKey = settings.openaiKey
   if (!apiKey) throw new Error('OpenAI API key not found')
 
   const client = new OpenAI({ apiKey, dangerouslyAllowBrowser: true })

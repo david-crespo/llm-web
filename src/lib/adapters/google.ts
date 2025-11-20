@@ -1,5 +1,6 @@
 import { GoogleGenAI, ThinkingLevel } from '@google/genai'
 import type { ChatInput, ModelResponse } from './index'
+import { settings } from '$lib/settings.svelte'
 
 export async function geminiCreateMessage({
   chat,
@@ -7,7 +8,7 @@ export async function geminiCreateMessage({
   search,
   think,
 }: ChatInput): Promise<ModelResponse> {
-  const apiKey = localStorage.getItem('google_api_key')
+  const apiKey = settings.googleKey
   if (!apiKey) throw new Error('Gemini API key not found')
 
   const genAI = new GoogleGenAI({ apiKey })

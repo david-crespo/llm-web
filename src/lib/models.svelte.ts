@@ -68,15 +68,10 @@ export function getCost(
   return cost / M
 }
 
-let keysVersion = $state(0)
+import { settings } from './settings.svelte'
 
 export function getAvailableModels(): Model[] {
-  void keysVersion // read to create reactive dependency
-  return models.filter((model) => !!localStorage.getItem(`${model.provider}_api_key`))
-}
-
-export function notifyKeysChanged() {
-  keysVersion++
+  return models.filter((model) => !!settings.getKey(model.provider))
 }
 
 /* eslint-disable svelte/prefer-svelte-reactivity -- static date string for system prompt */

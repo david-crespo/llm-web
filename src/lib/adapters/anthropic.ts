@@ -5,6 +5,7 @@ import type {
   ToolUseBlock,
 } from '@anthropic-ai/sdk/resources/messages'
 import type { ChatInput, ModelResponse } from './index'
+import { settings } from '$lib/settings.svelte'
 
 export async function anthropicCreateMessage({
   chat,
@@ -12,7 +13,7 @@ export async function anthropicCreateMessage({
   search,
   think,
 }: ChatInput): Promise<ModelResponse> {
-  const apiKey = localStorage.getItem('anthropic_api_key')
+  const apiKey = settings.anthropicKey
   if (!apiKey) throw new Error('Anthropic API key not found')
 
   const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true })
