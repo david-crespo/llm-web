@@ -220,6 +220,7 @@ export class ChatManager {
         model: this.selectedModel.id,
         content: response.content,
         reasoning: response.reasoning,
+        search: this.webSearch,
         tokens: response.tokens,
         stop_reason: response.stop_reason,
         cost,

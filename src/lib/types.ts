@@ -17,6 +17,8 @@ export type AssistantMessage = {
   content: string
   /** Reasoning text. May be blank. Not rendered in --raw mode. */
   reasoning?: string
+  /** Whether search was on when this was generated */
+  search?: boolean
   tokens: TokenCounts
   stop_reason: string
   cost: number
