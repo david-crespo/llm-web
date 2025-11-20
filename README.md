@@ -2,6 +2,13 @@
 
 An aggressively minimalist mobile web LLM client built as a static site with [SvelteKit](https://svelte.dev/docs/kit/introduction).
 
+<p float="left">
+  <img src="https://github.com/user-attachments/assets/a1bbfce0-cf25-4628-bbd8-93e1163a1262" width="393" />
+
+  <img src="https://github.com/user-attachments/assets/f86b78ad-c312-40e7-94fd-40832e801ea9" width="393" />
+
+</p>
+
 ## Features
 
 * Good on mobile (don't care about desktop)
