@@ -59,8 +59,8 @@ sell me a subscription. I considered writing one myself, but getting it on the A
 
 Storing API keys in localStorage and rendering LLM output as HTML creates
 [XSS](https://en.wikipedia.org/wiki/Cross-site_scripting) risk. You should only
-use this app if you understand what that means and buy with the argument here
-that the risk is low. The mitigations in place are:
+use this app if you understand what that means and buy the argument here that
+the risk is low. The mitigations in place are:
 
 - **Content Security Policy**: Hash-based CSP in `svelte.config.js` prevents
   inline script execution and restricts `connect-src` to the three LLM
