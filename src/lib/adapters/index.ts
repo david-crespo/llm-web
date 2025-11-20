@@ -1,5 +1,5 @@
 import type { Chat, TokenCounts } from '$lib/types'
-import type { Model } from '$lib/models'
+import type { Model } from '$lib/models.svelte'
 import { openaiCreateMessage } from './openai'
 import { anthropicCreateMessage } from './anthropic'
 import { geminiCreateMessage } from './google'

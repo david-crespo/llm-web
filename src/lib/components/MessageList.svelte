@@ -1,14 +1,15 @@
 <script lang="ts">
   import ChatMessage from '$lib/ChatMessage.svelte'
   import { chatState } from '$lib/chat.svelte'
+  import { getAvailableModels } from '$lib/models.svelte'
 
   interface Props {
-    hasApiKeys: boolean
     onFork: (index: number) => void
     onOpenAbout: () => void
   }
 
-  let { hasApiKeys, onFork, onOpenAbout }: Props = $props()
+  let { onFork, onOpenAbout }: Props = $props()
+  const hasApiKeys = getAvailableModels().length > 0
 </script>
 
 <div class="min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-4">

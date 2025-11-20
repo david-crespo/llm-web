@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { notifyKeysChanged } from '$lib/models.svelte'
+
   let openaiKey = $state('')
   let anthropicKey = $state('')
   let googleKey = $state('')
@@ -23,6 +25,8 @@
 
       if (googleKey) localStorage.setItem('google_api_key', googleKey)
       else localStorage.removeItem('google_api_key')
+
+      notifyKeysChanged()
 
       saveStatus = 'Keys saved successfully!'
       setTimeout(() => (saveStatus = ''), 3000)

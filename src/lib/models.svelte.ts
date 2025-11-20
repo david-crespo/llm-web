@@ -68,6 +68,18 @@ export function getCost(
   return cost / M
 }
 
+let keysVersion = $state(0)
+
+export function getAvailableModels(): Model[] {
+  void keysVersion // read to create reactive dependency
+  return models.filter((model) => !!localStorage.getItem(`${model.provider}_api_key`))
+}
+
+export function notifyKeysChanged() {
+  keysVersion++
+}
+
+/* eslint-disable svelte/prefer-svelte-reactivity -- static date string for system prompt */
 export const systemBase = `
 - Answer the question precisely, without much elaboration
 - Write natural prose for a sophisticated reader, without unnecessary bullets or headings
@@ -85,3 +97,4 @@ Tailor answers to the user:
 - Shell: zsh
 - Programming languages: TypeScript and Rust
 - Today's date is ${new Date().toISOString().slice(0, 10)}`
+/* eslint-enable svelte/prefer-svelte-reactivity */

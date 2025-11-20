@@ -12,12 +12,6 @@
   let chatToDelete = $state<number | null>(null)
   let showAboutModal = $state(false)
 
-  // Check for API keys (view-specific concern)
-  const openaiKey = localStorage.getItem('openai_api_key') || ''
-  const anthropicKey = localStorage.getItem('anthropic_api_key') || ''
-  const googleKey = localStorage.getItem('google_api_key') || ''
-  const hasApiKeys = !!(openaiKey || anthropicKey || googleKey)
-
   /**
    * Send message handler - clears input and delegates to ChatManager
    */
@@ -65,7 +59,7 @@
   <AboutModal open={showAboutModal} onClose={() => (showAboutModal = false)} />
 
   <div class="flex min-w-0 flex-1 flex-col">
-    <MessageList {hasApiKeys} onFork={handleFork} onOpenAbout={() => (showAboutModal = true)} />
+    <MessageList onFork={handleFork} onOpenAbout={() => (showAboutModal = true)} />
 
     <InputBar bind:message onSend={handleSend} />
   </div>

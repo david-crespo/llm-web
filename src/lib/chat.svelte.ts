@@ -1,6 +1,6 @@
 import { SvelteDate } from 'svelte/reactivity'
 import { storage } from '$lib/storage'
-import { models, getCost, systemBase, type Model } from '$lib/models'
+import { models, getCost, systemBase, getAvailableModels, type Model } from '$lib/models.svelte'
 import { createMessage } from '$lib/adapters'
 import { scrollToBottom } from '$lib/actions/autoScroll'
 import type { Chat, ChatMessage } from '$lib/types'
@@ -27,27 +27,9 @@ export class ChatManager {
   history = $state<(Chat & { id: number })[]>([])
 
   // Settings
-  selectedModel = $state<Model>(this.getDefaultModel())
+  selectedModel = $state<Model | undefined>(getAvailableModels().at(0))
   webSearch = $state(true)
   reasoning = $state(false)
-
-  /**
-   * Get the first available model based on configured API keys
-   */
-  private getDefaultModel(): Model {
-    const hasOpenAI = !!localStorage.getItem('openai_api_key')
-    const hasAnthropic = !!localStorage.getItem('anthropic_api_key')
-    const hasGoogle = !!localStorage.getItem('google_api_key')
-
-    const availableModel = models.find((model) => {
-      if (model.provider === 'openai') return hasOpenAI
-      if (model.provider === 'anthropic') return hasAnthropic
-      if (model.provider === 'google') return hasGoogle
-      return false
-    })
-
-    return availableModel || models[0]
-  }
 
   constructor() {
     // Automatically initialize when created
@@ -199,6 +181,8 @@ export class ChatManager {
    * This is the core message handling logic
    */
   private async processResponse(chat: Chat, input: string) {
+    if (!this.selectedModel) return // just in case
+
     this.isLoading = true
 
     try {

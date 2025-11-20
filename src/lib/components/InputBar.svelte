@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { models } from '$lib/models'
+  import { getAvailableModels } from '$lib/models.svelte'
   import { chatState } from '$lib/chat.svelte'
   import CloseIcon from './icons/CloseIcon.svelte'
   import MenuIcon from './icons/MenuIcon.svelte'
@@ -15,22 +15,18 @@
 
   let textarea: HTMLTextAreaElement | undefined = $state()
 
-  // Check which API keys are available
-  const hasOpenAI = $derived(!!localStorage.getItem('openai_api_key'))
-  const hasAnthropic = $derived(!!localStorage.getItem('anthropic_api_key'))
-  const hasGoogle = $derived(!!localStorage.getItem('google_api_key'))
+  const availableModels = $derived(getAvailableModels())
+  const hasAnyKeys = $derived(availableModels.length > 0)
 
-  // Filter models based on available API keys
-  const availableModels = $derived(
-    models.filter((model) => {
-      if (model.provider === 'openai') return hasOpenAI
-      if (model.provider === 'anthropic') return hasAnthropic
-      if (model.provider === 'google') return hasGoogle
-      return false
-    }),
-  )
-
-  const hasAnyKeys = $derived(hasOpenAI || hasAnthropic || hasGoogle)
+  // Auto-select first model when available models change
+  $effect(() => {
+    if (
+      availableModels.length > 0 &&
+      !availableModels.some((m) => m.key === chatState.selectedModel?.key)
+    ) {
+      chatState.selectedModel = availableModels[0]
+    }
+  })
 
   function getToggleClasses(isActive: boolean) {
     const base = 'size-10 flex items-center justify-center rounded border p-0'
