@@ -11,7 +11,8 @@
     googleKey = localStorage.getItem('google_api_key') || ''
   }
 
-  async function saveKeys() {
+  async function saveKeys(e: SubmitEvent) {
+    e.preventDefault()
     try {
       // Save to localStorage
       if (openaiKey) localStorage.setItem('openai_api_key', openaiKey)
@@ -33,6 +34,9 @@
 
   // Load keys on mount
   loadKeys()
+
+  const inputClass =
+    'w-full rounded border border-gray-300 bg-white px-3 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100'
 </script>
 
 <div class="mx-auto max-w-md p-4">
@@ -48,15 +52,10 @@
     </div>
   {/if}
 
-  <div class="space-y-4">
+  <form onsubmit={saveKeys} class="space-y-4">
     <div>
       <label for="openai-key" class="mb-1 block text-sm font-medium">OpenAI API Key</label>
-      <input
-        id="openai-key"
-        bind:value={openaiKey}
-        placeholder="sk-..."
-        class="w-full rounded border border-gray-300 bg-white px-3 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-      />
+      <input id="openai-key" bind:value={openaiKey} placeholder="sk-..." class={inputClass} />
     </div>
 
     <div>
@@ -65,24 +64,16 @@
         id="anthropic-key"
         bind:value={anthropicKey}
         placeholder="sk-ant-..."
-        class="w-full rounded border border-gray-300 bg-white px-3 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+        class={inputClass}
       />
     </div>
 
     <div>
       <label for="google-key" class="mb-1 block text-sm font-medium">Gemini API Key</label>
-      <input
-        id="google-key"
-        bind:value={googleKey}
-        placeholder="AIza..."
-        class="w-full rounded border border-gray-300 bg-white px-3 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-      />
+      <input id="google-key" bind:value={googleKey} placeholder="AIza..." class={inputClass} />
     </div>
 
-    <button
-      onclick={saveKeys}
-      class="w-full rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-    >
+    <button type="submit" class="w-full rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
       Save Keys
     </button>
 
@@ -91,7 +82,7 @@
     >
       Only providers with keys set will appear in the model picker.
     </div>
-  </div>
+  </form>
 
   <div class="mt-6">
     <a href="/" class="text-sm text-blue-600 hover:text-blue-800">← Back to Chat</a>
