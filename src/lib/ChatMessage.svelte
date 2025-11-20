@@ -36,7 +36,7 @@
 <div class="mb-6" data-message>
   {#if message.role === 'assistant'}
     <!-- Assistant message header -->
-    <div class="mb-2 flex items-center gap-2 text-xs text-gray-600">
+    <div class="mb-2 flex items-center gap-1.5 text-xs text-gray-600">
       <span class="font-medium">{message.model}</span>
       <span>•</span>
       <span>{formatTime(message.timeMs)}</span>
