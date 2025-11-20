@@ -63,8 +63,8 @@
     style="height: 100dvh; will-change: transform;"
   >
     <!-- Header -->
-    <div class="flex items-center justify-between border-b border-gray-300 p-3">
-      <h3 class="text-sm font-medium">Chat History</h3>
+    <div class="flex items-center justify-between border-b border-gray-300 py-3 pr-3 pl-3.5">
+      <h3 class="text-md font-medium">History</h3>
     </div>
 
     <!-- Chat history -->

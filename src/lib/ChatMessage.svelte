@@ -72,7 +72,7 @@
     <!-- User message bubble -->
     <div class="flex justify-end">
       <div
-        class="relative max-w-[80%] rounded-lg bg-gray-200 px-4 py-3 pr-8"
+        class="relative max-w-[87%] rounded-lg bg-gray-200 px-4 py-3 pr-8"
         use:clickOutside={{ onOut: () => (showMenu = false) }}
       >
         <!-- Kebab menu inside bubble -->
@@ -88,34 +88,34 @@
 
         {#if showMenu}
           <div
-            class="absolute top-8 right-2 z-10 w-32 rounded border border-gray-300 bg-white py-1 shadow-lg"
+            class="absolute top-8 right-2 z-10 w-20 rounded border border-gray-300 bg-white py-1 shadow-lg"
           >
             <button
               onclick={async () => {
                 showMenu = false
                 await navigator.clipboard.writeText(message.content)
               }}
-              class="w-full px-3 py-2 text-left text-sm hover:bg-gray-100"
+              class="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
             >
-              📋 Copy
+              Copy
             </button>
             <button
               onclick={() => {
                 showMenu = false
                 onFork(messageIndex)
               }}
-              class="w-full px-3 py-2 text-left text-sm hover:bg-gray-100"
+              class="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
             >
-              🍴 Fork
+              Fork
             </button>
             <button
               onclick={() => {
                 showMenu = false
                 onRegen(messageIndex)
               }}
-              class="w-full px-3 py-2 text-left text-sm hover:bg-gray-100"
+              class="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
             >
-              🔄 Regen
+              Regen
             </button>
           </div>
         {/if}
