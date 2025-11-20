@@ -14,7 +14,6 @@ export type ModelResponse = {
 export type ChatInput = {
   chat: Chat
   input: string
-  image_url?: string | undefined
   model: Model
   search: boolean
   think: boolean
