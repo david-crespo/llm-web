@@ -1,30 +1,30 @@
 <script lang="ts">
-  import type { Chat } from '$lib/types'
-  import type { Model } from '$lib/models'
   import ChatMessage from '$lib/ChatMessage.svelte'
+  import { chatState } from '$lib/chat.svelte'
+
   interface Props {
-    currentChat: Chat | null
-    isLoading: boolean
-    selectedModel: Model
     hasApiKeys: boolean
-    onRegen: (index: number) => void
     onFork: (index: number) => void
     onOpenAbout: () => void
   }
 
-  let { currentChat, isLoading, selectedModel, hasApiKeys, onRegen, onFork, onOpenAbout }: Props =
-    $props()
+  let { hasApiKeys, onFork, onOpenAbout }: Props = $props()
 </script>
 
 <div class="min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-4">
-  {#if currentChat && currentChat.messages.length > 0}
-    {#each currentChat.messages as msg, index (index)}
-      <ChatMessage message={msg} messageIndex={index} {onRegen} {onFork} />
+  {#if chatState.current && chatState.current.messages.length > 0}
+    {#each chatState.current.messages as msg, index (index)}
+      <ChatMessage
+        message={msg}
+        messageIndex={index}
+        onRegen={(i) => chatState.regenerate(i)}
+        {onFork}
+      />
     {/each}
-    {#if isLoading}
+    {#if chatState.isLoading}
       <div class="mb-6" data-message>
         <div class="mb-2 flex items-center gap-2 text-xs text-gray-600">
-          <span class="font-medium">{selectedModel.id}</span>
+          <span class="font-medium">{chatState.selectedModel.id}</span>
           <span>•</span>
           <span>Thinking...</span>
         </div>

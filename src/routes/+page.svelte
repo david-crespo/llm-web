@@ -43,12 +43,6 @@
 
 <div class="flex h-dvh overflow-x-hidden overflow-y-hidden">
   <Sidebar
-    open={chatState.sidebarOpen}
-    chatHistory={chatState.history}
-    currentChatId={chatState.current?.id}
-    onClose={() => (chatState.sidebarOpen = false)}
-    onNewChat={() => chatState.createNew()}
-    onSelectChat={(id) => chatState.selectChat(id)}
     onRequestDelete={(id) => (chatToDelete = id)}
     onOpenAbout={() => (showAboutModal = true)}
   />
@@ -71,25 +65,8 @@
   <AboutModal open={showAboutModal} onClose={() => (showAboutModal = false)} />
 
   <div class="flex min-w-0 flex-1 flex-col">
-    <MessageList
-      currentChat={chatState.current}
-      isLoading={chatState.isLoading}
-      selectedModel={chatState.selectedModel}
-      {hasApiKeys}
-      onRegen={(i) => chatState.regenerate(i)}
-      onFork={handleFork}
-      onOpenAbout={() => (showAboutModal = true)}
-    />
+    <MessageList {hasApiKeys} onFork={handleFork} onOpenAbout={() => (showAboutModal = true)} />
 
-    <InputBar
-      bind:message
-      isLoading={chatState.isLoading}
-      bind:selectedModel={chatState.selectedModel}
-      bind:webSearchEnabled={chatState.webSearch}
-      bind:reasoningEnabled={chatState.reasoning}
-      sidebarOpen={chatState.sidebarOpen}
-      onToggleSidebar={() => (chatState.sidebarOpen = !chatState.sidebarOpen)}
-      onSend={handleSend}
-    />
+    <InputBar bind:message onSend={handleSend} />
   </div>
 </div>

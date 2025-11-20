@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Chat } from '$lib/types'
+  import { chatState } from '$lib/chat.svelte'
   import { fly, fade } from 'svelte/transition'
   import CloseIcon from './icons/CloseIcon.svelte'
   import SunIcon from './icons/SunIcon.svelte'
@@ -10,26 +11,11 @@
   import InfoIcon from './icons/InfoIcon.svelte'
 
   interface Props {
-    open: boolean
-    chatHistory: (Chat & { id: number })[]
-    currentChatId?: number
-    onClose: () => void
-    onNewChat: () => void | Promise<void>
-    onSelectChat: (id: number) => void | Promise<void>
     onRequestDelete: (id: number) => void
     onOpenAbout: () => void
   }
 
-  let {
-    open,
-    chatHistory,
-    currentChatId,
-    onClose,
-    onNewChat,
-    onSelectChat,
-    onRequestDelete,
-    onOpenAbout,
-  }: Props = $props()
+  let { onRequestDelete, onOpenAbout }: Props = $props()
 
   function getChatPreview(chat: Chat): string {
     const firstUserMessage = chat.messages.find((m) => m.role === 'user')
@@ -58,7 +44,7 @@
   }
 </script>
 
-{#if open}
+{#if chatState.sidebarOpen}
   <!-- Scrim -->
   <div
     transition:fade|local={{ duration: 150 }}
@@ -66,8 +52,8 @@
     role="button"
     tabindex="0"
     aria-label="Close sidebar overlay"
-    onclick={onClose}
-    onkeydown={(e) => (e.key === 'Escape' || e.key === 'Enter') && onClose()}
+    onclick={() => (chatState.sidebarOpen = false)}
+    onkeydown={(e) => (e.key === 'Escape' || e.key === 'Enter') && (chatState.sidebarOpen = false)}
   ></div>
 
   <!-- Panel -->
@@ -83,11 +69,11 @@
 
     <!-- Chat history -->
     <div class="flex-1 overflow-y-auto pt-2">
-      {#if chatHistory.length === 0}
+      {#if chatState.history.length === 0}
         <div class="p-4 text-sm text-gray-600">No chats yet</div>
       {:else}
-        {#each chatHistory as chat (chat.id)}
-          {@const isActive = chat.id === currentChatId}
+        {#each chatState.history as chat (chat.id)}
+          {@const isActive = chat.id === chatState.current?.id}
           {@const preview = getChatPreview(chat)}
           <div
             role="button"
@@ -95,8 +81,9 @@
             class="relative flex w-full border-b border-gray-200 py-3 pr-3 pl-3.5 hover:bg-gray-100 focus:ring-2 focus:ring-gray-500 focus:outline-none focus:ring-inset dark:border-white/5 dark:hover:!bg-zinc-700 {isActive
               ? 'bg-blue-100 dark:!bg-zinc-700'
               : ''}"
-            onclick={() => onSelectChat(chat.id!)}
-            onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && onSelectChat(chat.id!)}
+            onclick={() => chatState.selectChat(chat.id!)}
+            onkeydown={(e) =>
+              (e.key === 'Enter' || e.key === ' ') && chatState.selectChat(chat.id!)}
           >
             <div class="min-w-0 pr-10">
               <div class="line-clamp-2 text-sm font-medium break-words">{preview}</div>
@@ -123,7 +110,7 @@
     <div class="flex items-center gap-4 border-t border-gray-300 p-3">
       <!-- Close button (left) -->
       <button
-        onclick={onClose}
+        onclick={() => (chatState.sidebarOpen = false)}
         class="size-10 rounded border border-gray-300 bg-gray-50 hover:bg-gray-100 dark:border-gray-600 dark:bg-zinc-800 dark:hover:bg-zinc-700"
         aria-label="Close sidebar"
       >
@@ -173,7 +160,7 @@
           class="flex size-10 items-center justify-center rounded border border-gray-300 bg-gray-50 text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:bg-zinc-800 dark:text-gray-100 dark:hover:bg-zinc-700"
           title="New Chat"
           aria-label="New Chat"
-          onclick={onNewChat}
+          onclick={() => chatState.createNew()}
         >
           <PlusIcon />
         </button>

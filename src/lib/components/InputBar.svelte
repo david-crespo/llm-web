@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { models, type Model } from '$lib/models'
+  import { models } from '$lib/models'
+  import { chatState } from '$lib/chat.svelte'
   import CloseIcon from './icons/CloseIcon.svelte'
   import MenuIcon from './icons/MenuIcon.svelte'
   import SearchIcon from './icons/SearchIcon.svelte'
@@ -7,25 +8,10 @@
 
   interface Props {
     message: string
-    isLoading: boolean
-    selectedModel: Model
-    webSearchEnabled: boolean
-    reasoningEnabled: boolean
-    sidebarOpen: boolean
-    onToggleSidebar: () => void
     onSend: () => void
   }
 
-  let {
-    message = $bindable(),
-    isLoading,
-    selectedModel = $bindable(),
-    webSearchEnabled = $bindable(),
-    reasoningEnabled = $bindable(),
-    sidebarOpen,
-    onToggleSidebar,
-    onSend,
-  }: Props = $props()
+  let { message = $bindable(), onSend }: Props = $props()
 
   let textarea: HTMLTextAreaElement | undefined = $state()
 
@@ -70,18 +56,18 @@
       class="w-full resize-none overflow-y-auto rounded border border-gray-300 px-3 py-2"
       style="min-height: 42px; max-height: 200px;"
       rows="1"
-      disabled={isLoading}
+      disabled={chatState.isLoading}
     ></textarea>
   </div>
 
   <!-- Button row -->
   <div class="flex items-center gap-1">
     <button
-      onclick={onToggleSidebar}
+      onclick={() => (chatState.sidebarOpen = !chatState.sidebarOpen)}
       class="size-10 rounded border border-gray-300 bg-gray-50 hover:bg-gray-100 dark:border-gray-600 dark:bg-zinc-800 dark:hover:bg-zinc-700"
       aria-label="Toggle sidebar"
     >
-      {#if sidebarOpen}
+      {#if chatState.sidebarOpen}
         <CloseIcon class="mx-auto" />
       {:else}
         <MenuIcon class="mx-auto" />
@@ -93,11 +79,11 @@
     <div class="flex items-center gap-2">
       <!-- Model selector -->
       <select
-        value={hasAnyKeys ? selectedModel : undefined}
+        value={hasAnyKeys ? chatState.selectedModel : undefined}
         onchange={(e) => {
           if (hasAnyKeys) {
             const index = e.currentTarget.selectedIndex
-            selectedModel = availableModels[index]
+            chatState.selectedModel = availableModels[index]
           }
         }}
         disabled={!hasAnyKeys}
@@ -115,31 +101,31 @@
 
       <!-- Web Search Toggle Button -->
       <button
-        onclick={() => (webSearchEnabled = !webSearchEnabled)}
-        class="flex size-10 items-center justify-center rounded border p-0 {webSearchEnabled
+        onclick={() => (chatState.webSearch = !chatState.webSearch)}
+        class="flex size-10 items-center justify-center rounded border p-0 {chatState.webSearch
           ? 'border-blue-500 bg-blue-500 text-white hover:bg-blue-600'
           : 'border-gray-300 bg-gray-50 text-gray-500 hover:bg-gray-100 dark:border-gray-600 dark:bg-zinc-800 dark:text-gray-100 dark:hover:bg-zinc-700'}"
         title="Web Search"
-        aria-pressed={webSearchEnabled}
+        aria-pressed={chatState.webSearch}
       >
         <SearchIcon />
       </button>
 
       <!-- Reasoning Toggle Button -->
       <button
-        onclick={() => (reasoningEnabled = !reasoningEnabled)}
-        class="flex h-10 w-10 items-center justify-center rounded border p-0 {reasoningEnabled
+        onclick={() => (chatState.reasoning = !chatState.reasoning)}
+        class="flex h-10 w-10 items-center justify-center rounded border p-0 {chatState.reasoning
           ? 'border-blue-500 bg-blue-500 text-white hover:bg-blue-600'
           : 'border-gray-300 bg-gray-50 text-gray-500 hover:bg-gray-100 dark:border-gray-600 dark:bg-zinc-800 dark:text-gray-100 dark:hover:bg-zinc-700'}"
         title="Reasoning"
-        aria-pressed={reasoningEnabled}
+        aria-pressed={chatState.reasoning}
       >
         <ThinkingIcon />
       </button>
 
       <button
         onclick={onSend}
-        disabled={isLoading || !message.trim()}
+        disabled={chatState.isLoading || !message.trim()}
         class="send-btn rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-400"
       >
         Send
