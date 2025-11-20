@@ -11,25 +11,25 @@ An aggressively minimalist mobile web LLM client built as a static site with [Sv
 
 ## Features
 
-* Good on mobile (don't care about desktop)
-* Static site: trivial to deploy
-* Hackable rather than configurable: fork it and deploy your own copy
-* Pretty markdown rendering with syntax highlighting for code blocks
-* Show cost and token counts for every response
-* SOTA models only (currently Gemini 3 Pro, GPT-5.1, and Sonnet 4.5)
-* One click to toggle search and extra thinking
-* Bring your own API keys
-* Keys and chats are stored client-side (and only sent directly to the LLM provider from the browser) so anyone can enter keys and use it
-* Fork chat to retry with another model
-* Dark/light mode
+- Good on mobile (don't care about desktop)
+- Static site: trivial to deploy
+- Hackable rather than configurable: fork it and deploy your own copy
+- Pretty markdown rendering with syntax highlighting for code blocks
+- Show cost and token counts for every response
+- SOTA models only (currently Gemini 3 Pro, GPT-5.1, and Sonnet 4.5)
+- One click to toggle search and extra thinking
+- Bring your own API keys
+- Keys and chats are stored client-side (and only sent directly to the LLM provider from the browser) so anyone can enter keys and use it
+- Fork chat to retry with another model
+- Dark/light mode
 
 ### Non-features
 
-* Cross-device syncing
-* Memory across chats
-* Image uploads or image generation
-* Voice chat
-* Streaming responses (will probably get to this eventually)
+- Cross-device syncing
+- Memory across chats
+- Image uploads or image generation
+- Voice chat
+- Streaming responses (will probably get to this eventually)
 
 ## Why
 
@@ -62,20 +62,20 @@ Storing API keys in localStorage and rendering LLM output as HTML creates
 use this app if you understand what that means and buy with the argument here
 that the risk is low. The mitigations in place are:
 
-* **Content Security Policy**: Hash-based CSP in `svelte.config.js` prevents
-inline script execution and restricts `connect-src` to the three LLM
-API endpoints. See security headers in `static/_headers` include
-frame-ancestors restrictions, HSTS, and cross-origin policies.
+- **Content Security Policy**: Hash-based CSP in `svelte.config.js` prevents
+  inline script execution and restricts `connect-src` to the three LLM
+  API endpoints. See security headers in `static/_headers` include
+  frame-ancestors restrictions, HSTS, and cross-origin policies.
 
-* **DOMPurify sanitization**: Markdown rendering goes through
-[DOMPurify](https://github.com/cure53/DOMPurify) with a strict config that
-forbids dangerous tags (style, iframe, object, embed, form, input, button) and
-restricts URLs to https/mailto/tel schemes and root-relative paths.
+- **DOMPurify sanitization**: Markdown rendering goes through
+  [DOMPurify](https://github.com/cure53/DOMPurify) with a strict config that
+  forbids dangerous tags (style, iframe, object, embed, form, input, button) and
+  restricts URLs to https/mailto/tel schemes and root-relative paths.
 
-* **Minimal attack surface**: The main avenue for attack is a malicious
-dependency. Having a small number of runtime deps and no server-side code means
-fewer potential vulnerabilities. The attack surface is limited to the browser
-sandbox with CSP enforcement.
+- **Minimal attack surface**: The main avenue for attack is a malicious
+  dependency. Having a small number of runtime deps and no server-side code means
+  fewer potential vulnerabilities. The attack surface is limited to the browser
+  sandbox with CSP enforcement.
 
 These layers make XSS difficult but not impossible.
 
