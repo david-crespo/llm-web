@@ -13,8 +13,6 @@
 
   let { message = $bindable(), onSend }: Props = $props()
 
-  let textarea: HTMLTextAreaElement | undefined = $state()
-
   const availableModels = $derived(getAvailableModels())
   const hasAnyKeys = $derived(availableModels.length > 0)
 
@@ -38,6 +36,8 @@
     return `${base} ${isActive ? active : inactive}`
   }
 
+  let textarea: HTMLTextAreaElement | undefined = $state()
+
   $effect(() => {
     if (message === '' && textarea) {
       textarea.style.height = 'auto'
@@ -52,7 +52,9 @@
       bind:this={textarea}
       bind:value={message}
       oninput={(e) => {
-        // Resize on input up to 200px high
+        // Resize on input up to 200px high. change to field-sizing-content once
+        // supported in Safari and Firefox
+        // https://caniuse.com/?search=field-sizing
         const target = e.currentTarget
         target.style.height = 'auto'
         target.style.height = `${Math.min(target.scrollHeight, 200)}px`
