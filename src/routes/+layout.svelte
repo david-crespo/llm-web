@@ -7,6 +7,7 @@
 
 <svelte:head>
   <link rel="icon" href={favicon} />
+  <title>llm-web</title>
 </svelte:head>
 
 {@render children?.()}

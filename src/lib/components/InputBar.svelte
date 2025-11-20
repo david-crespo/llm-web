@@ -32,6 +32,16 @@
 
   const hasAnyKeys = $derived(hasOpenAI || hasAnthropic || hasGoogle)
 
+  function getToggleClasses(isActive: boolean) {
+    const base = 'size-10 flex items-center justify-center rounded border p-0'
+    const active =
+      'border-blue-300 bg-blue-200 text-gray-900 hover:bg-blue-300 dark:border-blue-700 dark:bg-blue-900 dark:text-gray-300 dark:hover:bg-blue-800'
+    const inactive =
+      'border-gray-300 bg-gray-50 text-gray-500 hover:bg-gray-100 dark:border-gray-600 dark:bg-zinc-800 dark:text-gray-100 dark:hover:bg-zinc-700'
+
+    return `${base} ${isActive ? active : inactive}`
+  }
+
   $effect(() => {
     if (message === '' && textarea) {
       textarea.style.height = 'auto'
@@ -87,7 +97,7 @@
           }
         }}
         disabled={!hasAnyKeys}
-        class="h-10 w-36 rounded border border-gray-300 bg-gray-50 px-2 py-2 text-sm text-gray-900 disabled:cursor-not-allowed disabled:text-gray-500 dark:border-gray-600 dark:bg-zinc-800 dark:text-gray-100 dark:disabled:text-gray-500"
+        class="h-10 w-32 rounded border border-gray-300 bg-gray-50 px-2 py-2 text-sm text-gray-900 disabled:cursor-not-allowed disabled:text-gray-500 dark:border-gray-600 dark:bg-zinc-800 dark:text-gray-100 dark:disabled:text-gray-500"
         aria-label="Select model"
       >
         {#if !hasAnyKeys}
@@ -102,9 +112,7 @@
       <!-- Web Search Toggle Button -->
       <button
         onclick={() => (chatState.webSearch = !chatState.webSearch)}
-        class="flex size-10 items-center justify-center rounded border p-0 {chatState.webSearch
-          ? 'border-blue-500 bg-blue-500 text-white hover:bg-blue-600'
-          : 'border-gray-300 bg-gray-50 text-gray-500 hover:bg-gray-100 dark:border-gray-600 dark:bg-zinc-800 dark:text-gray-100 dark:hover:bg-zinc-700'}"
+        class={getToggleClasses(chatState.webSearch)}
         title="Web Search"
         aria-pressed={chatState.webSearch}
       >
@@ -114,9 +122,7 @@
       <!-- Reasoning Toggle Button -->
       <button
         onclick={() => (chatState.reasoning = !chatState.reasoning)}
-        class="flex h-10 w-10 items-center justify-center rounded border p-0 {chatState.reasoning
-          ? 'border-blue-500 bg-blue-500 text-white hover:bg-blue-600'
-          : 'border-gray-300 bg-gray-50 text-gray-500 hover:bg-gray-100 dark:border-gray-600 dark:bg-zinc-800 dark:text-gray-100 dark:hover:bg-zinc-700'}"
+        class={getToggleClasses(chatState.reasoning)}
         title="Reasoning"
         aria-pressed={chatState.reasoning}
       >
