@@ -1,1 +1,4 @@
-See README.md for plan. Do not run the server or `bun run build`. Use `bun run check` to typecheck. Don't give long summaries of everything you did. Don't make commits, the user will handle that.
+* Use bun
+* Do not run the server, it's already running
+* Use `bun run check` to typecheck.
+
