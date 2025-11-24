@@ -47,6 +47,14 @@ export const models: Model[] = [
     input_cached: 0.3,
     output: 15,
   },
+  {
+    provider: 'anthropic',
+    key: 'claude-opus-4-5',
+    id: 'Opus 4.5',
+    input: 5,
+    input_cached: 0.5,
+    output: 25,
+  },
 ]
 
 const M = 1_000_000
