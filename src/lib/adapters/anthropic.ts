@@ -22,7 +22,7 @@ export async function anthropicCreateMessage({
     model: model.key,
     system: chat.systemPrompt,
     messages: chat.messages.map((m) => ({ role: m.role, content: m.content })),
-    max_tokens: 4096,
+    max_tokens: 8192,
     thinking: { type: 'enabled', budget_tokens: think ? 4096 : 1024 },
     tools: search
       ? [
@@ -34,8 +34,6 @@ export async function anthropicCreateMessage({
         ]
       : undefined,
   })
-
-  console.log(response.content)
 
   const content = response.content
     .map((block): string | null => {
