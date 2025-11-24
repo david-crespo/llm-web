@@ -8,12 +8,14 @@
   import typescript from 'highlight.js/lib/languages/typescript'
   import bash from 'highlight.js/lib/languages/bash'
   import rust from 'highlight.js/lib/languages/rust'
+  import python from 'highlight.js/lib/languages/python'
 
   // Register a minimal set of languages to keep bundle size small
   hljs.registerLanguage('javascript', javascript)
   hljs.registerLanguage('typescript', typescript)
   hljs.registerLanguage('bash', bash)
   hljs.registerLanguage('rust', rust)
+  hljs.registerLanguage('python', python)
 
   interface Props {
     content: string
@@ -33,19 +35,12 @@
     // Render code blocks with highlight.js
     renderer.code = (token: Tokens.Code) => {
       const lang = token.lang ?? ''
-      let inner = token.text
-      try {
-        if (lang && hljs.getLanguage(lang)) inner = hljs.highlight(inner, { language: lang }).value
-        else inner = hljs.highlightAuto(inner).value
-      } catch {
-        inner = inner
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;')
-      }
+      const highlighted =
+        lang && hljs.getLanguage(lang)
+          ? hljs.highlight(token.text, { language: lang }).value
+          : hljs.highlightAuto(token.text).value
       const cls = `hljs${lang ? ` language-${lang}` : ''}`
-      return `<pre><code class="${cls}">${inner}\n</code></pre>`
+      return `<pre><code class="${cls}">${highlighted}\n</code></pre>`
     }
     ;(async () => {
       const rendered = await marked.parse(content, { renderer })
