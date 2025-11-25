@@ -1,7 +1,9 @@
 <script lang="ts">
-  import type { Chat } from '$lib/types'
+  import type { Chat, ChatMessage } from '$lib/types'
   import { chatState } from '$lib/chat.svelte'
+  import { formatTime, formatMoney, formatTokens } from '$lib/format'
   import { fly, fade } from 'svelte/transition'
+  import { DropdownMenu } from 'bits-ui'
   import CloseIcon from './icons/CloseIcon.svelte'
   import SunIcon from './icons/SunIcon.svelte'
   import MoonIcon from './icons/MoonIcon.svelte'
@@ -21,6 +23,27 @@
     const firstUserMessage = chat.messages.find((m) => m.role === 'user')
     if (!firstUserMessage) return 'New Chat'
     return firstUserMessage.content
+  }
+
+  function formatChatAsMarkdown(chat: Chat): string {
+    const total = chat.messages.length
+    return chat.messages
+      .map((msg: ChatMessage, i: number) => {
+        const num = i + 1
+        const header = `# ${msg.role} (${num}/${total})`
+        if (msg.role === 'user') {
+          return `${header}\n\n${msg.content}`
+        } else {
+          const meta = `\`${msg.model}\` | ${formatTime(msg.timeMs)} | ${formatMoney(msg.cost)} | **Tokens:** ${formatTokens(msg.tokens)}`
+          return `${header}\n${meta}\n\n${msg.content}`
+        }
+      })
+      .join('\n\n---\n\n')
+  }
+
+  async function copyMarkdown(chat: Chat) {
+    const markdown = formatChatAsMarkdown(chat)
+    await navigator.clipboard.writeText(markdown)
   }
 
   // Theme toggle (Light / Dark / System)
@@ -91,16 +114,35 @@
                 {chat.createdAt.toLocaleString()}
               </div>
             </div>
-            <button
-              class="absolute top-1/2 right-2 -translate-y-1/2 rounded px-2 py-2 text-xs hover:bg-gray-200 dark:hover:bg-gray-700"
-              aria-label="Delete chat"
-              onclick={(e) => {
-                e.stopPropagation()
-                onRequestDelete(chat.id!)
-              }}
-            >
-              🗑
-            </button>
+            <DropdownMenu.Root>
+              <DropdownMenu.Trigger
+                class="absolute top-1/2 right-2 -translate-y-1/2 rounded px-2 py-2 text-sm hover:bg-gray-200 dark:hover:bg-gray-700"
+                aria-label="Chat menu"
+                onclick={(e: MouseEvent) => e.stopPropagation()}
+              >
+                ⋮
+              </DropdownMenu.Trigger>
+              <DropdownMenu.Portal>
+                <DropdownMenu.Content
+                  class="z-50 w-40 rounded border border-gray-300 bg-white shadow-lg dark:border-zinc-600 dark:bg-zinc-800"
+                  sideOffset={4}
+                  align="end"
+                >
+                  <DropdownMenu.Item
+                    class="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-zinc-700 cursor-pointer outline-none data-[highlighted]:bg-gray-100 dark:data-[highlighted]:bg-zinc-700"
+                    onSelect={() => copyMarkdown(chat)}
+                  >
+                    Copy as Markdown
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Item
+                    class="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-gray-100 dark:text-red-400 dark:hover:bg-zinc-700 cursor-pointer outline-none data-[highlighted]:bg-gray-100 dark:data-[highlighted]:bg-zinc-700"
+                    onSelect={() => onRequestDelete(chat.id!)}
+                  >
+                    Delete
+                  </DropdownMenu.Item>
+                </DropdownMenu.Content>
+              </DropdownMenu.Portal>
+            </DropdownMenu.Root>
           </div>
         {/each}
       {/if}

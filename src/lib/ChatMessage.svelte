@@ -1,6 +1,8 @@
 <script lang="ts">
   import Markdown from './Markdown.svelte'
   import type { ChatMessage } from './types'
+  import { formatTime, formatMoney, formatTokens } from '$lib/format'
+  import { clickOutside } from '$lib/actions/clickOutside'
 
   interface Props {
     message: ChatMessage
@@ -9,38 +11,9 @@
     onFork: (index: number) => void
   }
 
-  import { clickOutside } from '$lib/actions/clickOutside'
-
   let { message, messageIndex = -1, onRegen, onFork }: Props = $props()
 
   let showMenu = $state(false)
-
-  const timeFmt = new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 })
-
-  // turn time into `1m20s` string
-  function formatTime(ms: number) {
-    const totalSeconds = ms / 1000
-    const minutes = Math.floor(totalSeconds / 60)
-    const seconds = totalSeconds % 60
-    if (minutes === 0) return `${timeFmt.format(seconds)}s`
-    return `${minutes}m${Math.floor(seconds)}s`
-  }
-
-  const moneyFmt = Intl.NumberFormat(undefined, {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 4,
-  })
-
-  function formatTokens(tokens: {
-    input: number
-    input_cache_hit?: number
-    output: number
-  }): string {
-    const cacheHit = tokens.input_cache_hit ? ` (${tokens.input_cache_hit})` : ''
-    return `${tokens.input}${cacheHit} → ${tokens.output}`
-  }
 </script>
 
 <div class="mb-6" data-message>
@@ -51,7 +24,7 @@
       <span>•</span>
       <span>{formatTime(message.timeMs)}</span>
       <span>•</span>
-      <span>{moneyFmt.format(message.cost)}</span>
+      <span>{formatMoney(message.cost)}</span>
       <span>•</span>
       <span title="Input → Output">{formatTokens(message.tokens)}</span>
       {#if message.stop_reason && !['stop', 'end_turn', 'completed'].includes(message.stop_reason.toLowerCase())}
