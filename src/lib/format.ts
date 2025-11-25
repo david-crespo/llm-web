@@ -21,7 +21,9 @@ export function formatMoney(amount: number): string {
   return moneyFmt.format(amount)
 }
 
+const tokenFmt = new Intl.NumberFormat()
+
 export function formatTokens(tokens: TokenCounts): string {
-  const cacheHit = tokens.input_cache_hit ? ` (${tokens.input_cache_hit})` : ''
-  return `${tokens.input}${cacheHit} → ${tokens.output}`
+  const cacheHit = tokens.input_cache_hit ? ` (${tokenFmt.format(tokens.input_cache_hit)})` : ''
+  return `${tokenFmt.format(tokens.input)}${cacheHit} → ${tokenFmt.format(tokens.output)}`
 }
