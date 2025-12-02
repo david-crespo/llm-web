@@ -5,84 +5,84 @@
 
 @theme {
   /* Surfaces */
-  --color-surface: #ffffff;
-  --color-surface-alt: #f9fafb;
-  --color-surface-elevated: #ffffff;
-  --color-surface-active: #dbeafe;
-  --color-surface-hover: #eff6ff;
-  --color-surface-user: #e5e7eb;
+  --color-surface: oklch(100% 0 0);
+  --color-surface-alt: oklch(98% 0.004 260);
+  --color-surface-elevated: oklch(100% 0 0);
+  --color-surface-active: oklch(93% 0.045 255);
+  --color-surface-hover: oklch(97% 0.02 255);
+  --color-surface-user: oklch(92% 0.008 260);
 
   /* Borders */
-  --color-edge: #d1d5db;
-  --color-edge-muted: #e5e7eb;
+  --color-edge: oklch(85% 0.01 260);
+  --color-edge-muted: oklch(91% 0.006 260);
 
   /* Foreground (text) */
-  --color-fg: #111827;
-  --color-fg-muted: #6b7280;
-  --color-fg-faint: #9ca3af;
+  --color-fg: oklch(13% 0.025 260);
+  --color-fg-muted: oklch(45% 0.015 260);
+  --color-fg-faint: oklch(65% 0.012 260);
 
   /* Accents */
-  --color-accent: #2563eb;
-  --color-accent-muted: #3b82f6;
+  --color-accent: oklch(52% 0.2 260);
+  --color-accent-muted: oklch(60% 0.17 260);
 
   /* Links */
-  --color-link: #2563eb;
-  --color-link-hover: #1d4ed8;
+  --color-link: oklch(52% 0.2 260);
+  --color-link-hover: oklch(45% 0.22 260);
 
   /* Code */
-  --color-code-bg: #e2e8f0;
-  --color-code-block-bg: #f6f8fa;
+  --color-code-bg: oklch(93% 0.01 260);
+  --color-code-block-bg: oklch(98.5% 0.004 260);
 
   /* Toggle active state (blue tinted) */
-  --color-toggle-active: #bfdbfe;
-  --color-toggle-active-hover: #93c5fd;
-  --color-toggle-active-border: #93c5fd;
-  --color-toggle-active-fg: #111827;
+  --color-toggle-active: oklch(88% 0.07 255);
+  --color-toggle-active-hover: oklch(82% 0.1 255);
+  --color-toggle-active-border: oklch(78% 0.12 255);
+  --color-toggle-active-fg: oklch(13% 0.025 260);
 
   /* Button primary (Send) */
-  --color-btn-primary: #2563eb;
-  --color-btn-primary-hover: #1d4ed8;
-  --color-btn-disabled: #9ca3af;
+  --color-btn-primary: oklch(52% 0.2 260);
+  --color-btn-primary-hover: oklch(45% 0.22 260);
+  --color-btn-disabled: oklch(68% 0.012 260);
 
   /* Danger/error */
-  --color-danger: #dc2626;
+  --color-danger: oklch(55% 0.22 25);
 }
 
 @layer theme {
   .dark {
-    --color-surface: #18181b;
-    --color-surface-alt: #27272a;
-    --color-surface-elevated: #1f1f22;
-    --color-surface-active: #3f3f46;
-    --color-surface-hover: #52525b;
-    --color-surface-user: #3f3f46;
+    --color-surface: oklch(14% 0.01 260);
+    --color-surface-alt: oklch(20% 0.012 260);
+    --color-surface-elevated: oklch(17% 0.01 260);
+    --color-surface-active: oklch(32% 0.025 260);
+    --color-surface-hover: oklch(28% 0.02 260);
+    --color-surface-user: oklch(30% 0.015 260);
 
-    --color-edge: #3f3f46;
-    --color-edge-muted: #27272a;
+    --color-edge: oklch(33% 0.015 260);
+    --color-edge-muted: oklch(22% 0.01 260);
 
-    --color-fg: #e5e7eb;
-    --color-fg-muted: #9ca3af;
-    --color-fg-faint: #6b7280;
+    --color-fg: oklch(92% 0.008 260);
+    --color-fg-muted: oklch(70% 0.012 260);
+    --color-fg-faint: oklch(52% 0.015 260);
 
-    --color-accent: #60a5fa;
-    --color-accent-muted: #93c5fd;
+    --color-accent: oklch(70% 0.15 255);
+    --color-accent-muted: oklch(78% 0.12 255);
 
-    --color-link: #93c5fd;
-    --color-link-hover: #bfdbfe;
+    --color-link: oklch(78% 0.12 255);
+    --color-link-hover: oklch(85% 0.09 255);
 
-    --color-code-bg: #2a2a30;
-    --color-code-block-bg: #1f1f22;
+    --color-code-bg: oklch(26% 0.015 260);
+    --color-code-block-bg: oklch(22% 0.012 260);
 
-    --color-toggle-active: #1e3a5f;
-    --color-toggle-active-hover: #1e40af;
-    --color-toggle-active-border: #1d4ed8;
-    --color-toggle-active-fg: #bfdbfe;
+    --color-toggle-active: oklch(30% 0.08 255);
+    --color-toggle-active-hover: oklch(38% 0.12 255);
+    --color-toggle-active-border: oklch(50% 0.18 260);
+    --color-toggle-active-fg: oklch(88% 0.07 255);
 
-    --color-btn-primary: #2563eb;
-    --color-btn-primary-hover: #3b82f6;
-    --color-btn-disabled: #4b5563;
+    --color-btn-primary: oklch(55% 0.2 260);
+    --color-btn-primary-hover: oklch(62% 0.18 260);
+    --color-btn-disabled: oklch(42% 0.015 260);
 
-    --color-danger: #f87171;
+    --color-danger: oklch(68% 0.18 25);
   }
 }
 
@@ -152,7 +152,7 @@ textarea:focus,
 select:focus {
   outline: none;
   border-color: var(--color-accent);
-  box-shadow: 0 0 0 1.5px rgba(96, 165, 250, 0.45);
+  box-shadow: 0 0 0 1.5px oklch(70% 0.15 255 / 0.4);
 }
 
 select option {
