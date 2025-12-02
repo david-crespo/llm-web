@@ -242,8 +242,6 @@
   }
   /* Default to compact sizing */
   .prose :global(p),
-  .prose :global(ul),
-  .prose :global(ol),
   .prose :global(li),
   .prose :global(td),
   .prose :global(th) {
