@@ -244,9 +244,18 @@
     line-height: 1.3;
   }
 
-  .prose :global(h1),
-  .prose :global(h2),
-  .prose :global(h3) {
+  .prose :global(h1) {
+    font-size: 1.1em;
+  }
+
+  .prose :global(h2) {
+    font-size: 1em;
+  }
+
+  .prose :global(h3),
+  .prose :global(h4),
+  .prose :global(h5),
+  .prose :global(h6) {
     font-size: 0.95em;
   }
 </style>
