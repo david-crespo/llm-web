@@ -19,7 +19,7 @@
 <div class="mb-6" data-message>
   {#if message.role === 'assistant'}
     <!-- Assistant message header -->
-    <div class="mb-2 flex items-center gap-1.5 text-xs text-gray-600">
+    <div class="mb-2 flex items-center gap-1.5 text-xs text-fg-muted">
       <span class="font-medium">{message.model}</span>
       <span>•</span>
       <span>{formatTime(message.timeMs)}</span>
@@ -29,7 +29,7 @@
       <span title="Input → Output">{formatTokens(message.tokens)}</span>
       {#if message.stop_reason && !['stop', 'end_turn', 'completed'].includes(message.stop_reason.toLowerCase())}
         <span>•</span>
-        <span class="text-red-600">Stop: {message.stop_reason}</span>
+        <span class="text-danger">Stop: {message.stop_reason}</span>
       {/if}
       {#if message.search}
         <span>•</span>
@@ -40,10 +40,10 @@
     <!-- Reasoning (if present) -->
     {#if message.reasoning}
       <details class="mb-3">
-        <summary class="cursor-pointer text-sm text-gray-600 hover:text-gray-800">
+        <summary class="cursor-pointer text-sm text-fg-muted hover:text-fg">
           Reasoning
         </summary>
-        <div class="mt-2 rounded border-l-4 border-gray-300 bg-gray-50 p-3">
+        <div class="mt-2 rounded border-l-4 border-edge bg-surface-alt p-3">
           <Markdown content={message.reasoning} />
         </div>
       </details>
@@ -55,14 +55,14 @@
     <!-- User message bubble -->
     <div class="flex justify-end">
       <div
-        class="relative max-w-[87%] rounded-lg bg-gray-200 px-4 py-3 pr-8"
+        class="relative max-w-[87%] rounded-lg bg-surface-user px-4 py-3 pr-8"
         use:clickOutside={{ onOut: () => (showMenu = false) }}
       >
         <!-- Kebab menu inside bubble -->
         <div class="absolute top-2 right-2">
           <button
             onclick={() => (showMenu = !showMenu)}
-            class="flex size-6 items-center justify-center rounded-full text-lg font-bold text-gray-600 hover:bg-gray-300 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-zinc-600 dark:hover:text-gray-200"
+            class="flex size-6 items-center justify-center rounded-full text-lg font-bold text-fg-muted hover:bg-surface-hover hover:text-fg"
             aria-label="Message options"
           >
             ⋮
@@ -71,14 +71,14 @@
 
         {#if showMenu}
           <div
-            class="absolute top-8 right-2 z-10 w-20 rounded border border-gray-300 bg-white py-1 shadow-lg"
+            class="absolute top-8 right-2 z-10 w-20 rounded border border-edge bg-surface-elevated py-1 shadow-lg"
           >
             <button
               onclick={async () => {
                 showMenu = false
                 await navigator.clipboard.writeText(message.content)
               }}
-              class="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
+              class="w-full px-3 py-2 text-left text-sm hover:bg-surface-hover"
             >
               Copy
             </button>
@@ -87,7 +87,7 @@
                 showMenu = false
                 onFork(messageIndex)
               }}
-              class="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
+              class="w-full px-3 py-2 text-left text-sm hover:bg-surface-hover"
             >
               Fork
             </button>
@@ -96,7 +96,7 @@
                 showMenu = false
                 onRegen(messageIndex)
               }}
-              class="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
+              class="w-full px-3 py-2 text-left text-sm hover:bg-surface-hover"
             >
               Regen
             </button>

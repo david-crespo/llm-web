@@ -3,11 +3,96 @@
 
 @variant dark (.dark &);
 
+@theme {
+  /* Surfaces */
+  --color-surface: #ffffff;
+  --color-surface-alt: #f9fafb;
+  --color-surface-elevated: #ffffff;
+  --color-surface-active: #dbeafe;
+  --color-surface-hover: #eff6ff;
+  --color-surface-user: #e5e7eb;
+
+  /* Borders */
+  --color-edge: #d1d5db;
+  --color-edge-muted: #e5e7eb;
+
+  /* Foreground (text) */
+  --color-fg: #111827;
+  --color-fg-muted: #6b7280;
+  --color-fg-faint: #9ca3af;
+
+  /* Accents */
+  --color-accent: #2563eb;
+  --color-accent-muted: #3b82f6;
+
+  /* Links */
+  --color-link: #2563eb;
+  --color-link-hover: #1d4ed8;
+
+  /* Code */
+  --color-code-bg: #e2e8f0;
+  --color-code-block-bg: #f6f8fa;
+
+  /* Toggle active state (blue tinted) */
+  --color-toggle-active: #bfdbfe;
+  --color-toggle-active-hover: #93c5fd;
+  --color-toggle-active-border: #93c5fd;
+  --color-toggle-active-fg: #111827;
+
+  /* Button primary (Send) */
+  --color-btn-primary: #2563eb;
+  --color-btn-primary-hover: #1d4ed8;
+  --color-btn-disabled: #9ca3af;
+
+  /* Danger/error */
+  --color-danger: #dc2626;
+}
+
+@layer theme {
+  .dark {
+    --color-surface: #18181b;
+    --color-surface-alt: #27272a;
+    --color-surface-elevated: #1f1f22;
+    --color-surface-active: #3f3f46;
+    --color-surface-hover: #52525b;
+    --color-surface-user: #3f3f46;
+
+    --color-edge: #3f3f46;
+    --color-edge-muted: #27272a;
+
+    --color-fg: #e5e7eb;
+    --color-fg-muted: #9ca3af;
+    --color-fg-faint: #6b7280;
+
+    --color-accent: #60a5fa;
+    --color-accent-muted: #93c5fd;
+
+    --color-link: #93c5fd;
+    --color-link-hover: #bfdbfe;
+
+    --color-code-bg: #2a2a30;
+    --color-code-block-bg: #1f1f22;
+
+    --color-toggle-active: #1e3a5f;
+    --color-toggle-active-hover: #1e40af;
+    --color-toggle-active-border: #1d4ed8;
+    --color-toggle-active-fg: #bfdbfe;
+
+    --color-btn-primary: #2563eb;
+    --color-btn-primary-hover: #3b82f6;
+    --color-btn-disabled: #4b5563;
+
+    --color-danger: #f87171;
+  }
+}
+
 /* Minimal and elegant styling */
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.5;
   overflow: hidden;
+  background-color: var(--color-surface);
+  color: var(--color-fg);
 }
 
 /* Dynamic viewport height for mobile browsers */
@@ -34,114 +119,43 @@ button {
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: var(--color-surface);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
+  background: var(--color-edge);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
+  background: var(--color-fg-muted);
 }
 
-/* Minimal dark mode overrides */
-.dark body {
-  background-color: #18181b; /* zinc-900: slightly lighter neutral */
-  color: #e5e7eb; /* gray-200 */
+/* Dark forms: inputs, textareas */
+input[type='text'],
+input[type='search'],
+input[type='email'],
+input[type='password'],
+textarea {
+  background-color: var(--color-surface-elevated);
+  color: var(--color-fg);
+  border-color: var(--color-edge);
 }
 
-.dark ::-webkit-scrollbar-track {
-  background: #18181b; /* match neutral body */
-}
-.dark ::-webkit-scrollbar-thumb {
-  background: #334155; /* slate-700 */
-}
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: #475569; /* slate-600 */
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-fg-faint);
 }
 
-/* Utility class overrides for commonly used colors in components (but not buttons/selects with explicit dark classes) */
-.dark .bg-white:not(button):not(select) {
-  background-color: #1f1f22 !important;
-} /* neutral card/bg */
-.dark .bg-gray-50:not(button):not(select) {
-  background-color: #27272a !important;
-} /* sidebar panel */
-.dark .bg-gray-100 {
-  background-color: #34343a !important;
-} /* selected item */
-.dark .bg-gray-200 {
-  background-color: #27272a !important;
-} /* bubbles/buttons */
-.dark .bg-gray-300 {
-  background-color: #3f3f46 !important;
-}
-.dark .hover\:bg-gray-50:hover:not(button) {
-  background-color: #262626 !important;
-}
-.dark .hover\:bg-gray-100:hover:not(button) {
-  background-color: #262626 !important;
-}
-.dark .border-gray-300 {
-  border-color: #3f3f46 !important;
-} /* neutral border */
-.dark .border-gray-400 {
-  border-color: #52525b !important;
-}
-.dark .border-gray-500 {
-  border-color: #6b7280 !important;
-}
-.dark .text-gray-500 {
-  color: #9ca3af !important;
-}
-.dark .text-gray-600 {
-  color: #e5e7eb !important;
-}
-.dark .text-gray-700 {
-  color: #cbd5e1 !important;
-}
-.dark .text-blue-600 {
-  color: #60a5fa !important;
-}
-.dark .text-blue-800 {
-  color: #93c5fd !important;
-}
-.dark .bg-blue-50 {
-  background-color: #0b2447 !important;
-}
-
-/* Dark forms: inputs, textareas (but not all selects - some need manual control) */
-.dark input[type='text'],
-.dark input[type='search'],
-.dark input[type='email'],
-.dark input[type='password'],
-.dark textarea {
-  background-color: #1f1f22 !important; /* neutral card/bg */
-  color: #e5e7eb !important; /* gray-200 */
-  border-color: #3f3f46 !important; /* neutral border */
-}
-.dark input::placeholder,
-.dark textarea::placeholder {
-  color: #9ca3af !important;
-}
-.dark input:focus,
-.dark textarea:focus,
-.dark select:focus {
+input:focus,
+textarea:focus,
+select:focus {
   outline: none;
-  border-color: #60a5fa !important; /* blue-400 */
+  border-color: var(--color-accent);
   box-shadow: 0 0 0 1.5px rgba(96, 165, 250, 0.45);
 }
-.dark select option {
-  background-color: #1f1f22;
-  color: #e5e7eb;
-}
 
-/* Highlight.js theme is swapped, no overrides here */
-
-/* Dark disabled primary button (Send) */
-.dark .send-btn:disabled {
-  background-color: #374151 !important; /* gray-700 */
-  color: #9ca3af !important; /* gray-400 */
+select option {
+  background-color: var(--color-surface-elevated);
+  color: var(--color-fg);
 }

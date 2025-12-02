@@ -29,9 +29,8 @@
   function getToggleClasses(isActive: boolean) {
     const base = 'size-10 flex items-center justify-center rounded border p-0'
     const active =
-      'border-blue-300 bg-blue-200 text-gray-900 hover:bg-blue-300 dark:border-blue-700 dark:bg-blue-900 dark:text-gray-300 dark:hover:bg-blue-800'
-    const inactive =
-      'border-gray-300 bg-gray-50 text-gray-500 hover:bg-gray-100 dark:border-gray-600 dark:bg-zinc-800 dark:text-gray-100 dark:hover:bg-zinc-700'
+      'border-toggle-active-border bg-toggle-active text-toggle-active-fg hover:bg-toggle-active-hover'
+    const inactive = 'border-edge bg-surface-alt text-fg-muted hover:bg-surface-hover'
 
     return `${base} ${isActive ? active : inactive}`
   }
@@ -45,7 +44,7 @@
   })
 </script>
 
-<div class="w-full border-t border-gray-300 bg-gray-50 p-3">
+<div class="w-full border-t border-edge bg-surface-alt p-3">
   <!-- Text input at top -->
   <div class="mb-2">
     <textarea
@@ -61,7 +60,7 @@
       }}
       onkeydown={(e) => e.key === 'Enter' && (e.metaKey || e.ctrlKey) && onSend()}
       placeholder="Type your message..."
-      class="w-full resize-none overflow-y-auto rounded border border-gray-300 px-3 py-2"
+      class="w-full resize-none overflow-y-auto rounded border border-edge px-3 py-2"
       style="min-height: 42px; max-height: 200px;"
       rows="1"
       disabled={chatState.isLoading}
@@ -72,7 +71,7 @@
   <div class="flex items-center gap-1">
     <button
       onclick={() => (chatState.sidebarOpen = !chatState.sidebarOpen)}
-      class="size-10 rounded border border-gray-300 bg-gray-50 hover:bg-gray-100 dark:border-gray-600 dark:bg-zinc-800 dark:hover:bg-zinc-700"
+      class="size-10 rounded border border-edge bg-surface-alt hover:bg-surface-hover"
       aria-label="Toggle sidebar"
     >
       {#if chatState.sidebarOpen}
@@ -95,7 +94,7 @@
           }
         }}
         disabled={!hasAnyKeys}
-        class="h-10 w-32 rounded border border-gray-300 bg-gray-50 px-2 py-2 text-sm text-gray-900 disabled:cursor-not-allowed disabled:text-gray-500 dark:border-gray-600 dark:bg-zinc-800 dark:text-gray-100 dark:disabled:text-gray-500"
+        class="h-10 w-32 rounded border border-edge bg-surface-alt px-2 py-2 text-sm text-fg disabled:cursor-not-allowed disabled:text-fg-faint"
         aria-label="Select model"
       >
         {#if !hasAnyKeys}
@@ -130,7 +129,7 @@
       <button
         onclick={onSend}
         disabled={chatState.isLoading || !message.trim()}
-        class="send-btn rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-400"
+        class="rounded bg-btn-primary px-4 py-2 text-white hover:bg-btn-primary-hover disabled:cursor-not-allowed disabled:bg-btn-disabled"
       >
         Send
       </button>

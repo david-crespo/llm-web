@@ -18,19 +18,17 @@
     onclick={(e) => e.currentTarget === e.target && onClose()}
     onkeydown={(e) => (e.key === 'Escape' || e.key === 'Enter') && onClose()}
   >
-    <div class="w-96 max-w-[90vw] rounded-lg bg-white shadow-lg dark:bg-gray-800">
-      <div
-        class="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-600"
-      >
+    <div class="w-96 max-w-[90vw] rounded-lg border border-edge bg-surface-elevated shadow-lg">
+      <div class="flex items-center justify-between border-b border-edge-muted px-6 py-4">
         <h3 class="text-lg font-medium">About this app</h3>
         <button
           onclick={onClose}
-          class="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+          class="text-fg-faint hover:text-fg-muted"
           aria-label="Close modal">✕</button
         >
       </div>
       <div class="p-6">
-        <div class="mb-6 space-y-3 text-sm text-gray-600">
+        <div class="mb-6 space-y-3 text-sm text-fg">
           <p>
             This is a fully client-side LLM chat client built as a static site with
             <Link href="https://svelte.dev/docs/kit/introduction">SvelteKit</Link>. It's designed to
@@ -53,7 +51,7 @@
           </p>
         </div>
         <div>
-          <Link href="https://github.com/david-crespo/llm-web" darkMode>View on GitHub →</Link>
+          <Link href="https://github.com/david-crespo/llm-web">View on GitHub →</Link>
         </div>
       </div>
     </div>

@@ -89,7 +89,8 @@
   }
 
   .prose :global(code) {
-    background-color: #e2e8f0;
+    background-color: var(--color-code-bg, #e2e8f0);
+    color: var(--color-fg);
     padding: 0.125rem 0.25rem;
     border-radius: 3px;
     font-size: 0.875em;
@@ -104,19 +105,15 @@
   }
   /* Code block visuals: background + subtle border */
   .prose :global(pre code.hljs) {
-    background-color: #f6f8fa; /* lighter than default */
-    border: 1px solid #e5e7eb; /* light border */
-  }
-  :global(.dark .prose pre code.hljs) {
-    background-color: #1f1f22; /* neutral card tone, less blue */
-    border: 1px solid #3f3f46; /* neutral zinc-700 border */
+    background-color: var(--color-code-block-bg, #f6f8fa);
+    border: 1px solid var(--color-edge);
   }
 
   .prose :global(blockquote) {
-    border-left: 4px solid #e5e7eb;
+    border-left: 4px solid var(--color-edge);
     padding-left: 1rem;
     margin: 1rem 0;
-    color: #4b5563; /* gray-600 */
+    color: var(--color-fg-muted);
   }
 
   .prose :global(blockquote:last-child) {
@@ -202,51 +199,30 @@
 
   .prose :global(th),
   .prose :global(td) {
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--color-edge);
     padding: 0.5rem;
     text-align: left;
   }
 
   .prose :global(th) {
-    background-color: #e5e7eb;
+    background-color: var(--color-surface-alt);
     font-weight: 600;
   }
 
   .prose :global(a) {
-    color: #2563eb;
+    color: var(--color-link);
     text-decoration: underline;
   }
 
   .prose :global(hr) {
-    @apply border-gray-300 dark:border-zinc-600 my-4;
+    border-color: var(--color-edge);
+    margin: 1rem 0;
   }
 
   .prose :global(a:hover) {
-    color: #1d4ed8;
+    color: var(--color-link-hover);
   }
 
-  /* Dark mode overrides for markdown (non-code elements) */
-  :global(.dark .prose :not(pre) > code) {
-    background-color: #2a2a30;
-    color: #e5e7eb;
-  }
-  :global(.dark .prose blockquote) {
-    border-left-color: #374151; /* gray-700 */
-    color: #c9cdd4; /* lighter than gray-400 */
-  }
-  :global(.dark .prose th),
-  :global(.dark .prose td) {
-    border-color: #374151; /* gray-700 */
-  }
-  :global(.dark .prose th) {
-    background-color: #27272a; /* zinc-800 */
-  }
-  :global(.dark .prose a) {
-    color: #93c5fd; /* blue-300 */
-  }
-  :global(.dark .prose a:hover) {
-    color: #bfdbfe; /* blue-200 */
-  }
   /* Default to compact sizing */
   .prose :global(p),
   .prose :global(li),

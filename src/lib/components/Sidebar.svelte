@@ -82,18 +82,18 @@
   <!-- Panel -->
   <div
     transition:fly|local={{ x: -320, duration: 150 }}
-    class="fixed top-0 left-0 z-50 flex w-4/5 max-w-sm flex-col overflow-hidden border-r border-gray-400/60 bg-gray-50 dark:border-zinc-700 dark:bg-zinc-900"
+    class="fixed top-0 left-0 z-50 flex w-4/5 max-w-sm flex-col overflow-hidden border-r border-edge bg-surface-alt"
     style="height: 100dvh; will-change: transform;"
   >
     <!-- Header -->
-    <div class="flex items-center justify-between border-b border-gray-300 py-3 pr-3 pl-3.5">
+    <div class="flex items-center justify-between border-b border-edge py-3 pr-3 pl-3.5">
       <h3 class="text-md font-medium">History</h3>
     </div>
 
     <!-- Chat history -->
     <div class="flex-1 overflow-y-auto pt-2">
       {#if chatState.history.length === 0}
-        <div class="p-4 text-sm text-gray-600">No chats yet</div>
+        <div class="p-4 text-sm text-fg-muted">No chats yet</div>
       {:else}
         {#each chatState.history as chat (chat.id)}
           {@const isActive = chat.id === chatState.current?.id}
@@ -101,8 +101,8 @@
           <div
             role="button"
             tabindex="0"
-            class="relative flex w-full border-b border-gray-200 py-3 pr-3 pl-3.5 hover:bg-gray-100 focus:ring-2 focus:ring-gray-500 focus:outline-none focus:ring-inset dark:border-white/5 dark:hover:!bg-zinc-700 {isActive
-              ? 'bg-blue-100 dark:!bg-zinc-700'
+            class="relative flex w-full border-b border-edge-muted py-3 pr-3 pl-3.5 hover:bg-surface-hover focus:ring-2 focus:ring-gray-500 focus:outline-none focus:ring-inset {isActive
+              ? 'bg-surface-active'
               : ''}"
             onclick={() => chatState.selectChat(chat.id!)}
             onkeydown={(e) =>
@@ -110,13 +110,13 @@
           >
             <div class="min-w-0 pr-10">
               <div class="line-clamp-2 text-sm font-medium break-words">{preview}</div>
-              <div class="mt-1 text-xs leading-4 text-gray-500">
+              <div class="mt-1 text-xs leading-4 text-fg-muted">
                 {chat.createdAt.toLocaleString()}
               </div>
             </div>
             <DropdownMenu.Root>
               <DropdownMenu.Trigger
-                class="absolute top-1/2 right-2 -translate-y-1/2 rounded px-2 py-2 text-sm hover:bg-gray-200 dark:hover:bg-gray-700"
+                class="absolute top-1/2 right-2 -translate-y-1/2 rounded px-2 py-2 text-sm hover:bg-surface-hover"
                 aria-label="Chat menu"
                 onclick={(e: MouseEvent) => e.stopPropagation()}
               >
@@ -124,18 +124,18 @@
               </DropdownMenu.Trigger>
               <DropdownMenu.Portal>
                 <DropdownMenu.Content
-                  class="z-50 w-40 rounded border border-gray-300 bg-white shadow-lg dark:border-zinc-600 dark:bg-zinc-800"
+                  class="z-50 w-40 rounded border border-edge bg-surface-elevated shadow-lg"
                   sideOffset={4}
                   align="end"
                 >
                   <DropdownMenu.Item
-                    class="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-zinc-700 cursor-pointer outline-none data-[highlighted]:bg-gray-100 dark:data-[highlighted]:bg-zinc-700"
+                    class="w-full px-3 py-2 text-left text-sm hover:bg-surface-hover cursor-pointer outline-none data-[highlighted]:bg-surface-hover"
                     onSelect={() => copyMarkdown(chat)}
                   >
                     Copy as Markdown
                   </DropdownMenu.Item>
                   <DropdownMenu.Item
-                    class="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-gray-100 dark:text-red-400 dark:hover:bg-zinc-700 cursor-pointer outline-none data-[highlighted]:bg-gray-100 dark:data-[highlighted]:bg-zinc-700"
+                    class="w-full px-3 py-2 text-left text-sm text-danger hover:bg-surface-hover cursor-pointer outline-none data-[highlighted]:bg-surface-hover"
                     onSelect={() => onRequestDelete(chat.id!)}
                   >
                     Delete
@@ -149,11 +149,11 @@
     </div>
 
     <!-- Bottom section -->
-    <div class="flex items-center gap-4 border-t border-gray-300 p-3">
+    <div class="flex items-center gap-4 border-t border-edge p-3">
       <!-- Close button (left) -->
       <button
         onclick={() => (chatState.sidebarOpen = false)}
-        class="size-10 rounded border border-gray-300 bg-gray-50 hover:bg-gray-100 dark:border-gray-600 dark:bg-zinc-800 dark:hover:bg-zinc-700"
+        class="size-10 rounded border border-edge bg-surface-alt hover:bg-surface-hover"
         aria-label="Close sidebar"
       >
         <CloseIcon class="mx-auto" />
@@ -166,7 +166,7 @@
         <!-- About button -->
         <button
           onclick={onOpenAbout}
-          class="flex size-10 items-center justify-center rounded border border-gray-300 bg-gray-50 text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:bg-zinc-800 dark:text-gray-100 dark:hover:bg-zinc-700"
+          class="flex size-10 items-center justify-center rounded border border-edge bg-surface-alt text-fg hover:bg-surface-hover"
           title="About"
           aria-label="About"
         >
@@ -174,7 +174,7 @@
         </button>
         <a
           href="/settings"
-          class="flex size-10 items-center justify-center rounded border border-gray-300 bg-gray-50 text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:bg-zinc-800 dark:text-gray-100 dark:hover:bg-zinc-700"
+          class="flex size-10 items-center justify-center rounded border border-edge bg-surface-alt text-fg hover:bg-surface-hover"
           title="Settings"
           aria-label="Settings"
         >
@@ -183,7 +183,7 @@
 
         <!-- Theme toggle button -->
         <button
-          class="flex size-10 items-center justify-center rounded border border-gray-300 bg-gray-50 text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:bg-zinc-800 dark:text-gray-100 dark:hover:bg-zinc-700"
+          class="flex size-10 items-center justify-center rounded border border-edge bg-surface-alt text-fg hover:bg-surface-hover"
           title="Cycle theme (Light / Dark / System)"
           aria-label="Cycle theme"
           onclick={onCycleTheme}
@@ -199,7 +199,7 @@
 
         <!-- New Chat button -->
         <button
-          class="flex size-10 items-center justify-center rounded border border-gray-300 bg-gray-50 text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:bg-zinc-800 dark:text-gray-100 dark:hover:bg-zinc-700"
+          class="flex size-10 items-center justify-center rounded border border-edge bg-surface-alt text-fg hover:bg-surface-hover"
           title="New Chat"
           aria-label="New Chat"
           onclick={() => chatState.createNew()}

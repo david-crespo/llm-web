@@ -24,14 +24,14 @@
     {/each}
     {#if chatState.isLoading}
       <div class="mb-6" data-message>
-        <div class="mb-2 flex items-center gap-2 text-xs text-gray-600">
+        <div class="mb-2 flex items-center gap-2 text-xs text-fg-muted">
           <span class="font-medium">{chatState.selectedModel?.id || 'Unknown model'}</span>
           <span>•</span>
           <span>Thinking...</span>
         </div>
         <div>
-          <div class="mb-2 h-3.5 w-3/4 animate-pulse rounded bg-gray-200"></div>
-          <div class="h-3.5 w-1/2 animate-pulse rounded bg-gray-200"></div>
+          <div class="mb-2 h-3.5 w-3/4 animate-pulse rounded bg-edge"></div>
+          <div class="h-3.5 w-1/2 animate-pulse rounded bg-edge"></div>
         </div>
       </div>
     {/if}
@@ -40,14 +40,12 @@
       <div class="flex max-w-xs flex-col gap-2 rounded-lg p-4 text-center">
         <p class="text-lg">Start a chat below</p>
         {#if !hasApiKeys}
-          <p class="text-balance text-gray-700">
-            Go to <a href="/settings" class="text-blue-600 underline hover:text-blue-800"
-              >settings</a
-            >
+          <p class="text-balance text-fg-muted">
+            Go to <a href="/settings" class="text-link underline hover:text-link-hover">settings</a>
             to set an OpenAI, Anthropic, or Gemini API key. Keys are stored only in the browser.
           </p>
         {/if}
-        <button onclick={onOpenAbout} class="text-sm text-blue-600 underline hover:text-blue-800"
+        <button onclick={onOpenAbout} class="text-sm text-link underline hover:text-link-hover"
           >About this app</button
         >
       </div>

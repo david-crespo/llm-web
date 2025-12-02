@@ -29,13 +29,13 @@
     onclick={(e) => e.currentTarget === e.target && onCancel()}
     onkeydown={(e) => (e.key === 'Escape' || e.key === 'Enter') && onCancel()}
   >
-    <div class="w-80 rounded-lg bg-white p-6 shadow-lg">
+    <div class="w-80 rounded-lg border border-edge bg-surface-elevated p-6 shadow-lg">
       <h3 class="mb-4 text-lg font-medium">{title}</h3>
-      <p class="mb-6 text-sm text-gray-600">{message}</p>
+      <p class="mb-6 text-sm text-fg-muted">{message}</p>
       <div class="flex justify-end gap-3">
         <button
           onclick={onCancel}
-          class="rounded border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50"
+          class="rounded border border-edge px-4 py-2 text-sm hover:bg-surface-hover"
           >{cancelLabel}</button
         >
         <button

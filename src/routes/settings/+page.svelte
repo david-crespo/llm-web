@@ -2,7 +2,7 @@
   import { settings } from '$lib/settings.svelte'
 
   const inputClass =
-    'w-full rounded border border-gray-300 bg-white px-3 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100'
+    'w-full rounded border border-edge bg-surface-elevated px-3 py-2 text-fg'
 </script>
 
 <div class="mx-auto max-w-md p-4">
@@ -39,15 +39,13 @@
       />
     </div>
 
-    <div
-      class="rounded border border-gray-300 bg-gray-100 p-3 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
-    >
+    <div class="rounded border border-edge bg-surface-alt p-3 text-sm text-fg-muted">
       Keys are saved automatically as you type. Only providers with keys set will appear in the
       model picker.
     </div>
   </div>
 
   <div class="mt-6">
-    <a href="/" class="text-sm text-blue-600 hover:text-blue-800">← Back to Chat</a>
+    <a href="/" class="text-sm text-link hover:text-link-hover">← Back to Chat</a>
   </div>
 </div>
