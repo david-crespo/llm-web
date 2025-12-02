@@ -116,7 +116,7 @@
             </div>
             <DropdownMenu.Root>
               <DropdownMenu.Trigger
-                class="absolute top-1/2 right-2 -translate-y-1/2 rounded px-2 py-2 text-sm hover:bg-surface-hover"
+                class="absolute top-1/2 right-2 -translate-y-1/2 rounded px-2 py-2 text-lg font-bold hover:bg-surface-hover"
                 aria-label="Chat menu"
                 onclick={(e: MouseEvent) => e.stopPropagation()}
               >
