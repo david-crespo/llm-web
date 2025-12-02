@@ -68,7 +68,10 @@
   {@html html}
 </div>
 
-<style>
+<!-- lang="postcss" suppresses svelte-check warnings for Tailwind's @reference/@apply directives -->
+<style lang="postcss">
+  @reference '../app.css';
+
   /* Custom styles for markdown content */
   .prose :global(pre) {
     /* Let the highlight theme style the code block visuals */
@@ -86,7 +89,7 @@
   }
 
   .prose :global(code) {
-    background-color: #f1f3f4;
+    background-color: #e2e8f0;
     padding: 0.125rem 0.25rem;
     border-radius: 3px;
     font-size: 0.875em;
@@ -113,7 +116,7 @@
     border-left: 4px solid #e5e7eb;
     padding-left: 1rem;
     margin: 1rem 0;
-    color: #6b7280;
+    color: #4b5563; /* gray-600 */
   }
 
   .prose :global(blockquote:last-child) {
@@ -205,7 +208,7 @@
   }
 
   .prose :global(th) {
-    background-color: #f9fafb;
+    background-color: #e5e7eb;
     font-weight: 600;
   }
 
@@ -214,25 +217,29 @@
     text-decoration: underline;
   }
 
+  .prose :global(hr) {
+    @apply border-gray-300 dark:border-zinc-600 my-4;
+  }
+
   .prose :global(a:hover) {
     color: #1d4ed8;
   }
 
   /* Dark mode overrides for markdown (non-code elements) */
   :global(.dark .prose :not(pre) > code) {
-    background-color: #0f172a;
+    background-color: #2a2a30;
     color: #e5e7eb;
   }
   :global(.dark .prose blockquote) {
     border-left-color: #374151; /* gray-700 */
-    color: #9ca3af; /* gray-400 */
+    color: #c9cdd4; /* lighter than gray-400 */
   }
   :global(.dark .prose th),
   :global(.dark .prose td) {
     border-color: #374151; /* gray-700 */
   }
   :global(.dark .prose th) {
-    background-color: #111827; /* gray-900 */
+    background-color: #27272a; /* zinc-800 */
   }
   :global(.dark .prose a) {
     color: #93c5fd; /* blue-300 */
