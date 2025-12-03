@@ -34,7 +34,8 @@
         if (msg.role === 'user') {
           return `${header}\n\n${msg.content}`
         } else {
-          const meta = `\`${msg.model}\` | ${formatTime(msg.timeMs)} | ${formatMoney(msg.cost)} | **Tokens:** ${formatTokens(msg.tokens)}`
+          const searches = msg.search ? ' | 🌐' : ''
+          const meta = `\`${msg.model}\` | ${formatTime(msg.timeMs)} | ${formatMoney(msg.cost)} | ${formatTokens(msg.tokens)}${searches}`
           return `${header}\n${meta}\n\n${msg.content}`
         }
       })

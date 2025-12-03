@@ -9,6 +9,7 @@ export type ModelResponse = {
   tokens: TokenCounts
   stop_reason: string
   reasoning?: string
+  searches?: number
 }
 
 export type ChatInput = {

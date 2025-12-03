@@ -33,7 +33,7 @@
       {/if}
       {#if message.search}
         <span>•</span>
-        <span title="Search enabled">🌐</span>
+        <span title="Web search">🌐</span>
       {/if}
     </div>
 

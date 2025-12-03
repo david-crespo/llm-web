@@ -83,9 +83,7 @@ export async function anthropicCreateMessage({
     .map((block) => block.thinking)
     .join('\n\n')
 
-  // TODO: include cost of these, 1 cent per search
-  // https://claude.com/pricing#api
-  // usage.server_tool_use: { web_search_requests: 2, web_fetch_requests: 0 }
+  const searches = response.usage.server_tool_use?.web_search_requests ?? 0
 
   const tokens = {
     input: response.usage.input_tokens || 0,
@@ -98,5 +96,6 @@ export async function anthropicCreateMessage({
     reasoning,
     tokens,
     stop_reason: response.stop_reason || 'unknown',
+    searches: searches || undefined,
   }
 }

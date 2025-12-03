@@ -9,6 +9,8 @@ export type Model = {
   input: number
   output: number
   input_cached?: number
+  /** Cost per web search in dollars */
+  search_cost?: number
 }
 
 /**
@@ -24,20 +26,23 @@ export type Model = {
  */
 export const models: Model[] = [
   {
-    provider: 'google',
-    key: 'gemini-3-pro-preview',
-    id: 'Gemini 3 Pro',
-    input: 2.0,
-    input_cached: 0.5,
-    output: 12.0,
-  },
-  {
     provider: 'openai',
     key: 'gpt-5.1',
     id: 'GPT-5.1',
     input: 1.25,
     input_cached: 0.125,
     output: 10,
+    search_cost: 0.01,
+  },
+  {
+    provider: 'google',
+    key: 'gemini-3-pro-preview',
+    id: 'Gemini 3 Pro',
+    input: 2.0,
+    input_cached: 0.5,
+    output: 12.0,
+    // 5,000 search queries per month free, then $14/1000
+    search_cost: 0,
   },
   {
     provider: 'anthropic',
@@ -46,6 +51,7 @@ export const models: Model[] = [
     input: 3,
     input_cached: 0.3,
     output: 15,
+    search_cost: 0.01,
   },
   {
     provider: 'anthropic',
@@ -54,6 +60,7 @@ export const models: Model[] = [
     input: 5,
     input_cached: 0.5,
     output: 25,
+    search_cost: 0.01,
   },
 ]
 
@@ -62,18 +69,19 @@ const M = 1_000_000
 export function getCost(
   model: Model,
   tokens: { input: number; input_cache_hit?: number; output: number },
+  searches = 0,
 ): number {
-  const { input, output, input_cached } = model
+  const { input, output, input_cached, search_cost } = model
 
   // when there is caching and we have cache pricing, take it into account
-  const cost =
+  const tokenCost =
     input_cached && tokens.input_cache_hit
       ? input_cached * tokens.input_cache_hit +
         input * (tokens.input - tokens.input_cache_hit) +
         output * tokens.output
       : input * tokens.input + output * tokens.output
 
-  return cost / M
+  return tokenCost / M + (search_cost ?? 0) * searches
 }
 
 import { settings } from './settings.svelte'

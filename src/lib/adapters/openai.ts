@@ -22,6 +22,8 @@ export async function openaiCreateMessage({
     instructions: chat.systemPrompt,
   })
 
+  const searches = response.output.filter((item) => item.type === 'web_search_call').length
+
   const tokens = {
     input: response.usage?.input_tokens || 0,
     output: response.usage?.output_tokens || 0,
@@ -33,5 +35,6 @@ export async function openaiCreateMessage({
     reasoning: '', // Responses API integrates reasoning into output_text
     tokens,
     stop_reason: response.status || 'completed',
+    searches: searches || undefined,
   }
 }

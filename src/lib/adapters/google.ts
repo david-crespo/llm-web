@@ -39,6 +39,7 @@ export async function geminiCreateMessage({
     .join('\n\n')
 
   const searchResults = result.candidates?.[0]?.groundingMetadata?.groundingChunks
+  const searches = searchResults && searchResults.length > 0 ? 1 : 0
   const searchResultsMd = searchResults
     ? '\n\n### Sources\n\n' +
       searchResults
@@ -62,5 +63,6 @@ export async function geminiCreateMessage({
     reasoning,
     tokens,
     stop_reason: result.candidates?.[0]?.finishReason || '',
+    searches: searches || undefined,
   }
 }

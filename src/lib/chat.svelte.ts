@@ -197,7 +197,7 @@ export class ChatManager {
       })
 
       const timeMs = performance.now() - startTime
-      const cost = getCost(this.selectedModel, response.tokens)
+      const cost = getCost(this.selectedModel, response.tokens, response.searches)
 
       const assistantMessage: ChatMessage = {
         role: 'assistant',
