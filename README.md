@@ -16,7 +16,7 @@ An aggressively minimalist mobile web LLM client built as a static site with [Sv
 - Hackable rather than configurable: fork it and deploy your own copy
 - Pretty markdown rendering with syntax highlighting for code blocks
 - Show cost and token counts for every response
-- SOTA models only (currently Gemini 3 Pro, GPT-5.1, and Sonnet 4.5)
+- SOTA models only (latest Gemini, GPT, and Claude)
 - One click to toggle search and extra thinking
 - Bring your own API keys
 - Keys and chats are stored client-side (and only sent directly to the LLM provider from the browser) so anyone can enter keys and use it
