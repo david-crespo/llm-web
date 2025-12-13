@@ -1,8 +1,5 @@
 import type { Chat } from './types'
 
-// Type declarations for browser APIs
-declare const indexedDB: IDBFactory
-
 const DB_NAME = 'llm-web'
 const DB_VERSION = 1
 
@@ -57,7 +54,7 @@ class Storage {
   }
 
   // Chat methods
-  async saveChat(chat: Chat): Promise<number> {
+  async createChat(chat: Chat): Promise<number> {
     await this.ensureInit()
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction(['chats'], 'readwrite')

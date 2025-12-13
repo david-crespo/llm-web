@@ -83,7 +83,7 @@ export class ChatManager {
       messages: [],
     }
 
-    const id = await storage.saveChat(newChat)
+    const id = await storage.createChat(newChat)
     this.current = { ...newChat, id }
     await this.loadHistory()
     this.sidebarOpen = false
@@ -184,7 +184,7 @@ export class ChatManager {
       messages,
     }
 
-    const id = await storage.saveChat(newChat)
+    const id = await storage.createChat(newChat)
     this.current = { ...newChat, id }
     await this.loadHistory()
 
@@ -308,7 +308,7 @@ export class ChatManager {
     if (this.current.id) {
       await storage.updateChat(this.current.id, this.current)
     } else {
-      const id = await storage.saveChat(this.current)
+      const id = await storage.createChat(this.current)
       this.current = { ...this.current, id }
     }
   }
