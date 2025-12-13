@@ -12,28 +12,32 @@ export async function anthropicCreateMessage({
   model,
   search,
   think,
+  signal,
 }: ChatInput): Promise<ModelResponse> {
   const apiKey = settings.anthropicKey
   if (!apiKey) throw new Error('Anthropic API key not found')
 
   const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true })
 
-  const response = await client.messages.create({
-    model: model.key,
-    system: chat.systemPrompt,
-    messages: chat.messages.map((m) => ({ role: m.role, content: m.content })),
-    max_tokens: 8192,
-    thinking: { type: 'enabled', budget_tokens: think ? 4096 : 1024 },
-    tools: search
-      ? [
-          {
-            type: 'web_search_20250305',
-            name: 'web_search',
-            max_uses: 5,
-          },
-        ]
-      : undefined,
-  })
+  const response = await client.messages.create(
+    {
+      model: model.key,
+      system: chat.systemPrompt,
+      messages: chat.messages.map((m) => ({ role: m.role, content: m.content })),
+      max_tokens: 8192,
+      thinking: { type: 'enabled', budget_tokens: think ? 4096 : 1024 },
+      tools: search
+        ? [
+            {
+              type: 'web_search_20250305',
+              name: 'web_search',
+              max_uses: 5,
+            },
+          ]
+        : undefined,
+    },
+    { signal },
+  )
 
   const content = response.content
     .map((block): string | null => {

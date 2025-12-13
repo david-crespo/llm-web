@@ -22,6 +22,9 @@ export class ChatManager {
   sidebarOpen = $state(false)
   isLoading = $state(false)
 
+  // Initialization state
+  initError = $state<string | null>(null)
+
   // Chat Data
   current = $state<Chat | null>(null)
   history = $state<(Chat & { id: number })[]>([])
@@ -30,6 +33,9 @@ export class ChatManager {
   selectedModel = $state<Model | undefined>(getAvailableModels().at(0))
   webSearch = $state(true)
   reasoning = $state(false)
+
+  // Track in-flight request for cancellation detection
+  private abortController: AbortController | null = null
 
   constructor() {
     // Automatically initialize when created
@@ -40,14 +46,21 @@ export class ChatManager {
    * Initialize storage and load initial chat
    */
   async init() {
-    await storage.init()
-    await this.loadHistory()
+    this.initError = null
 
-    // Reuse existing empty chat or create new one
-    if (this.history.length > 0 && this.history[0].messages.length === 0) {
-      this.current = this.history[0]
-    } else {
-      await this.createNew()
+    try {
+      await storage.init()
+      await this.loadHistory()
+
+      // Reuse existing empty chat or create new one
+      if (this.history.length > 0 && this.history[0].messages.length === 0) {
+        this.current = this.history[0]
+      } else {
+        await this.createNew()
+      }
+    } catch (error) {
+      console.error('Failed to initialize chat storage:', error)
+      this.initError = error instanceof Error ? error.message : 'Failed to initialize storage'
     }
   }
 
@@ -129,6 +142,9 @@ export class ChatManager {
     this.current.messages.push(userMessage)
     scrollToBottom()
 
+    // Save immediately so the question is preserved even if the request is interrupted
+    await this.saveCurrentIfDirty()
+
     await this.processResponse(this.current, content.trim())
   }
 
@@ -184,6 +200,10 @@ export class ChatManager {
     if (!this.selectedModel) return // just in case
 
     this.isLoading = true
+    // Defensive: abort any prior request if one slipped through the isLoading guard
+    this.abortController?.abort('replaced')
+    const controller = new AbortController()
+    this.abortController = controller
 
     try {
       const startTime = performance.now()
@@ -194,7 +214,11 @@ export class ChatManager {
         model: this.selectedModel,
         search: this.webSearch,
         think: this.reasoning,
+        signal: controller.signal,
       })
+
+      // Stale response from a replaced request - ignore
+      if (this.abortController !== controller) return
 
       const timeMs = performance.now() - startTime
       const cost = getCost(this.selectedModel, response.tokens, response.searches)
@@ -217,22 +241,61 @@ export class ChatManager {
       await this.saveCurrentIfDirty()
       await this.loadHistory()
     } catch (error) {
+      // Stale error from a replaced request - ignore silently
+      if (this.abortController !== controller) return
+
+      const reason = controller.signal.reason as string | undefined
+
+      // Silent abort when replaced by a new request
+      if (reason === 'replaced') return
+
       console.error('Error sending message:', error)
+
+      const isAbort =
+        controller.signal.aborted || (error instanceof Error && error.name === 'AbortError')
+      const wasUserStopped = reason === 'user_stopped'
+
+      let errorContent: string
+      let stopReason: string
+      if (wasUserStopped) {
+        errorContent = 'Stopped by user'
+        stopReason = 'stopped'
+      } else if (isAbort) {
+        errorContent = 'Request interrupted (connection lost or tab backgrounded)'
+        stopReason = 'interrupted'
+      } else {
+        errorContent = `Error: ${error instanceof Error ? error.message : 'Unknown error'}`
+        stopReason = 'error'
+      }
 
       const errorMessage: ChatMessage = {
         role: 'assistant',
         model: this.selectedModel.id,
-        content: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        content: errorContent,
         tokens: { input: 0, output: 0 },
-        stop_reason: 'error',
+        stop_reason: stopReason,
         cost: 0,
         timeMs: 0,
       }
 
       chat.messages.push(errorMessage)
       scrollToBottom()
+
+      // Save the error so the user sees what happened
+      await this.saveCurrentIfDirty()
+      await this.loadHistory()
     } finally {
       this.isLoading = false
+      this.abortController = null
+    }
+  }
+
+  /**
+   * Stop the current in-flight request
+   */
+  stop() {
+    if (this.abortController) {
+      this.abortController.abort('user_stopped')
     }
   }
 

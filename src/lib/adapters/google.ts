@@ -7,6 +7,7 @@ export async function geminiCreateMessage({
   model,
   search,
   think,
+  signal,
 }: ChatInput): Promise<ModelResponse> {
   const apiKey = settings.googleKey
   if (!apiKey) throw new Error('Gemini API key not found')
@@ -20,6 +21,7 @@ export async function geminiCreateMessage({
       },
       systemInstruction: chat.systemPrompt,
       tools: [{ urlContext: {} }, ...(search ? [{ googleSearch: {} }] : [])],
+      abortSignal: signal,
     },
     model: model.key,
     contents: chat.messages.map((msg) => ({

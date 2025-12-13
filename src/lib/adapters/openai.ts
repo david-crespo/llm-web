@@ -8,19 +8,23 @@ export async function openaiCreateMessage({
   model,
   search,
   think,
+  signal,
 }: ChatInput): Promise<ModelResponse> {
   const apiKey = settings.openaiKey
   if (!apiKey) throw new Error('OpenAI API key not found')
 
   const client = new OpenAI({ apiKey, dangerouslyAllowBrowser: true })
 
-  const response = await client.responses.create({
-    model: model.key,
-    input: chat.messages.map((m) => ({ role: m.role, content: m.content })),
-    tools: search ? [{ type: 'web_search_preview' as const }] : undefined,
-    reasoning: { effort: think ? 'medium' : 'low' },
-    instructions: chat.systemPrompt,
-  })
+  const response = await client.responses.create(
+    {
+      model: model.key,
+      input: chat.messages.map((m) => ({ role: m.role, content: m.content })),
+      tools: search ? [{ type: 'web_search_preview' as const }] : undefined,
+      reasoning: { effort: think ? 'medium' : 'low' },
+      instructions: chat.systemPrompt,
+    },
+    { signal },
+  )
 
   const searches = response.output.filter((item) => item.type === 'web_search_call').length
 

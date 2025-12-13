@@ -18,6 +18,7 @@ export type ChatInput = {
   model: Model
   search: boolean
   think: boolean
+  signal?: AbortSignal
 }
 
 export async function createMessage(provider: string, input: ChatInput): Promise<ModelResponse> {

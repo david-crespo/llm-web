@@ -28,6 +28,12 @@
           <span class="font-medium">{chatState.selectedModel?.id || 'Unknown model'}</span>
           <span>•</span>
           <span>Thinking...</span>
+          <button
+            onclick={() => chatState.stop()}
+            class="ml-1 rounded border border-edge px-1.5 py-0.5 text-fg-muted hover:border-fg-faint hover:bg-surface-hover hover:text-fg"
+          >
+            Stop
+          </button>
         </div>
         <div>
           <div class="mb-2 h-3.5 w-3/4 animate-pulse rounded bg-edge"></div>
