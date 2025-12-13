@@ -130,13 +130,13 @@
                   align="end"
                 >
                   <DropdownMenu.Item
-                    class="w-full px-3 py-2 text-left text-sm hover:bg-surface-hover cursor-pointer outline-none data-[highlighted]:bg-surface-hover"
+                    class="w-full cursor-pointer px-3 py-2 text-left text-sm outline-none hover:bg-surface-hover data-[highlighted]:bg-surface-hover"
                     onSelect={() => copyMarkdown(chat)}
                   >
                     Copy as Markdown
                   </DropdownMenu.Item>
                   <DropdownMenu.Item
-                    class="w-full px-3 py-2 text-left text-sm text-danger hover:bg-surface-hover cursor-pointer outline-none data-[highlighted]:bg-surface-hover"
+                    class="w-full cursor-pointer px-3 py-2 text-left text-sm text-danger outline-none hover:bg-surface-hover data-[highlighted]:bg-surface-hover"
                     onSelect={() => onRequestDelete(chat.id!)}
                   >
                     Delete

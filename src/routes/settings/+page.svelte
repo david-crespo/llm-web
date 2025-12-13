@@ -1,8 +1,7 @@
 <script lang="ts">
   import { settings } from '$lib/settings.svelte'
 
-  const inputClass =
-    'w-full rounded border border-edge bg-surface-elevated px-3 py-2 text-fg'
+  const inputClass = 'w-full rounded border border-edge bg-surface-elevated px-3 py-2 text-fg'
 </script>
 
 <div class="mx-auto max-w-md p-4">

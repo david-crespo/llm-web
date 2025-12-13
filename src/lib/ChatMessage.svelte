@@ -40,9 +40,7 @@
     <!-- Reasoning (if present) -->
     {#if message.reasoning}
       <details class="mb-3">
-        <summary class="cursor-pointer text-sm text-fg-muted hover:text-fg">
-          Reasoning
-        </summary>
+        <summary class="cursor-pointer text-sm text-fg-muted hover:text-fg"> Reasoning </summary>
         <div class="mt-2 rounded border-l-4 border-edge bg-surface-alt p-3">
           <Markdown content={message.reasoning} />
         </div>
