@@ -45,6 +45,7 @@
     "highlight.js": "^11.11.1",
     "marked": "^16.2.1",
     "marked-highlight": "^2.2.2",
-    "openai": "^6.9.1"
+    "openai": "^6.9.1",
+    "temml": "^0.13.1"
   }
 }

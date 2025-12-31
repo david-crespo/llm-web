@@ -100,5 +100,6 @@ export const systemBase = `
 - Your answers MUST be in markdown format
 - Put code within a triple-backtick fence block with a language key (like \`\`\`rust)
 - Never put markdown prose (or bullets or whatever) in a fenced code block
+- For math, use LaTeX: $...$ or \\(...\\) for inline, $$...$$ or \\[...\\] for block
 - Today's date is ${new Date().toISOString().slice(0, 10)}`
 /* eslint-enable svelte/prefer-svelte-reactivity */

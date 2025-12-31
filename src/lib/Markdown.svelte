@@ -9,6 +9,8 @@
   import bash from 'highlight.js/lib/languages/bash'
   import rust from 'highlight.js/lib/languages/rust'
   import python from 'highlight.js/lib/languages/python'
+  // Math rendering via Temml (outputs MathML, rendered natively by browsers)
+  import temml from 'temml'
 
   // Register a minimal set of languages to keep bundle size small
   hljs.registerLanguage('javascript', javascript)
@@ -16,6 +18,47 @@
   hljs.registerLanguage('bash', bash)
   hljs.registerLanguage('rust', rust)
   hljs.registerLanguage('python', python)
+
+  // Render LaTeX math expressions to MathML
+  // Supports both $...$/$$...$$ and \(...\)/\[...\] delimiters
+  function renderMath(text: string): string {
+    // Protect code blocks and inline code from math processing
+    const codeBlocks: string[] = []
+    const placeholder = (i: number) => `\x00CODE${i}\x00`
+
+    // Protect fenced code blocks
+    text = text.replace(/```[\s\S]*?```|`[^`\n]+`/g, (match) => {
+      codeBlocks.push(match)
+      return placeholder(codeBlocks.length - 1)
+    })
+
+    // Block math: $$...$$ or \[...\]
+    text = text.replace(/\$\$([\s\S]+?)\$\$|\\\[([\s\S]+?)\\\]/g, (_, d1, d2) => {
+      const latex = (d1 ?? d2).trim()
+      try {
+        return temml.renderToString(latex, { displayMode: true })
+      } catch {
+        return `<code class="math-error">${latex}</code>`
+      }
+    })
+    // Inline math: $...$ (not \$) or \(...\)
+    // For $...$, require at least one LaTeX-ish char to avoid "$50 to $100" false positives
+    const hasLatexChar = (s: string) => /[\\^_{}=]/.test(s)
+    text = text.replace(/(?<!\\)\$([^\$\n]+?)\$|\\\((.+?)\\\)/g, (match, d1, d2) => {
+      // d1 is from $...$, d2 is from \(...\)
+      if (d1 !== undefined && !hasLatexChar(d1)) return match
+      const latex = (d1 ?? d2).trim()
+      try {
+        return temml.renderToString(latex, { displayMode: false })
+      } catch {
+        return `<code class="math-error">${latex}</code>`
+      }
+    })
+
+    // Restore code blocks
+    text = text.replace(/\x00CODE(\d+)\x00/g, (_, i) => codeBlocks[parseInt(i)])
+    return text
+  }
 
   interface Props {
     content: string
@@ -28,6 +71,39 @@
   let divClass = $derived(`prose prose-sm max-w-none${className ? ' ' + className : ''}`)
 
   // Simple highlight.js integration via custom code renderer
+
+  // MathML elements to allow through DOMPurify
+  const MATHML_TAGS = [
+    'math',
+    'semantics',
+    'annotation',
+    'mrow',
+    'mi',
+    'mo',
+    'mn',
+    'ms',
+    'mtext',
+    'mspace',
+    'msup',
+    'msub',
+    'msubsup',
+    'mfrac',
+    'msqrt',
+    'mroot',
+    'mtable',
+    'mtr',
+    'mtd',
+    'mover',
+    'munder',
+    'munderover',
+    'menclose',
+    'mpadded',
+    'mphantom',
+    'mstyle',
+    'merror',
+    'mmultiscripts',
+    'mprescripts',
+  ]
 
   $effect(() => {
     const renderer = new marked.Renderer()
@@ -43,7 +119,9 @@
       return `<pre><code class="${cls}">${highlighted}\n</code></pre>`
     }
     ;(async () => {
-      const rendered = await marked.parse(content, { renderer })
+      // Render math before markdown so $...$ isn't misinterpreted
+      const withMath = renderMath(content)
+      const rendered = await marked.parse(withMath, { renderer })
 
       DOMPurify.addHook('afterSanitizeAttributes', (node) => {
         if (node.tagName === 'A') {
@@ -56,6 +134,8 @@
         // Allow common safe URL schemes and root-relative paths
         ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel):|\/)/i,
         FORBID_TAGS: ['style', 'iframe', 'object', 'embed', 'form', 'input', 'button'],
+        ADD_TAGS: MATHML_TAGS,
+        ADD_ATTR: ['xmlns', 'displaystyle', 'scriptlevel'],
       })
 
       DOMPurify.removeHook('afterSanitizeAttributes')
@@ -257,5 +337,18 @@
   .prose :global(h5),
   .prose :global(h6) {
     font-size: 0.95em;
+  }
+
+  /* Block math: center and add vertical spacing */
+  .prose :global(math[display='block']) {
+    display: block;
+    text-align: center;
+    margin: 1rem 0;
+  }
+
+  /* Math parse errors */
+  .prose :global(.math-error) {
+    color: var(--color-error, #dc2626);
+    background-color: var(--color-error-bg, #fef2f2);
   }
 </style>
