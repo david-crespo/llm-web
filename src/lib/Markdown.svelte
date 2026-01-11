@@ -43,7 +43,7 @@
     })
     // Inline math: $...$ (not \$) or \(...\)
     // For $...$, require at least one LaTeX-ish char to avoid "$50 to $100" false positives
-    const hasLatexChar = (s: string) => /[\\^_{}=]/.test(s)
+    const hasLatexChar = (s: string) => /[\\^_{}=]/.test(s) || /^[a-zA-Z]$/.test(s)
     text = text.replace(/(?<!\\)\$([^\$\n]+?)\$|\\\((.+?)\\\)/g, (match, d1, d2) => {
       // d1 is from $...$, d2 is from \(...\)
       if (d1 !== undefined && !hasLatexChar(d1)) return match

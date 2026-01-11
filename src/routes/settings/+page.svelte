@@ -65,8 +65,8 @@
       <div>{storageUsage.used} MB used of {storageUsage.quota} GB quota</div>
     </div>
     <div class="mt-2 text-sm text-fg-muted">
-      Chats are stored in <Link href="https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API"
-        >IndexedDB</Link
+      Chats are stored in <Link
+        href="https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API">IndexedDB</Link
       >. Usage comes from
       <Link href="https://developer.mozilla.org/en-US/docs/Web/API/StorageManager/estimate"
         >StorageManager.estimate()</Link
