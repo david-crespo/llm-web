@@ -69,8 +69,6 @@
   let { content, class: className }: Props = $props()
   let html = $state('')
 
-  let divClass = $derived(`prose prose-sm max-w-none${className ? ' ' + className : ''}`)
-
   // Simple highlight.js integration via custom code renderer
 
   // MathML elements to allow through DOMPurify
@@ -144,7 +142,7 @@
   })
 </script>
 
-<div class={divClass}>
+<div class="prose max-w-none {className}">
   <!-- eslint-disable-next-line svelte/no-at-html-tags -->
   {@html html}
 </div>
