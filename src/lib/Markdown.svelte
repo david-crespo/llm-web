@@ -172,7 +172,7 @@
     color: var(--color-fg);
     padding: 0.125rem 0.25rem;
     border-radius: 3px;
-    font-size: 0.875em;
+    font-size: 0.875rem;
   }
 
   .prose :global(pre code) {
@@ -307,35 +307,35 @@
   .prose :global(li),
   .prose :global(td),
   .prose :global(th) {
-    font-size: 0.9375em;
+    font-size: 0.9375rem;
     line-height: 1.35;
   }
 
   /* Inline code slightly smaller */
   .prose :global(code) {
-    font-size: 0.85em;
+    font-size: 0.85rem;
   }
 
   /* Code blocks a notch smaller + tighter line-height */
   .prose :global(pre),
   .prose :global(pre code) {
-    font-size: 0.9em;
+    font-size: 0.9rem;
     line-height: 1.3;
   }
 
   .prose :global(h1) {
-    font-size: 1.1em;
+    font-size: 1.1rem;
   }
 
   .prose :global(h2) {
-    font-size: 1em;
+    font-size: 1rem;
   }
 
   .prose :global(h3),
   .prose :global(h4),
   .prose :global(h5),
   .prose :global(h6) {
-    font-size: 0.95em;
+    font-size: 0.95rem;
   }
 
   /* Block math: center and add vertical spacing */
