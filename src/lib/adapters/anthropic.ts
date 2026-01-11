@@ -19,13 +19,13 @@ export async function anthropicCreateMessage({
 
   const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true })
 
-  const response = await client.messages.create(
+  const response = await client.beta.messages.create(
     {
       model: model.key,
       system: chat.systemPrompt,
       messages: chat.messages.map((m) => ({ role: m.role, content: m.content })),
       max_tokens: 8192,
-      thinking: { type: 'enabled', budget_tokens: think ? 4096 : 1024 },
+      output_config: { effort: think ? 'high' : 'low' },
       tools: search
         ? [
             {
@@ -35,6 +35,7 @@ export async function anthropicCreateMessage({
             },
           ]
         : undefined,
+      betas: ['effort-2025-11-24'],
     },
     { signal },
   )

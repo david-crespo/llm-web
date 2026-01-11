@@ -35,7 +35,7 @@
     "vite": "^7.0.4"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.70.0",
+    "@anthropic-ai/sdk": "0.71.2",
     "@google/genai": "^1.30.0",
     "bits-ui": "2.14.4",
     "dompurify": "^3.2.6",
