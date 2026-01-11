@@ -30,5 +30,7 @@
           window.matchMedia('(prefers-color-scheme: dark)').matches)
       window.__applyHljsTheme(isDark)
     })
-  } catch {}
+  } catch {
+    // ignore - theme init is best-effort
+  }
 })()

@@ -1,0 +1,10 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "singleQuote": true,
+  "semi": false,
+  "experimentalSortPackageJson": false,
+  "experimentalTailwindcss": {
+    "stylesheet": "./src/app.css"
+  },
+  "ignorePatterns": ["src/app.html"]
+}
