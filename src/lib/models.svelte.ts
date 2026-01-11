@@ -46,15 +46,6 @@ export const models: Model[] = [
   },
   {
     provider: 'anthropic',
-    key: 'claude-sonnet-4-5',
-    id: 'Sonnet 4.5',
-    input: 3,
-    input_cached: 0.3,
-    output: 15,
-    search_cost: 0.01,
-  },
-  {
-    provider: 'anthropic',
     key: 'claude-opus-4-5',
     id: 'Opus 4.5',
     input: 5,
