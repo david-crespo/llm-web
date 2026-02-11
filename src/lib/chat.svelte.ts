@@ -242,7 +242,7 @@ export class ChatManager {
       // Don't yank the viewport if the user is viewing a different chat.
       if (this.current.id === chatId) scrollToBottom()
 
-      storage.updateChat(chatId, chat)
+      await storage.updateChat(chatId, chat)
     } catch (error) {
       // Stale error from a replaced request — ignore silently
       if (this.pendingRequests.get(chatId) !== controller) return
@@ -282,9 +282,9 @@ export class ChatManager {
       chat.messages.push(errorMessage)
       if (this.current.id === chatId) scrollToBottom()
 
-      storage.updateChat(chatId, chat)
+      await storage.updateChat(chatId, chat)
     } finally {
-      wakeLock?.release()
+      await wakeLock?.release()
       // Only clean up if we're still the active request for this chat
       if (this.pendingRequests.get(chatId) === controller) {
         this.pendingRequests.delete(chatId)
@@ -340,4 +340,4 @@ async function boot() {
   }
 }
 
-boot()
+void boot()

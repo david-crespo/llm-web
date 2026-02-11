@@ -77,7 +77,7 @@
       const cls = `hljs${lang ? ` language-${lang}` : ''}`
       return `<pre><code class="${cls}">${highlighted}\n</code></pre>`
     }
-    ;(async () => {
+    void (async () => {
       // Render math before markdown so $...$ isn't misinterpreted
       const withMath = renderMath(content)
       const rendered = await marked.parse(withMath, { renderer })
