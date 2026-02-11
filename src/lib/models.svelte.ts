@@ -1,6 +1,8 @@
 // prices are per million tokens
+import type { Provider } from './settings.svelte'
+
 export type Model = {
-  provider: string
+  provider: Provider
   /** Key provided to API call */
   key: string
   /** ID for display and usability purposes */

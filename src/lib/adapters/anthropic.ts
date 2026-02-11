@@ -14,7 +14,7 @@ export async function anthropicCreateMessage({
   think,
   signal,
 }: ChatInput): Promise<ModelResponse> {
-  const apiKey = settings.anthropicKey
+  const apiKey = settings.getKey('anthropic')
   if (!apiKey) throw new Error('Anthropic API key not found')
 
   const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true })

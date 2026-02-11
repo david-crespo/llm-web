@@ -27,7 +27,8 @@
       <label for="openai-key" class="mb-1 block text-sm font-medium">OpenAI</label>
       <input
         id="openai-key"
-        bind:value={settings.openaiKey}
+        value={settings.getKey('openai')}
+        oninput={(e) => settings.setKey('openai', e.currentTarget.value)}
         placeholder="sk-..."
         class={inputClass}
       />
@@ -37,7 +38,8 @@
       <label for="anthropic-key" class="mb-1 block text-sm font-medium">Anthropic</label>
       <input
         id="anthropic-key"
-        bind:value={settings.anthropicKey}
+        value={settings.getKey('anthropic')}
+        oninput={(e) => settings.setKey('anthropic', e.currentTarget.value)}
         placeholder="sk-ant-..."
         class={inputClass}
       />
@@ -47,7 +49,8 @@
       <label for="google-key" class="mb-1 block text-sm font-medium">Gemini</label>
       <input
         id="google-key"
-        bind:value={settings.googleKey}
+        value={settings.getKey('google')}
+        oninput={(e) => settings.setKey('google', e.currentTarget.value)}
         placeholder="AIza..."
         class={inputClass}
       />

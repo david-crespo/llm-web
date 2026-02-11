@@ -44,8 +44,7 @@ export class ChatManager {
   get lastMessageIsError(): boolean {
     const last = this.current?.messages.at(-1)
     return (
-      last?.role === 'assistant' &&
-      ['stopped', 'interrupted', 'error'].includes(last.stop_reason)
+      last?.role === 'assistant' && ['stopped', 'interrupted', 'error'].includes(last.stop_reason)
     )
   }
 

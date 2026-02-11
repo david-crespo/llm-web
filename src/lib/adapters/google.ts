@@ -9,7 +9,7 @@ export async function geminiCreateMessage({
   think,
   signal,
 }: ChatInput): Promise<ModelResponse> {
-  const apiKey = settings.googleKey
+  const apiKey = settings.getKey('google')
   if (!apiKey) throw new Error('Gemini API key not found')
 
   const genAI = new GoogleGenAI({ apiKey })

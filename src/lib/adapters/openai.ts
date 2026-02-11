@@ -10,7 +10,7 @@ export async function openaiCreateMessage({
   think,
   signal,
 }: ChatInput): Promise<ModelResponse> {
-  const apiKey = settings.openaiKey
+  const apiKey = settings.getKey('openai')
   if (!apiKey) throw new Error('OpenAI API key not found')
 
   const client = new OpenAI({ apiKey, dangerouslyAllowBrowser: true })
