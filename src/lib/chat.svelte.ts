@@ -224,6 +224,14 @@ export class ChatManager {
     const controller = new AbortController()
     this.pendingRequests.set(chatId, controller)
 
+    // Prevent iOS from suspending the page while the request is in-flight
+    let wakeLock: WakeLockSentinel | null = null
+    try {
+      wakeLock = await navigator.wakeLock?.request('screen')
+    } catch {
+      // Wake Lock not supported or failed (e.g. low battery) — proceed without it
+    }
+
     try {
       const startTime = performance.now()
 
@@ -302,6 +310,7 @@ export class ChatManager {
       await storage.updateChat(chatId, chat)
       await this.loadHistory()
     } finally {
+      wakeLock?.release()
       // Only clean up if we're still the active request for this chat
       if (this.pendingRequests.get(chatId) === controller) {
         this.pendingRequests.delete(chatId)
