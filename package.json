@@ -38,10 +38,10 @@
     "@anthropic-ai/sdk": "0.74.0",
     "@google/genai": "^1.40.0",
     "bits-ui": "2.14.4",
-    "dompurify": "^3.2.6",
+    "dompurify": "^3.3.1",
     "highlight.js": "^11.11.1",
-    "marked": "^16.2.1",
-    "marked-highlight": "^2.2.2",
+    "marked": "^17.0.1",
+    "marked-highlight": "^2.2.3",
     "openai": "^6.21.0",
     "temml": "^0.13.1"
   }
