@@ -9,8 +9,7 @@
   import bash from 'highlight.js/lib/languages/bash'
   import rust from 'highlight.js/lib/languages/rust'
   import python from 'highlight.js/lib/languages/python'
-  // Math rendering via Temml (outputs MathML, rendered natively by browsers)
-  import temml from 'temml'
+  import { renderMath } from './math'
 
   // Register a minimal set of languages to keep bundle size small
   hljs.registerLanguage('javascript', javascript)
@@ -18,48 +17,6 @@
   hljs.registerLanguage('bash', bash)
   hljs.registerLanguage('rust', rust)
   hljs.registerLanguage('python', python)
-
-  // Render LaTeX math expressions to MathML
-  // Supports both $...$/$$...$$ and \(...\)/\[...\] delimiters
-  function renderMath(text: string): string {
-    // Protect code blocks and inline code from math processing
-    const codeBlocks: string[] = []
-    const placeholder = (i: number) => `\x00CODE${i}\x00`
-
-    // Protect fenced code blocks
-    text = text.replace(/```[\s\S]*?```|`[^`\n]+`/g, (match) => {
-      codeBlocks.push(match)
-      return placeholder(codeBlocks.length - 1)
-    })
-
-    // Block math: $$...$$ or \[...\]
-    text = text.replace(/\$\$([\s\S]+?)\$\$|\\\[([\s\S]+?)\\\]/g, (_, d1, d2) => {
-      const latex = (d1 ?? d2).trim()
-      try {
-        return temml.renderToString(latex, { displayMode: true })
-      } catch {
-        return `<code class="math-error">${latex}</code>`
-      }
-    })
-    // Inline math: $...$ (not \$) or \(...\)
-    // For $...$, require at least one LaTeX-ish char to avoid "$50 to $100" false positives
-    const hasLatexChar = (s: string) => /[\\^_{}=]/.test(s) || /^[a-zA-Z]$/.test(s)
-    text = text.replace(/(?<!\\)\$([^$\n]+?)\$|\\\((.+?)\\\)/g, (match, d1, d2) => {
-      // d1 is from $...$, d2 is from \(...\)
-      if (d1 !== undefined && !hasLatexChar(d1)) return match
-      const latex = (d1 ?? d2).trim()
-      try {
-        return temml.renderToString(latex, { displayMode: false })
-      } catch {
-        return `<code class="math-error">${latex}</code>`
-      }
-    })
-
-    // Restore code blocks
-    // eslint-disable-next-line no-control-regex
-    text = text.replace(/\x00CODE(\d+)\x00/g, (_, i) => codeBlocks[parseInt(i)])
-    return text
-  }
 
   interface Props {
     content: string
