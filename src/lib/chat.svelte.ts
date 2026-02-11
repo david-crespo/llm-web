@@ -19,7 +19,11 @@ let _boot = $state<BootState>({ status: 'loading' })
 // assigned before bootState flips to 'ready' and is only accessed by components
 // rendered inside that gate. After mount, reactivity comes from ChatManager's
 // internal $state fields (current, history, etc.).
-export const bootState = { get current() { return _boot } }
+export const bootState = {
+  get current() {
+    return _boot
+  },
+}
 export let chatState: ChatManager
 
 export class ChatManager {

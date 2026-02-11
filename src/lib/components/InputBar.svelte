@@ -58,7 +58,11 @@
           target.style.height = `${Math.min(target.scrollHeight, 200)}px`
         }}
         onkeydown={(e) => e.key === 'Enter' && (e.metaKey || e.ctrlKey) && onSend()}
-        placeholder="Type a message (⌘+Enter to send)"
+        placeholder={chatState.isCurrentLoading
+          ? 'Waiting for response…'
+          : chatState.lastMessageIsError
+            ? 'Regen or fork to continue after error'
+            : 'Type a message (⌘+Enter to send)'}
         class="w-full resize-none overflow-y-auto rounded border border-edge px-3 py-2"
         style="min-height: 42px; max-height: 200px;"
         rows="1"
@@ -93,7 +97,7 @@
             }
           }}
           disabled={!hasAnyKeys}
-          class="h-10 w-32 rounded border border-edge bg-surface-alt px-2 py-2 text-sm text-fg disabled:cursor-not-allowed disabled:text-fg-faint"
+          class="h-10 w-32 rounded border border-edge bg-surface-alt px-2 py-2 text-sm text-fg disabled:text-fg-faint"
           aria-label="Select model"
         >
           {#if !hasAnyKeys}
@@ -130,7 +134,7 @@
         <button
           onclick={onSend}
           disabled={chatState.isCurrentLoading || !message.trim() || chatState.lastMessageIsError}
-          class="rounded bg-btn-primary px-4 py-2 text-white hover:bg-btn-primary-hover disabled:cursor-not-allowed disabled:bg-btn-disabled"
+          class="rounded bg-btn-primary px-4 py-2 text-white hover:bg-btn-primary-hover disabled:bg-btn-disabled"
         >
           Send
         </button>

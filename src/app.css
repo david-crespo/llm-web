@@ -121,6 +121,11 @@ select,
   cursor: pointer;
 }
 
+button:disabled,
+select:disabled {
+  cursor: not-allowed;
+}
+
 /* Custom scrollbar for webkit browsers */
 ::-webkit-scrollbar {
   width: 6px;
