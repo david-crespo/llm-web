@@ -1,4 +1,4 @@
-import { SvelteDate } from 'svelte/reactivity'
+import { SvelteDate, SvelteMap } from 'svelte/reactivity'
 import { storage } from '$lib/storage'
 import { models, getCost, systemBase, getAvailableModels, type Model } from '$lib/models.svelte'
 import { createMessage } from '$lib/adapters'
@@ -20,7 +20,6 @@ import type { Chat, ChatMessage } from '$lib/types'
 export class ChatManager {
   // UI State
   sidebarOpen = $state(false)
-  isLoading = $state(false)
 
   // Initialization state
   initError = $state<string | null>(null)
@@ -34,8 +33,12 @@ export class ChatManager {
   webSearch = $state(true)
   reasoning = $state(false)
 
-  // Track in-flight request for cancellation detection
-  private abortController: AbortController | null = null
+  // Per-chat in-flight requests so switching chats doesn't block, cancel, or mis-attribute replies.
+  private pendingRequests = new SvelteMap<number, AbortController>()
+
+  get isCurrentLoading(): boolean {
+    return this.current?.id != null && this.pendingRequests.has(this.current.id)
+  }
 
   constructor() {
     // Automatically initialize when created
@@ -132,35 +135,39 @@ export class ChatManager {
    * Send a user message and get AI response
    */
   async sendMessage(content: string) {
-    if (!content.trim() || !this.current || this.isLoading) return
+    if (!content.trim() || !this.current || this.isCurrentLoading) return
+
+    // Capture before any await: the user can switch chats while the request is in-flight.
+    const chat = this.current
 
     const userMessage: ChatMessage = {
       role: 'user',
       content: content.trim(),
     }
 
-    this.current.messages.push(userMessage)
+    chat.messages.push(userMessage)
     scrollToBottom()
 
     // Save immediately so the question is preserved even if the request is interrupted
     await this.saveCurrentIfDirty()
 
-    await this.processResponse(this.current, content.trim())
+    await this.processResponse(chat, content.trim())
   }
 
   /**
    * Regenerate response from a specific message index
    */
   async regenerate(index: number) {
-    if (!this.current || this.isLoading) return
+    if (!this.current || this.isCurrentLoading) return
 
-    const targetMessage = this.current.messages[index]
+    const chat = this.current
+    const targetMessage = chat.messages[index]
     if (targetMessage.role !== 'user') return
 
     // Truncate messages after this point
-    this.current.messages = this.current.messages.slice(0, index + 1)
+    chat.messages = chat.messages.slice(0, index + 1)
 
-    await this.processResponse(this.current, targetMessage.content)
+    await this.processResponse(chat, targetMessage.content)
   }
 
   /**
@@ -193,42 +200,45 @@ export class ChatManager {
   }
 
   /**
-   * Process AI response for a given input
-   * This is the core message handling logic
+   * Process AI response for a given input.
+   * Operates on the specific `chat` reference so it remains correct even if
+   * the user switches to a different chat while the request is in-flight.
    */
   private async processResponse(chat: Chat, input: string) {
-    if (!this.selectedModel) return // just in case
+    const chatId = chat.id
+    if (chatId == null || !this.selectedModel) return
+    const model = this.selectedModel
+    const search = this.webSearch
 
-    this.isLoading = true
-    // Defensive: abort any prior request if one slipped through the isLoading guard
-    this.abortController?.abort('replaced')
+    // Abort any prior request for this same chat
+    this.pendingRequests.get(chatId)?.abort('replaced')
     const controller = new AbortController()
-    this.abortController = controller
+    this.pendingRequests.set(chatId, controller)
 
     try {
       const startTime = performance.now()
 
-      const response = await createMessage(this.selectedModel.provider, {
+      const response = await createMessage(model.provider, {
         chat,
         input,
-        model: this.selectedModel,
-        search: this.webSearch,
+        model,
+        search,
         think: this.reasoning,
         signal: controller.signal,
       })
 
-      // Stale response from a replaced request - ignore
-      if (this.abortController !== controller) return
+      // Ignore stale results: only the most recent request for this chat is allowed to append.
+      if (this.pendingRequests.get(chatId) !== controller) return
 
       const timeMs = performance.now() - startTime
-      const cost = getCost(this.selectedModel, response.tokens, response.searches)
+      const cost = getCost(model, response.tokens, response.searches)
 
       const assistantMessage: ChatMessage = {
         role: 'assistant',
-        model: this.selectedModel.id,
+        model: model.id,
         content: response.content,
         reasoning: response.reasoning,
-        search: this.webSearch,
+        search,
         tokens: response.tokens,
         stop_reason: response.stop_reason,
         cost,
@@ -236,17 +246,16 @@ export class ChatManager {
       }
 
       chat.messages.push(assistantMessage)
-      scrollToBottom()
+      // Don't yank the viewport if the user is viewing a different chat.
+      if (this.current?.id === chatId) scrollToBottom()
 
-      await this.saveCurrentIfDirty()
+      await storage.updateChat(chatId, chat)
       await this.loadHistory()
     } catch (error) {
-      // Stale error from a replaced request - ignore silently
-      if (this.abortController !== controller) return
+      // Stale error from a replaced request — ignore silently
+      if (this.pendingRequests.get(chatId) !== controller) return
 
       const reason = controller.signal.reason as string | undefined
-
-      // Silent abort when replaced by a new request
       if (reason === 'replaced') return
 
       console.error('Error sending message:', error)
@@ -270,7 +279,7 @@ export class ChatManager {
 
       const errorMessage: ChatMessage = {
         role: 'assistant',
-        model: this.selectedModel.id,
+        model: model.id,
         content: errorContent,
         tokens: { input: 0, output: 0 },
         stop_reason: stopReason,
@@ -279,23 +288,25 @@ export class ChatManager {
       }
 
       chat.messages.push(errorMessage)
-      scrollToBottom()
+      if (this.current?.id === chatId) scrollToBottom()
 
-      // Save the error so the user sees what happened
-      await this.saveCurrentIfDirty()
+      await storage.updateChat(chatId, chat)
       await this.loadHistory()
     } finally {
-      this.isLoading = false
-      this.abortController = null
+      // Only clean up if we're still the active request for this chat
+      if (this.pendingRequests.get(chatId) === controller) {
+        this.pendingRequests.delete(chatId)
+      }
     }
   }
 
   /**
-   * Stop the current in-flight request
+   * Stop the in-flight request for the current chat
    */
   stop() {
-    if (this.abortController) {
-      this.abortController.abort('user_stopped')
+    const id = this.current?.id
+    if (id != null) {
+      this.pendingRequests.get(id)?.abort('user_stopped')
     }
   }
 
@@ -305,11 +316,12 @@ export class ChatManager {
   private async saveCurrentIfDirty() {
     if (!this.current || this.current.messages.length === 0) return
 
-    if (this.current.id) {
+    if (this.current.id != null) {
       await storage.updateChat(this.current.id, this.current)
     } else {
       const id = await storage.createChat(this.current)
-      this.current = { ...this.current, id }
+      // Preserve object identity so any captured references observe the newly assigned id.
+      this.current.id = id
     }
   }
 }
