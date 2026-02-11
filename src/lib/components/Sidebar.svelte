@@ -82,9 +82,9 @@
           class="chat-row relative flex w-full border-b border-edge-muted py-3 pr-3 pl-3.5 focus:ring-2 focus:ring-gray-500 focus:outline-none focus:ring-inset {isActive
             ? 'bg-surface-active'
             : ''}"
-          onclick={() => chatState.selectChat(chat.id!)}
+          onclick={() => chatState.selectChat(chat.id)}
           onkeydown={(e) =>
-            (e.key === 'Enter' || e.key === ' ') && chatState.selectChat(chat.id!)}
+            (e.key === 'Enter' || e.key === ' ') && chatState.selectChat(chat.id)}
         >
           <div class="min-w-0 pr-10">
             <div class="line-clamp-2 text-sm font-medium break-words">{preview}</div>
@@ -114,7 +114,7 @@
                 </DropdownMenu.Item>
                 <DropdownMenu.Item
                   class="w-full cursor-pointer px-3 py-2 text-left text-sm text-danger outline-none hover:bg-surface-hover data-[highlighted]:bg-surface-hover"
-                  onSelect={() => onRequestDelete(chat.id!)}
+                  onSelect={() => onRequestDelete(chat.id)}
                 >
                   Delete
                 </DropdownMenu.Item>

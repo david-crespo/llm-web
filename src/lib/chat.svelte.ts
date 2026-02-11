@@ -3,7 +3,7 @@ import { storage } from '$lib/storage'
 import { models, getCost, systemBase, getAvailableModels, type Model } from '$lib/models.svelte'
 import { createMessage } from '$lib/adapters'
 import { scrollToBottom } from '$lib/actions/autoScroll'
-import type { Chat, ChatMessage } from '$lib/types'
+import type { Chat, NewChat, ChatMessage } from '$lib/types'
 
 /**
  * ChatManager: Centralized state management for chat functionality
@@ -26,7 +26,7 @@ export class ChatManager {
 
   // Chat Data
   current = $state<Chat | null>(null)
-  history = $state<(Chat & { id: number })[]>([])
+  history = $state<Chat[]>([])
 
   // Settings
   selectedModel = $state<Model | undefined>(getAvailableModels().at(0))
@@ -37,7 +37,7 @@ export class ChatManager {
   private pendingRequests = new SvelteMap<number, AbortController>()
 
   get isCurrentLoading(): boolean {
-    return this.current?.id != null && this.pendingRequests.has(this.current.id)
+    return this.current != null && this.pendingRequests.has(this.current.id)
   }
 
   /** True when the last message is an error/stopped response — the user should regen or fork, not send a new message. */
@@ -89,7 +89,7 @@ export class ChatManager {
   async createNew() {
     await this.saveCurrentIfDirty()
 
-    const newChat: Chat = {
+    const newChat: NewChat = {
       createdAt: new SvelteDate(),
       systemPrompt: systemBase,
       messages: [],
@@ -194,7 +194,7 @@ export class ChatManager {
 
     // Create new chat with messages up to the fork point
     const messages = this.current.messages.slice(0, index)
-    const newChat: Chat = {
+    const newChat: NewChat = {
       createdAt: new SvelteDate(),
       systemPrompt: this.current.systemPrompt,
       messages,
@@ -214,8 +214,8 @@ export class ChatManager {
    * the user switches to a different chat while the request is in-flight.
    */
   private async processResponse(chat: Chat, input: string) {
+    if (!this.selectedModel) return
     const chatId = chat.id
-    if (chatId == null || !this.selectedModel) return
     const model = this.selectedModel
     const search = this.webSearch
 
@@ -322,9 +322,8 @@ export class ChatManager {
    * Stop the in-flight request for the current chat
    */
   stop() {
-    const id = this.current?.id
-    if (id != null) {
-      this.pendingRequests.get(id)?.abort('user_stopped')
+    if (this.current) {
+      this.pendingRequests.get(this.current.id)?.abort('user_stopped')
     }
   }
 
@@ -333,14 +332,7 @@ export class ChatManager {
    */
   private async saveCurrentIfDirty() {
     if (!this.current || this.current.messages.length === 0) return
-
-    if (this.current.id != null) {
-      await storage.updateChat(this.current.id, this.current)
-    } else {
-      const id = await storage.createChat(this.current)
-      // Preserve object identity so any captured references observe the newly assigned id.
-      this.current.id = id
-    }
+    await storage.updateChat(this.current.id, this.current)
   }
 }
 

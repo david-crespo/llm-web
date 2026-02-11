@@ -1,4 +1,4 @@
-import type { Chat } from './types'
+import type { Chat, NewChat } from './types'
 
 const DB_NAME = 'llm-web'
 const DB_VERSION = 1
@@ -54,7 +54,7 @@ class Storage {
   }
 
   // Chat methods
-  async createChat(chat: Chat): Promise<number> {
+  async createChat(chat: NewChat): Promise<number> {
     await this.ensureInit()
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction(['chats'], 'readwrite')
@@ -120,7 +120,7 @@ class Storage {
     })
   }
 
-  async getAllChats(): Promise<(Chat & { id: number })[]> {
+  async getAllChats(): Promise<Chat[]> {
     await this.ensureInit()
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction(['chats'], 'readonly')
@@ -128,7 +128,7 @@ class Storage {
       const index = store.index('createdAt')
       const request = index.openCursor(null, 'prev') // Most recent first
 
-      const results: (Chat & { id: number })[] = []
+      const results: Chat[] = []
 
       request.onerror = () => reject(request.error)
       request.onsuccess = (event) => {

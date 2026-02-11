@@ -28,11 +28,12 @@ export type AssistantMessage = {
 
 export type ChatMessage = UserMessage | AssistantMessage
 
-export type Chat = {
+export type NewChat = {
   // For now we don't allow system prompt to be changed in the middle
   // of a chat. Otherwise we'd have to annotate each message with it.
   systemPrompt: string
   messages: ChatMessage[]
   createdAt: Date
-  id?: number // Optional ID for stored chats
 }
+
+export type Chat = NewChat & { id: number }
