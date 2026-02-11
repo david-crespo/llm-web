@@ -12,37 +12,39 @@
   const hasApiKeys = getAvailableModels().length > 0
 </script>
 
-<div class="min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-4">
+<div class="flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto p-4">
   {#if chatState.current && chatState.current.messages.length > 0}
-    {#each chatState.current.messages as msg, index (index)}
-      <ChatMessage
-        message={msg}
-        messageIndex={index}
-        onRegen={(i) => chatState.regenerate(i)}
-        {onFork}
-      />
-    {/each}
-    {#if chatState.isLoading}
-      <div class="mb-6" data-message>
-        <div class="mb-2 flex items-center gap-2 text-xs text-fg-muted">
-          <span class="font-medium">{chatState.selectedModel?.id || 'Unknown model'}</span>
-          <span>•</span>
-          <span>Thinking...</span>
-          <button
-            onclick={() => chatState.stop()}
-            class="ml-1 rounded border border-edge px-1.5 py-0.5 text-fg-muted hover:border-fg-faint hover:bg-surface-hover hover:text-fg"
-          >
-            Stop
-          </button>
+    <div class="mx-auto w-full md:max-w-2xl">
+      {#each chatState.current.messages as msg, index (index)}
+        <ChatMessage
+          message={msg}
+          messageIndex={index}
+          onRegen={(i) => chatState.regenerate(i)}
+          {onFork}
+        />
+      {/each}
+      {#if chatState.isLoading}
+        <div class="mb-6" data-message>
+          <div class="mb-2 flex items-center gap-2 text-xs text-fg-muted">
+            <span class="font-medium">{chatState.selectedModel?.id || 'Unknown model'}</span>
+            <span>•</span>
+            <span>Thinking...</span>
+            <button
+              onclick={() => chatState.stop()}
+              class="ml-1 rounded border border-edge px-1.5 py-0.5 text-fg-muted hover:border-fg-faint hover:bg-surface-hover hover:text-fg"
+            >
+              Stop
+            </button>
+          </div>
+          <div>
+            <div class="mb-2 h-3.5 w-3/4 animate-pulse rounded bg-edge"></div>
+            <div class="h-3.5 w-1/2 animate-pulse rounded bg-edge"></div>
+          </div>
         </div>
-        <div>
-          <div class="mb-2 h-3.5 w-3/4 animate-pulse rounded bg-edge"></div>
-          <div class="h-3.5 w-1/2 animate-pulse rounded bg-edge"></div>
-        </div>
-      </div>
-    {/if}
+      {/if}
+    </div>
   {:else}
-    <div class="flex h-full items-center justify-center">
+    <div class="flex flex-1 items-center justify-center">
       <div class="flex max-w-xs flex-col gap-2 rounded-lg p-4 text-center">
         <p class="text-lg">Start a chat below</p>
         {#if !hasApiKeys}

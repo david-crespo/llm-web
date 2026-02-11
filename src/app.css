@@ -113,6 +113,14 @@ button {
   font-family: inherit;
 }
 
+/* Interactive elements should show pointer cursor */
+button,
+a,
+select,
+[role='button'] {
+  cursor: pointer;
+}
+
 /* Custom scrollbar for webkit browsers */
 ::-webkit-scrollbar {
   width: 6px;

@@ -68,90 +68,74 @@
   }
 </script>
 
-{#if chatState.sidebarOpen}
-  <!-- Scrim -->
-  <div
-    transition:fade|local={{ duration: 150 }}
-    class="fixed inset-0 z-40 bg-black/20"
-    role="button"
-    tabindex="0"
-    aria-label="Close sidebar overlay"
-    onclick={() => (chatState.sidebarOpen = false)}
-    onkeydown={(e) => (e.key === 'Escape' || e.key === 'Enter') && (chatState.sidebarOpen = false)}
-  ></div>
+{#snippet sidebarContent(isDesktop: boolean)}
+  <!-- Header -->
+  <div class="flex items-center justify-between border-b border-edge py-3 pr-3 pl-3.5">
+    <h3 class="text-md font-medium">History</h3>
+  </div>
 
-  <!-- Panel -->
-  <div
-    transition:fly|local={{ x: -320, duration: 150 }}
-    class="fixed top-0 left-0 z-50 flex w-4/5 max-w-sm flex-col overflow-hidden border-r border-edge bg-surface-alt"
-    style="height: 100dvh; will-change: transform;"
-  >
-    <!-- Header -->
-    <div class="flex items-center justify-between border-b border-edge py-3 pr-3 pl-3.5">
-      <h3 class="text-md font-medium">History</h3>
-    </div>
-
-    <!-- Chat history -->
-    <div class="flex-1 overflow-y-auto pt-2">
-      {#if chatState.history.length === 0}
-        <div class="p-4 text-sm text-fg-muted">No chats yet</div>
-      {:else}
-        {#each chatState.history as chat (chat.id)}
-          {@const isActive = chat.id === chatState.current?.id}
-          {@const preview = getChatPreview(chat)}
-          <div
-            role="button"
-            tabindex="0"
-            class="relative flex w-full border-b border-edge-muted py-3 pr-3 pl-3.5 hover:bg-surface-hover focus:ring-2 focus:ring-gray-500 focus:outline-none focus:ring-inset {isActive
-              ? 'bg-surface-active'
-              : ''}"
-            onclick={() => chatState.selectChat(chat.id!)}
-            onkeydown={(e) =>
-              (e.key === 'Enter' || e.key === ' ') && chatState.selectChat(chat.id!)}
-          >
-            <div class="min-w-0 pr-10">
-              <div class="line-clamp-2 text-sm font-medium break-words">{preview}</div>
-              <div class="mt-1 text-xs leading-4 text-fg-muted">
-                {chat.createdAt.toLocaleString()}
-              </div>
+  <!-- Chat history -->
+  <div class="flex-1 overflow-y-auto pt-2">
+    {#if chatState.history.length === 0}
+      <div class="p-4 text-sm text-fg-muted">No chats yet</div>
+    {:else}
+      {#each chatState.history as chat (chat.id)}
+        {@const isActive = chat.id === chatState.current?.id}
+        {@const preview = getChatPreview(chat)}
+        <div
+          role="button"
+          tabindex="0"
+          class="chat-row relative flex w-full border-b border-edge-muted py-3 pr-3 pl-3.5 focus:ring-2 focus:ring-gray-500 focus:outline-none focus:ring-inset {isActive
+            ? 'bg-surface-active'
+            : ''}"
+          onclick={() => chatState.selectChat(chat.id!)}
+          onkeydown={(e) =>
+            (e.key === 'Enter' || e.key === ' ') && chatState.selectChat(chat.id!)}
+        >
+          <div class="min-w-0 pr-10">
+            <div class="line-clamp-2 text-sm font-medium break-words">{preview}</div>
+            <div class="mt-1 text-xs leading-4 text-fg-muted">
+              {chat.createdAt.toLocaleString()}
             </div>
-            <DropdownMenu.Root>
-              <DropdownMenu.Trigger
-                class="absolute top-1/2 right-2 -translate-y-1/2 rounded px-2 py-2 text-lg font-bold hover:bg-surface-hover"
-                aria-label="Chat menu"
-                onclick={(e: MouseEvent) => e.stopPropagation()}
-              >
-                ⋮
-              </DropdownMenu.Trigger>
-              <DropdownMenu.Portal>
-                <DropdownMenu.Content
-                  class="z-50 w-40 rounded border border-edge bg-surface-elevated shadow-lg"
-                  sideOffset={4}
-                  align="end"
-                >
-                  <DropdownMenu.Item
-                    class="w-full cursor-pointer px-3 py-2 text-left text-sm outline-none hover:bg-surface-hover data-[highlighted]:bg-surface-hover"
-                    onSelect={() => copyMarkdown(chat)}
-                  >
-                    Copy as Markdown
-                  </DropdownMenu.Item>
-                  <DropdownMenu.Item
-                    class="w-full cursor-pointer px-3 py-2 text-left text-sm text-danger outline-none hover:bg-surface-hover data-[highlighted]:bg-surface-hover"
-                    onSelect={() => onRequestDelete(chat.id!)}
-                  >
-                    Delete
-                  </DropdownMenu.Item>
-                </DropdownMenu.Content>
-              </DropdownMenu.Portal>
-            </DropdownMenu.Root>
           </div>
-        {/each}
-      {/if}
-    </div>
+          <DropdownMenu.Root>
+            <DropdownMenu.Trigger
+              class="chat-kebab absolute top-1/2 right-2 -translate-y-1/2 rounded px-2 py-2 text-lg font-bold hover:bg-surface-hover"
+              aria-label="Chat menu"
+              onclick={(e: MouseEvent) => e.stopPropagation()}
+            >
+              ⋮
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Portal>
+              <DropdownMenu.Content
+                class="z-50 w-40 rounded border border-edge bg-surface-elevated shadow-lg"
+                sideOffset={4}
+                align="end"
+              >
+                <DropdownMenu.Item
+                  class="w-full cursor-pointer px-3 py-2 text-left text-sm outline-none hover:bg-surface-hover data-[highlighted]:bg-surface-hover"
+                  onSelect={() => copyMarkdown(chat)}
+                >
+                  Copy as Markdown
+                </DropdownMenu.Item>
+                <DropdownMenu.Item
+                  class="w-full cursor-pointer px-3 py-2 text-left text-sm text-danger outline-none hover:bg-surface-hover data-[highlighted]:bg-surface-hover"
+                  onSelect={() => onRequestDelete(chat.id!)}
+                >
+                  Delete
+                </DropdownMenu.Item>
+              </DropdownMenu.Content>
+            </DropdownMenu.Portal>
+          </DropdownMenu.Root>
+        </div>
+      {/each}
+    {/if}
+  </div>
 
-    <!-- Bottom section -->
-    <div class="flex items-center gap-4 border-t border-edge p-3">
-      <!-- Close button (left) -->
+  <!-- Bottom section -->
+  <div class="flex items-center justify-center gap-2 border-t border-edge p-3">
+    {#if !isDesktop}
+      <!-- Close button (mobile only) -->
       <button
         onclick={() => (chatState.sidebarOpen = false)}
         class="size-10 rounded border border-edge bg-surface-alt hover:bg-surface-hover"
@@ -159,60 +143,92 @@
       >
         <CloseIcon class="mx-auto" />
       </button>
-
       <div class="flex-1"></div>
+    {/if}
 
-      <!-- Settings button -->
-      <div class="flex gap-2">
-        <!-- About button -->
-        <button
-          onclick={onOpenAbout}
-          class="flex size-10 items-center justify-center rounded border border-edge bg-surface-alt text-fg hover:bg-surface-hover"
-          title="About"
-          aria-label="About"
-        >
-          <InfoIcon />
-        </button>
-        <a
-          href="/settings"
-          class="flex size-10 items-center justify-center rounded border border-edge bg-surface-alt text-fg hover:bg-surface-hover"
-          title="Settings"
-          aria-label="Settings"
-        >
-          <SettingsIcon />
-        </a>
+    <div class="flex gap-2">
+      <!-- About button -->
+      <button
+        onclick={onOpenAbout}
+        class="flex size-10 items-center justify-center rounded border border-edge bg-surface-alt text-fg hover:bg-surface-hover"
+        title="About"
+        aria-label="About"
+      >
+        <InfoIcon />
+      </button>
+      <a
+        href="/settings"
+        class="flex size-10 items-center justify-center rounded border border-edge bg-surface-alt text-fg hover:bg-surface-hover"
+        title="Settings"
+        aria-label="Settings"
+      >
+        <SettingsIcon />
+      </a>
 
-        <!-- Theme toggle button -->
-        <button
-          class="flex size-10 items-center justify-center rounded border border-edge bg-surface-alt text-fg hover:bg-surface-hover"
-          title="Cycle theme (Light / Dark / System)"
-          aria-label="Cycle theme"
-          onclick={onCycleTheme}
-        >
-          {#if themeMode === 'light'}
-            <SunIcon />
-          {:else if themeMode === 'dark'}
-            <MoonIcon />
-          {:else}
-            <MonitorIcon />
-          {/if}
-        </button>
+      <!-- Theme toggle button -->
+      <button
+        class="flex size-10 items-center justify-center rounded border border-edge bg-surface-alt text-fg hover:bg-surface-hover"
+        title="Cycle theme (Light / Dark / System)"
+        aria-label="Cycle theme"
+        onclick={onCycleTheme}
+      >
+        {#if themeMode === 'light'}
+          <SunIcon />
+        {:else if themeMode === 'dark'}
+          <MoonIcon />
+        {:else}
+          <MonitorIcon />
+        {/if}
+      </button>
 
-        <!-- New Chat button -->
-        <button
-          class="flex size-10 items-center justify-center rounded border border-edge bg-surface-alt text-fg hover:bg-surface-hover"
-          title="New Chat"
-          aria-label="New Chat"
-          onclick={() => chatState.createNew()}
-        >
-          <PlusIcon />
-        </button>
-      </div>
+      <!-- New Chat button -->
+      <button
+        class="flex size-10 items-center justify-center rounded border border-edge bg-surface-alt text-fg hover:bg-surface-hover"
+        title="New Chat"
+        aria-label="New Chat"
+        onclick={() => chatState.createNew()}
+      >
+        <PlusIcon />
+      </button>
     </div>
   </div>
-{/if}
+{/snippet}
+
+<!-- Desktop sidebar: always visible -->
+<div class="hidden h-dvh w-64 flex-col border-r border-edge bg-surface-alt md:flex">
+  {@render sidebarContent(true)}
+</div>
+
+<!-- Mobile sidebar: overlay -->
+<div class="md:hidden">
+  {#if chatState.sidebarOpen}
+    <!-- Scrim -->
+    <div
+      transition:fade|local={{ duration: 150 }}
+      class="fixed inset-0 z-40 bg-black/20"
+      role="button"
+      tabindex="0"
+      aria-label="Close sidebar overlay"
+      onclick={() => (chatState.sidebarOpen = false)}
+      onkeydown={(e) => (e.key === 'Escape' || e.key === 'Enter') && (chatState.sidebarOpen = false)}
+    ></div>
+
+    <!-- Panel -->
+    <div
+      transition:fly|local={{ x: -320, duration: 150 }}
+      class="fixed top-0 left-0 z-50 flex w-4/5 max-w-sm flex-col overflow-hidden border-r border-edge bg-surface-alt"
+      style="height: 100dvh; will-change: transform;"
+    >
+      {@render sidebarContent(false)}
+    </div>
+  {/if}
+</div>
 
 <style>
+  .chat-row:hover:not(:has(.chat-kebab:hover)) {
+    background-color: var(--color-surface-hover);
+  }
+
   .line-clamp-2 {
     display: -webkit-box;
     line-clamp: 2;

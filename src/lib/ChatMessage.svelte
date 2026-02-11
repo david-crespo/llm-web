@@ -53,7 +53,7 @@
     <!-- User message bubble -->
     <div class="flex justify-end">
       <div
-        class="relative max-w-[87%] rounded-lg bg-surface-user px-4 py-3 pr-8"
+        class="relative max-w-[87%] rounded-lg bg-surface-user px-4 py-3 pr-8 md:max-w-[70%]"
         use:clickOutside={{ onOut: () => (showMenu = false) }}
       >
         <!-- Kebab menu inside bubble -->

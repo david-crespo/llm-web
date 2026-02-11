@@ -18,7 +18,7 @@
     onclick={(e) => e.currentTarget === e.target && onClose()}
     onkeydown={(e) => (e.key === 'Escape' || e.key === 'Enter') && onClose()}
   >
-    <div class="w-96 max-w-[90vw] rounded-lg border border-edge bg-surface-elevated shadow-lg">
+    <div class="w-96 max-w-[90vw] rounded-lg border border-edge bg-surface-elevated shadow-lg md:w-[32rem]">
       <div class="flex items-center justify-between border-b border-edge-muted px-6 py-4">
         <h3 class="text-lg font-medium">About this app</h3>
         <button onclick={onClose} class="text-fg-faint hover:text-fg-muted" aria-label="Close modal"
