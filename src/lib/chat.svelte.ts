@@ -134,8 +134,8 @@ export class ChatManager {
     chat.messages.push(userMessage)
     scrollToBottom()
 
-    // Save immediately so the question is preserved even if the request is interrupted
-    await this.saveCurrentIfDirty()
+    // Save the captured chat (not this.current which may change if the user switches)
+    await storage.updateChat(chat.id, chat)
 
     await this.processResponse(chat, content.trim())
   }
