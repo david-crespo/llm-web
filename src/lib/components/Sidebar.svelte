@@ -66,6 +66,19 @@
   function onCycleTheme() {
     themeMode = cycleThemeMode()
   }
+
+  // Conditionally render desktop vs mobile sidebar to avoid creating
+  // duplicate DOM (especially DropdownMenu portals) for the hidden variant
+  let isDesktop = $state(false)
+  $effect(() => {
+    const mq = window.matchMedia('(min-width: 768px)')
+    isDesktop = mq.matches
+    const handler = (e: MediaQueryListEvent) => {
+      isDesktop = e.matches
+    }
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  })
 </script>
 
 {#snippet sidebarContent(isDesktop: boolean)}
@@ -194,35 +207,33 @@
   </div>
 {/snippet}
 
-<!-- Desktop sidebar: always visible -->
-<div class="hidden h-dvh w-64 flex-col border-r border-edge bg-surface-alt md:flex">
-  {@render sidebarContent(true)}
-</div>
+{#if isDesktop}
+  <!-- Desktop sidebar: always visible -->
+  <div class="flex h-dvh w-64 flex-col border-r border-edge bg-surface-alt">
+    {@render sidebarContent(true)}
+  </div>
+{:else if chatState.sidebarOpen}
+  <!-- Mobile sidebar: overlay -->
+  <!-- Scrim -->
+  <div
+    transition:fade|local={{ duration: 150 }}
+    class="fixed inset-0 z-40 bg-black/20"
+    role="button"
+    tabindex="0"
+    aria-label="Close sidebar overlay"
+    onclick={() => (chatState.sidebarOpen = false)}
+    onkeydown={(e) => (e.key === 'Escape' || e.key === 'Enter') && (chatState.sidebarOpen = false)}
+  ></div>
 
-<!-- Mobile sidebar: overlay -->
-<div class="md:hidden">
-  {#if chatState.sidebarOpen}
-    <!-- Scrim -->
-    <div
-      transition:fade|local={{ duration: 150 }}
-      class="fixed inset-0 z-40 bg-black/20"
-      role="button"
-      tabindex="0"
-      aria-label="Close sidebar overlay"
-      onclick={() => (chatState.sidebarOpen = false)}
-      onkeydown={(e) => (e.key === 'Escape' || e.key === 'Enter') && (chatState.sidebarOpen = false)}
-    ></div>
-
-    <!-- Panel -->
-    <div
-      transition:fly|local={{ x: -320, duration: 150 }}
-      class="fixed top-0 left-0 z-50 flex w-4/5 max-w-sm flex-col overflow-hidden border-r border-edge bg-surface-alt"
-      style="height: 100dvh; will-change: transform;"
-    >
-      {@render sidebarContent(false)}
-    </div>
-  {/if}
-</div>
+  <!-- Panel -->
+  <div
+    transition:fly|local={{ x: -320, duration: 150 }}
+    class="fixed top-0 left-0 z-50 flex w-4/5 max-w-sm flex-col overflow-hidden border-r border-edge bg-surface-alt"
+    style="height: 100dvh; will-change: transform;"
+  >
+    {@render sidebarContent(false)}
+  </div>
+{/if}
 
 <style>
   .chat-row:hover:not(:has(.chat-kebab:hover)) {
