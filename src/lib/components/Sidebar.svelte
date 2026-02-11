@@ -2,7 +2,6 @@
   import type { Chat, ChatMessage } from '$lib/types'
   import { chatState } from '$lib/chat.svelte'
   import { formatTime, formatMoney, formatTokens } from '$lib/format'
-  import { fly, fade } from 'svelte/transition'
   import { DropdownMenu } from 'bits-ui'
   import CloseIcon from './icons/CloseIcon.svelte'
   import SunIcon from './icons/SunIcon.svelte'
@@ -212,12 +211,12 @@
   <div class="flex h-dvh w-64 flex-col border-r border-edge bg-surface-alt">
     {@render sidebarContent(true)}
   </div>
-{:else if chatState.sidebarOpen}
-  <!-- Mobile sidebar: overlay -->
+{:else}
+  <!-- Mobile sidebar: always in DOM, animated with CSS transforms -->
   <!-- Scrim -->
   <div
-    transition:fade|local={{ duration: 150 }}
-    class="fixed inset-0 z-40 bg-black/20"
+    class="fixed inset-0 z-40 bg-black/20 transition-opacity duration-150
+      {chatState.sidebarOpen ? 'opacity-100' : 'pointer-events-none opacity-0'}"
     role="button"
     tabindex="0"
     aria-label="Close sidebar overlay"
@@ -227,9 +226,9 @@
 
   <!-- Panel -->
   <div
-    transition:fly|local={{ x: -320, duration: 150 }}
-    class="fixed top-0 left-0 z-50 flex w-4/5 max-w-sm flex-col overflow-hidden border-r border-edge bg-surface-alt"
-    style="height: 100dvh; will-change: transform;"
+    class="fixed top-0 left-0 z-50 flex w-4/5 max-w-sm flex-col overflow-hidden border-r border-edge bg-surface-alt transition-transform duration-150
+      {chatState.sidebarOpen ? 'translate-x-0' : '-translate-x-full'}"
+    style="height: 100dvh;"
   >
     {@render sidebarContent(false)}
   </div>
