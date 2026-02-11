@@ -74,7 +74,7 @@
       <div class="p-4 text-sm text-fg-muted">No chats yet</div>
     {:else}
       {#each chatState.history as chat (chat.id)}
-        {@const isActive = chat.id === chatState.current?.id}
+        {@const isActive = chat.id === chatState.current.id}
         {@const preview = getChatPreview(chat)}
         <div
           role="button"

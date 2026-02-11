@@ -13,7 +13,7 @@
 </script>
 
 <div class="flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto p-4">
-  {#if chatState.current && chatState.current.messages.length > 0}
+  {#if chatState.current.messages.length > 0}
     <div class="mx-auto w-full md:max-w-2xl">
       {#each chatState.current.messages as msg, index (index)}
         <ChatMessage

@@ -5,7 +5,7 @@
   import AboutModal from '$lib/components/AboutModal.svelte'
   import ConfirmDialog from '$lib/components/ConfirmDialog.svelte'
   import { initTheme } from '$lib/theme.svelte'
-  import { chatState } from '$lib/chat.svelte'
+  import { bootState, chatState } from '$lib/chat.svelte'
 
   // Local UI state (not managed by ChatManager)
   let message = $state('')
@@ -35,23 +35,18 @@
   initTheme()
 </script>
 
-{#if chatState.initError}
+{#if bootState.current.status === 'error'}
   <div class="flex h-dvh items-center justify-center p-4">
     <div class="max-w-md space-y-4 text-center">
       <h1 class="text-lg font-medium text-danger">Failed to load</h1>
-      <p class="text-sm text-fg-muted">{chatState.initError}</p>
+      <p class="text-sm text-fg-muted">{bootState.current.error || ''}</p>
       <p class="text-sm text-fg-muted">
-        This can happen in private browsing mode or if storage is unavailable.
+        This can happen in private browsing mode or if storage is unavailable. Try refreshing the
+        page.
       </p>
-      <button
-        class="rounded bg-accent px-4 py-2 text-sm text-white hover:opacity-90"
-        onclick={() => chatState.init()}
-      >
-        Retry
-      </button>
     </div>
   </div>
-{:else}
+{:else if bootState.current.status === 'ready'}
   <div class="flex h-dvh overflow-x-hidden overflow-y-hidden">
     <Sidebar
       onRequestDelete={(id) => (chatToDelete = id)}

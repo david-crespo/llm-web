@@ -5,74 +5,54 @@ import { createMessage } from '$lib/adapters'
 import { scrollToBottom } from '$lib/actions/autoScroll'
 import type { Chat, NewChat, ChatMessage } from '$lib/types'
 
-/**
- * ChatManager: Centralized state management for chat functionality
- *
- * This class uses Svelte 5 runes ($state, $effect) to manage reactive state
- * and business logic, separating concerns from the UI layer.
- *
- * Key patterns:
- * - $state() creates reactive state that triggers UI updates
- * - Class properties with $state are automatically reactive
- * - Methods can be called directly from components
- * - Effects ($effect) run when dependencies change
- */
+// --- App init state (checked by the page component to gate rendering) ---
+
+type BootState =
+  | { status: 'loading'; error?: undefined }
+  | { status: 'error'; error: string }
+  | { status: 'ready'; error?: undefined }
+
+let _boot = $state<BootState>({ status: 'loading' })
+
+// Exported as a getter object because Svelte doesn't allow direct $state exports.
+// bootState is the reactive signal that gates page rendering; chatState below is
+// assigned before bootState flips to 'ready' and is only accessed by components
+// rendered inside that gate. After mount, reactivity comes from ChatManager's
+// internal $state fields (current, history, etc.).
+export const bootState = { get current() { return _boot } }
+export let chatState: ChatManager
+
 export class ChatManager {
-  // UI State
   sidebarOpen = $state(false)
+  current: Chat
+  history: Chat[]
 
-  // Initialization state
-  initError = $state<string | null>(null)
-
-  // Chat Data
-  current = $state<Chat | null>(null)
-  history = $state<Chat[]>([])
-
-  // Settings
   selectedModel = $state<Model | undefined>(getAvailableModels().at(0))
   webSearch = $state(true)
   reasoning = $state(false)
 
-  // Per-chat in-flight requests so switching chats doesn't block, cancel, or mis-attribute replies.
+  // Per-chat in-flight requests so switching chats doesn't block, cancel, or
+  // mis-attribute replies.
   private pendingRequests = new SvelteMap<number, AbortController>()
 
   get isCurrentLoading(): boolean {
-    return this.current != null && this.pendingRequests.has(this.current.id)
+    return this.pendingRequests.has(this.current.id)
   }
 
-  /** True when the last message is an error/stopped response — the user should regen or fork, not send a new message. */
+  /**
+   * True when the last message is an error/stopped response — the user should
+   * regen or fork, not send a new message.
+   */
   get lastMessageIsError(): boolean {
-    const last = this.current?.messages.at(-1)
+    const last = this.current.messages.at(-1)
     return (
       last?.role === 'assistant' && ['stopped', 'interrupted', 'error'].includes(last.stop_reason)
     )
   }
 
-  constructor() {
-    // Automatically initialize when created
-    this.init()
-  }
-
-  /**
-   * Initialize storage and load initial chat
-   */
-  async init() {
-    this.initError = null
-
-    try {
-      await storage.init()
-      this.history = await storage.getAllChats()
-
-      // Reuse existing empty chat or create new one
-      if (this.history.length > 0 && this.history[0].messages.length === 0) {
-        this.current = this.history[0]
-      } else {
-        await this.createNew()
-      }
-    } catch (error) {
-      console.error('Failed to initialize chat storage:', error)
-      this.initError = error instanceof Error ? error.message : 'Failed to initialize storage'
-    }
+  constructor(current: Chat, history: Chat[]) {
+    this.current = $state(current)
+    this.history = $state(history)
   }
 
   /**
@@ -124,7 +104,7 @@ export class ChatManager {
     this.history = this.history.filter((c) => c.id !== id)
 
     // If we deleted the current chat, switch to another or create new
-    if (this.current?.id === id) {
+    if (this.current.id === id) {
       if (this.history.length > 0) {
         this.current = this.history[0]
       } else {
@@ -137,7 +117,7 @@ export class ChatManager {
    * Send a user message and get AI response
    */
   async sendMessage(content: string) {
-    if (!content.trim() || !this.current || this.isCurrentLoading || this.lastMessageIsError) return
+    if (!content.trim() || this.isCurrentLoading || this.lastMessageIsError) return
 
     // Capture before any await: the user can switch chats while the request is in-flight.
     const chat = this.current
@@ -160,7 +140,7 @@ export class ChatManager {
    * Regenerate response from a specific message index
    */
   async regenerate(index: number) {
-    if (!this.current || this.isCurrentLoading) return
+    if (this.isCurrentLoading) return
 
     const chat = this.current
     const targetMessage = chat.messages[index]
@@ -177,8 +157,6 @@ export class ChatManager {
    * Returns the content of the forked message
    */
   async fork(index: number): Promise<string | null> {
-    if (!this.current) return null
-
     const targetMessage = this.current.messages[index]
     if (targetMessage.role !== 'user') return null
 
@@ -258,7 +236,7 @@ export class ChatManager {
 
       chat.messages.push(assistantMessage)
       // Don't yank the viewport if the user is viewing a different chat.
-      if (this.current?.id === chatId) scrollToBottom()
+      if (this.current.id === chatId) scrollToBottom()
 
       storage.updateChat(chatId, chat)
     } catch (error) {
@@ -298,7 +276,7 @@ export class ChatManager {
       }
 
       chat.messages.push(errorMessage)
-      if (this.current?.id === chatId) scrollToBottom()
+      if (this.current.id === chatId) scrollToBottom()
 
       storage.updateChat(chatId, chat)
     } finally {
@@ -314,22 +292,48 @@ export class ChatManager {
    * Stop the in-flight request for the current chat
    */
   stop() {
-    if (this.current) {
-      this.pendingRequests.get(this.current.id)?.abort('user_stopped')
-    }
+    this.pendingRequests.get(this.current.id)?.abort('user_stopped')
   }
 
   /**
    * Save current chat if it has messages
    */
   private async saveCurrentIfDirty() {
-    if (!this.current || this.current.messages.length === 0) return
+    if (this.current.messages.length === 0) return
     await storage.updateChat(this.current.id, this.current)
   }
 }
 
-/**
- * Singleton instance exported for use across components
- * This pattern ensures a single source of truth for chat state
- */
-export const chatState = new ChatManager()
+// --- Boot ---
+
+async function boot() {
+  try {
+    await storage.init()
+    const history = await storage.getAllChats()
+
+    let current: Chat
+    if (history.length > 0 && history[0].messages.length === 0) {
+      current = history[0]
+    } else {
+      const newChat: NewChat = {
+        createdAt: new SvelteDate(),
+        systemPrompt: systemBase,
+        messages: [],
+      }
+      const id = await storage.createChat(newChat)
+      current = { ...newChat, id }
+      history.unshift(current)
+    }
+
+    chatState = new ChatManager(current, history)
+    _boot = { status: 'ready' }
+  } catch (error) {
+    console.error('Failed to initialize chat storage:', error)
+    _boot = {
+      status: 'error',
+      error: error instanceof Error ? error.message : 'Failed to initialize storage',
+    }
+  }
+}
+
+boot()
