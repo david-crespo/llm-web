@@ -46,25 +46,7 @@
     await navigator.clipboard.writeText(markdown)
   }
 
-  // Theme toggle (Light / Dark / System)
-  import { initTheme, getThemeMode, cycleThemeMode } from '$lib/theme'
-  type ThemeMode = import('$lib/theme').ThemeMode
-  let themeMode: ThemeMode = $state('system')
-
-  $effect(() => {
-    initTheme()
-    themeMode = getThemeMode()
-    const onChange = (e: Event) => {
-      const detail = (e as CustomEvent<{ mode: ThemeMode }>).detail
-      if (detail?.mode) themeMode = detail.mode
-    }
-    window.addEventListener('theme-change', onChange as EventListener)
-    return () => window.removeEventListener('theme-change', onChange as EventListener)
-  })
-
-  function onCycleTheme() {
-    themeMode = cycleThemeMode()
-  }
+  import { getThemeMode, cycleThemeMode } from '$lib/theme.svelte'
 
   // Conditionally render desktop vs mobile sidebar to avoid creating
   // duplicate DOM (especially DropdownMenu portals) for the hidden variant
@@ -182,11 +164,11 @@
         class="flex size-10 items-center justify-center rounded border border-edge bg-surface-alt text-fg hover:bg-surface-hover"
         title="Cycle theme (Light / Dark / System)"
         aria-label="Cycle theme"
-        onclick={onCycleTheme}
+        onclick={() => cycleThemeMode()}
       >
-        {#if themeMode === 'light'}
+        {#if getThemeMode() === 'light'}
           <SunIcon />
-        {:else if themeMode === 'dark'}
+        {:else if getThemeMode() === 'dark'}
           <MoonIcon />
         {:else}
           <MonitorIcon />

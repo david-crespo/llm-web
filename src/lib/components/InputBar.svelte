@@ -62,7 +62,7 @@
         class="w-full resize-none overflow-y-auto rounded border border-edge px-3 py-2"
         style="min-height: 42px; max-height: 200px;"
         rows="1"
-        disabled={chatState.isCurrentLoading}
+        disabled={chatState.isCurrentLoading || chatState.lastMessageIsError}
       ></textarea>
     </div>
 
@@ -129,7 +129,7 @@
 
         <button
           onclick={onSend}
-          disabled={chatState.isCurrentLoading || !message.trim()}
+          disabled={chatState.isCurrentLoading || !message.trim() || chatState.lastMessageIsError}
           class="rounded bg-btn-primary px-4 py-2 text-white hover:bg-btn-primary-hover disabled:cursor-not-allowed disabled:bg-btn-disabled"
         >
           Send

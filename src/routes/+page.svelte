@@ -4,7 +4,7 @@
   import InputBar from '$lib/components/InputBar.svelte'
   import AboutModal from '$lib/components/AboutModal.svelte'
   import ConfirmDialog from '$lib/components/ConfirmDialog.svelte'
-  import { initTheme } from '$lib/theme'
+  import { initTheme } from '$lib/theme.svelte'
   import { chatState } from '$lib/chat.svelte'
 
   // Local UI state (not managed by ChatManager)

@@ -1,7 +1,6 @@
 <script lang="ts">
   import { marked, type Tokens } from 'marked'
-  // Sanitize rendered HTML safely in the browser
-  import DOMPurify from 'dompurify'
+  import DOMPurify from '$lib/purify'
   // Use highlight.js core and explicitly register only needed languages
   import hljs from 'highlight.js/lib/core'
   import javascript from 'highlight.js/lib/languages/javascript'
@@ -61,7 +60,11 @@
     'mprescripts',
   ]
 
+  // Guard against stale async renders when content changes rapidly
+  let renderSeq = 0
+
   $effect(() => {
+    const seq = ++renderSeq
     const renderer = new marked.Renderer()
 
     // Render code blocks with highlight.js
@@ -79,12 +82,8 @@
       const withMath = renderMath(content)
       const rendered = await marked.parse(withMath, { renderer })
 
-      DOMPurify.addHook('afterSanitizeAttributes', (node) => {
-        if (node.tagName === 'A') {
-          node.setAttribute('target', '_blank')
-          node.setAttribute('rel', 'noopener noreferrer')
-        }
-      })
+      // A newer render started while we were awaiting — discard this result
+      if (seq !== renderSeq) return
 
       html = DOMPurify.sanitize(rendered, {
         // Allow common safe URL schemes and root-relative paths
@@ -93,8 +92,6 @@
         ADD_TAGS: MATHML_TAGS,
         ADD_ATTR: ['xmlns', 'displaystyle', 'scriptlevel'],
       })
-
-      DOMPurify.removeHook('afterSanitizeAttributes')
     })()
   })
 </script>

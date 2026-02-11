@@ -40,6 +40,15 @@ export class ChatManager {
     return this.current?.id != null && this.pendingRequests.has(this.current.id)
   }
 
+  /** True when the last message is an error/stopped response — the user should regen or fork, not send a new message. */
+  get lastMessageIsError(): boolean {
+    const last = this.current?.messages.at(-1)
+    return (
+      last?.role === 'assistant' &&
+      ['stopped', 'interrupted', 'error'].includes(last.stop_reason)
+    )
+  }
+
   constructor() {
     // Automatically initialize when created
     this.init()
@@ -135,7 +144,7 @@ export class ChatManager {
    * Send a user message and get AI response
    */
   async sendMessage(content: string) {
-    if (!content.trim() || !this.current || this.isCurrentLoading) return
+    if (!content.trim() || !this.current || this.isCurrentLoading || this.lastMessageIsError) return
 
     // Capture before any await: the user can switch chats while the request is in-flight.
     const chat = this.current

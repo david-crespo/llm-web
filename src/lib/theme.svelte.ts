@@ -1,7 +1,8 @@
 export type ThemeMode = 'light' | 'dark' | 'system'
 
-let currentMode: ThemeMode = 'system'
+let currentMode = $state<ThemeMode>('system')
 let media: MediaQueryList | null = null
+let initialized = false
 
 function getSystemPrefersDark(): boolean {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false
@@ -29,42 +30,21 @@ function apply(mode: ThemeMode) {
   const root = document.documentElement
   const dark = mode === 'dark' || (mode === 'system' && getSystemPrefersDark())
   root.classList.toggle('dark', dark)
-  // Hint to the UA for form controls, etc.
   root.style.colorScheme = dark ? 'dark' : 'light'
 }
 
-function notify(mode: ThemeMode) {
-  if (typeof window === 'undefined') return
-  const event = new CustomEvent('theme-change', {
-    detail: {
-      mode,
-      effectiveDark: mode === 'dark' || (mode === 'system' && getSystemPrefersDark()),
-    },
-  })
-  window.dispatchEvent(event)
-}
-
 export function initTheme() {
-  // Only run in browser
-  if (typeof window === 'undefined') return
+  if (typeof window === 'undefined' || initialized) return
+  initialized = true
   currentMode = loadStoredMode()
   apply(currentMode)
-  // Watch system changes when in system mode
   media ||= window.matchMedia('(prefers-color-scheme: dark)')
-  const onChange = () => {
-    if (currentMode === 'system') {
-      apply(currentMode)
-      notify(currentMode)
-    }
-  }
-  media.addEventListener?.('change', onChange)
+  media.addEventListener?.('change', () => {
+    if (currentMode === 'system') apply(currentMode)
+  })
 }
 
 export function getThemeMode(): ThemeMode {
-  if (typeof window !== 'undefined' && !media) {
-    // Ensure initialized in case consumer didn't call init
-    initTheme()
-  }
   return currentMode
 }
 
@@ -72,7 +52,6 @@ export function setThemeMode(mode: ThemeMode) {
   currentMode = mode
   saveStoredMode(mode)
   apply(mode)
-  notify(mode)
 }
 
 export function cycleThemeMode(): ThemeMode {
