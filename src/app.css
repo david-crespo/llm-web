@@ -121,13 +121,6 @@ select,
   cursor: pointer;
 }
 
-/* Prevent Safari's double-tap-to-zoom delay after compositing layer changes */
-button,
-a,
-[role='button'] {
-  touch-action: manipulation;
-}
-
 /* Custom scrollbar for webkit browsers */
 ::-webkit-scrollbar {
   width: 6px;
