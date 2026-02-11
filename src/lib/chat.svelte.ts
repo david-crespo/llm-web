@@ -61,7 +61,7 @@ export class ChatManager {
 
     try {
       await storage.init()
-      await this.loadHistory()
+      this.history = await storage.getAllChats()
 
       // Reuse existing empty chat or create new one
       if (this.history.length > 0 && this.history[0].messages.length === 0) {
@@ -73,13 +73,6 @@ export class ChatManager {
       console.error('Failed to initialize chat storage:', error)
       this.initError = error instanceof Error ? error.message : 'Failed to initialize storage'
     }
-  }
-
-  /**
-   * Reload chat history from storage
-   */
-  async loadHistory() {
-    this.history = await storage.getAllChats()
   }
 
   /**
@@ -95,8 +88,9 @@ export class ChatManager {
     }
 
     const id = await storage.createChat(newChat)
-    this.current = { ...newChat, id }
-    await this.loadHistory()
+    const chat: Chat = { ...newChat, id }
+    this.current = chat
+    this.history.unshift(chat)
     this.sidebarOpen = false
   }
 
@@ -127,7 +121,7 @@ export class ChatManager {
    */
   async deleteChat(id: number) {
     await storage.deleteChat(id)
-    await this.loadHistory()
+    this.history = this.history.filter((c) => c.id !== id)
 
     // If we deleted the current chat, switch to another or create new
     if (this.current?.id === id) {
@@ -200,8 +194,9 @@ export class ChatManager {
     }
 
     const id = await storage.createChat(newChat)
-    this.current = { ...newChat, id }
-    await this.loadHistory()
+    const chat: Chat = { ...newChat, id }
+    this.current = chat
+    this.history.unshift(chat)
 
     // Return the message content to populate input field
     return targetMessage.content
@@ -265,8 +260,7 @@ export class ChatManager {
       // Don't yank the viewport if the user is viewing a different chat.
       if (this.current?.id === chatId) scrollToBottom()
 
-      await storage.updateChat(chatId, chat)
-      await this.loadHistory()
+      storage.updateChat(chatId, chat)
     } catch (error) {
       // Stale error from a replaced request — ignore silently
       if (this.pendingRequests.get(chatId) !== controller) return
@@ -306,8 +300,7 @@ export class ChatManager {
       chat.messages.push(errorMessage)
       if (this.current?.id === chatId) scrollToBottom()
 
-      await storage.updateChat(chatId, chat)
-      await this.loadHistory()
+      storage.updateChat(chatId, chat)
     } finally {
       wakeLock?.release()
       // Only clean up if we're still the active request for this chat

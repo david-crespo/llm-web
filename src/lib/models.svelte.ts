@@ -15,17 +15,6 @@ export type Model = {
   search_cost?: number
 }
 
-/**
- * The order matters: preferred models go first.
- *
- * We pick a model by finding the first one containing the specified string.
- * But the same string can be in multiple model names. For example, "mini" is
- * in both gpt-4o-mini and the gemini models. By putting gpt-4o-mini earlier, we
- * ensure "mini" matches that. By putting gpt-4o first, we ensure "4o" matches
- * that.
- *
- * id is doing double duty as both a human-readable nickname and a unique ID.
- */
 export const models: Model[] = [
   {
     provider: 'openai',
