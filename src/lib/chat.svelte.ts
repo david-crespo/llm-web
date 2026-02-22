@@ -55,8 +55,10 @@ export class ChatManager {
   }
 
   constructor(current: Chat, history: Chat[]) {
-    this.current = $state(current)
     this.history = $state(history)
+    // Read from the reactive history proxy so current and history[0] share
+    // the same proxy — same pattern as createNew().
+    this.current = $state(this.history[history.indexOf(current)])
   }
 
   /**
@@ -72,9 +74,13 @@ export class ChatManager {
     }
 
     const id = await storage.createChat(newChat)
-    const chat: Chat = { ...newChat, id }
-    this.current = chat
-    this.history.unshift(chat)
+    // Insert into history first, then read back from the array. Svelte's $state
+    // wraps array elements in reactive proxies on read, so this.history[0]
+    // returns a proxy. If we instead set this.current to the raw object directly,
+    // it and this.history[0] would be different proxies — pushing messages onto
+    // one wouldn't notify subscribers (the sidebar) reading the other.
+    this.history.unshift({ ...newChat, id })
+    this.current = this.history[0]
     this.sidebarOpen = false
   }
 
@@ -176,9 +182,9 @@ export class ChatManager {
     }
 
     const id = await storage.createChat(newChat)
-    const chat: Chat = { ...newChat, id }
-    this.current = chat
-    this.history.unshift(chat)
+    // See comment in createNew() for why we read back from history
+    this.history.unshift({ ...newChat, id })
+    this.current = this.history[0]
 
     // Return the message content to populate input field
     return targetMessage.content
