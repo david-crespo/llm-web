@@ -27,8 +27,8 @@ export const models: Model[] = [
   },
   {
     provider: 'google',
-    key: 'gemini-3-pro-preview',
-    id: 'Gemini 3 Pro',
+    key: 'gemini-3.1-pro-preview',
+    id: 'Gemini 3.1 Pro',
     input: 2.0,
     input_cached: 0.5,
     output: 12.0,
