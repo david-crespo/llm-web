@@ -22,20 +22,19 @@ export async function anthropicCreateMessage({
   const response = await client.beta.messages.create(
     {
       model: model.key,
+      cache_control: { type: 'ephemeral' },
       system: chat.systemPrompt,
       messages: chat.messages.map((m) => ({ role: m.role, content: m.content })),
       max_tokens: 8192,
       output_config: { effort: think ? 'high' : 'low' },
       tools: search
         ? [
-            {
-              type: 'web_search_20250305',
-              name: 'web_search',
-              max_uses: 5,
-            },
+            { type: 'web_search_20260209', name: 'web_search', max_uses: 5 },
+            { type: 'web_fetch_20260209', name: 'web_fetch' },
+            { type: 'code_execution_20260120', name: 'code_execution' },
           ]
         : undefined,
-      betas: ['effort-2025-11-24'],
+      betas: ['code-execution-web-tools-2026-02-09'],
     },
     { signal },
   )
@@ -77,6 +76,9 @@ export async function anthropicCreateMessage({
         if (toolBlock.name === 'web_search') {
           return `🔍 **Search:** ${(toolBlock.input as { query: string }).query}\n\n`
         }
+        if (toolBlock.name === 'web_fetch') {
+          return `🌐 **Fetch:** ${(toolBlock.input as { url: string }).url}\n\n`
+        }
       }
 
       return ''
@@ -90,10 +92,15 @@ export async function anthropicCreateMessage({
 
   const searches = response.usage.server_tool_use?.web_search_requests ?? 0
 
+  // input_tokens is only tokens after the last cache breakpoint, so add in
+  // cache hits and writes for total. See:
+  // https://platform.claude.com/docs/en/build-with-claude/prompt-caching#tracking-cache-performance
+  const cache_hit = response.usage.cache_read_input_tokens ?? 0
+  const cache_write = response.usage.cache_creation_input_tokens ?? 0
   const tokens = {
-    input: response.usage.input_tokens || 0,
+    input: (response.usage.input_tokens || 0) + cache_hit + cache_write,
     output: response.usage.output_tokens || 0,
-    input_cache_hit: 0,
+    input_cache_hit: cache_hit,
   }
 
   return {
