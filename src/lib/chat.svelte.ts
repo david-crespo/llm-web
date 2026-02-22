@@ -43,6 +43,10 @@ export class ChatManager {
     return this.pendingRequests.has(this.current.id)
   }
 
+  isLoading(chatId: number): boolean {
+    return this.pendingRequests.has(chatId)
+  }
+
   /**
    * True when the last message is an error/stopped response — the user should
    * regen or fork, not send a new message.

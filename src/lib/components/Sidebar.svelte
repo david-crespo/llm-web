@@ -88,8 +88,11 @@
         >
           <div class="min-w-0 pr-10">
             <div class="line-clamp-2 text-sm font-medium break-words">{preview}</div>
-            <div class="mt-1 text-xs leading-4 text-fg-muted">
+            <div class="mt-1 flex items-center gap-1.5 text-xs leading-4 text-fg-muted">
               {chat.createdAt.toLocaleString()}
+              {#if chatState.isLoading(chat.id)}
+                <span class="loading-dot"></span>
+              {/if}
             </div>
           </div>
           <DropdownMenu.Root>
@@ -219,6 +222,25 @@
 <style>
   .chat-row:hover:not(:has(.chat-kebab:hover)) {
     background-color: var(--color-surface-hover);
+  }
+
+  .loading-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--color-accent);
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%,
+    100% {
+      opacity: 0.3;
+    }
+    50% {
+      opacity: 1;
+    }
   }
 
   .line-clamp-2 {
