@@ -75,6 +75,14 @@ describe('renderMath', () => {
     test('renders parenthesized: $(a+b)^2$', () => {
       expect(hasMathML(renderMath('$(a+b)^2$'))).toBe(true)
     })
+
+    test('renders math starting with digit: $2^{10}$', () => {
+      expect(hasMathML(renderMath('$2^{10}$'))).toBe(true)
+    })
+
+    test('renders math starting with digit: $3x+1$', () => {
+      expect(hasMathML(renderMath('$3x+1$'))).toBe(true)
+    })
   })
 
   describe('inline math with \\(...\\)', () => {
@@ -110,8 +118,23 @@ describe('renderMath', () => {
       expect(renderMath(input)).toBe(input)
     })
 
+    test('does not treat "$50/year ... $100" as math', () => {
+      const input = "used to be $50/year. Now it's $100"
+      expect(renderMath(input)).toBe(input)
+    })
+
     test('does not treat "$100" in prose as math', () => {
       const input = 'I paid $100 for it'
+      expect(renderMath(input)).toBe(input)
+    })
+
+    test('does not treat "$5 and $10" as math', () => {
+      const input = 'between $5 and $10'
+      expect(renderMath(input)).toBe(input)
+    })
+
+    test('does not treat "$ " opening as math', () => {
+      const input = '$ x^2$'
       expect(renderMath(input)).toBe(input)
     })
   })
