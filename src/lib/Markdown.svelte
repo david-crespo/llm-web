@@ -90,7 +90,7 @@
         ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel):|\/)/i,
         FORBID_TAGS: ['style', 'iframe', 'object', 'embed', 'form', 'input', 'button'],
         ADD_TAGS: MATHML_TAGS,
-        ADD_ATTR: ['xmlns', 'displaystyle', 'scriptlevel'],
+        ADD_ATTR: ['xmlns', 'display', 'displaystyle', 'scriptlevel'],
       })
     })()
   })
@@ -293,10 +293,14 @@
   }
 
   /* Block math: center and add vertical spacing */
-  .prose :global(math[display='block']) {
-    display: block;
+  .prose :global(math.tml-display) {
     text-align: center;
     margin: 1rem 0;
+  }
+
+  /* Scroll wide display math rather than overflowing the container */
+  .prose :global(p:has(> math.tml-display)) {
+    overflow-x: auto;
   }
 
   /* Math parse errors */
