@@ -27,6 +27,8 @@ export function renderMath(text: string): string {
   text = text.replace(/(?<!\\)\$(?! )([^$\n]+?)(?<! )\$|\\\((.+?)\\\)/g, (match, d1, d2) => {
     // d1 is from $...$, d2 is from \(...\)
     if (d1 !== undefined && !hasLatexChar(d1)) return match
+    // Skip dollar amounts paired across prose: **$30.7k** of depreciation, versus **$13.6k**
+    if (d1 !== undefined && /^\d/.test(d1) && /\s/.test(d1) && !/[\\^_{}]/.test(d1)) return match
     const latex = (d1 ?? d2).trim()
     try {
       return temml.renderToString(latex, { displayMode: false })

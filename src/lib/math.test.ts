@@ -57,6 +57,7 @@ describe('renderMath', () => {
     '```python\n$x^2$\n```',
     '\\$not math$',
     '$x\ny$',
+    '**$30.7k** of depreciation, versus **$13.6k** for a Toyota',
   ])('not math: %s', (input) => {
     expect(renderMath(input)).toBe(input)
   })
