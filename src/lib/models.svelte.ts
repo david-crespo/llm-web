@@ -18,11 +18,11 @@ export type Model = {
 export const models: Model[] = [
   {
     provider: 'openai',
-    key: 'gpt-5.2',
-    id: 'GPT-5.2',
-    input: 1.75,
-    input_cached: 0.175,
-    output: 14,
+    key: 'gpt-5.4',
+    id: 'GPT-5.4',
+    input: 2.5,
+    input_cached: 0.25,
+    output: 15,
     search_cost: 0.01,
   },
   {
