@@ -37,8 +37,8 @@ export const models: Model[] = [
   },
   {
     provider: 'anthropic',
-    key: 'claude-opus-4-6',
-    id: 'Opus 4.6',
+    key: 'claude-opus-4-7',
+    id: 'Opus 4.7',
     input: 5,
     input_cached: 0.5,
     output: 25,
