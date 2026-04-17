@@ -46,5 +46,5 @@ export function renderMath(text: string): string {
 // Heuristic: does the string contain characters typical of LaTeX?
 // Used to avoid treating "$50 to $100" as math.
 export function hasLatexChar(s: string): boolean {
-  return /[\\^_{}=\/,+\-()]/.test(s) || /^[a-zA-Z]$/.test(s)
+  return /[\\^_{}=/,+\-()]/.test(s) || /^[a-zA-Z]$/.test(s)
 }
