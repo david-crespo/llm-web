@@ -2,7 +2,6 @@ import Anthropic from '@anthropic-ai/sdk'
 import type {
   ThinkingBlock,
   CitationsWebSearchResultLocation,
-  ToolUseBlock,
 } from '@anthropic-ai/sdk/resources/messages'
 import type { ChatInput, ModelResponse } from './index'
 import { settings } from '$lib/settings.svelte'
@@ -72,12 +71,11 @@ export async function anthropicCreateMessage({
 
       // Handle web search tool uses
       if (block.type === 'tool_use' || block.type === 'server_tool_use') {
-        const toolBlock = block as ToolUseBlock
-        if (toolBlock.name === 'web_search') {
-          return `🔍 **Search:** ${(toolBlock.input as { query: string }).query}\n\n`
+        if (block.name === 'web_search') {
+          return `🔍 **Search:** ${(block.input as { query: string }).query}\n\n`
         }
-        if (toolBlock.name === 'web_fetch') {
-          return `🌐 **Fetch:** ${(toolBlock.input as { url: string }).url}\n\n`
+        if (block.name === 'web_fetch') {
+          return `🌐 **Fetch:** ${(block.input as { url: string }).url}\n\n`
         }
       }
 

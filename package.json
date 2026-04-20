@@ -33,16 +33,16 @@
     "tailwindcss": "^4.2.2",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.58.2",
-    "vite": "^8.0.8",
+    "vite": "^8.0.9",
     "vitest": "^4.1.4"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "0.78.0",
+    "@anthropic-ai/sdk": "^0.90.0",
     "@google/genai": "^1.50.1",
-    "bits-ui": "2.15.5",
+    "bits-ui": "^2.18.0",
     "dompurify": "^3.4.0",
     "highlight.js": "^11.11.1",
-    "marked": "^17.0.6",
+    "marked": "^18.0.2",
     "marked-highlight": "^2.2.4",
     "openai": "^6.34.0",
     "temml": "^0.13.2"
