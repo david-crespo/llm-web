@@ -1,0 +1,22 @@
+diff --git a/dist/temml.mjs b/dist/temml.mjs
+index f20b6e83aa7b6daae1c37adff4a681a584b33042..ba25629fed30f7577b021333311f09613e7d7fa2 100644
+--- a/dist/temml.mjs
++++ b/dist/temml.mjs
+@@ -11875,7 +11875,7 @@ const functions = _functions;
+  */
+ const spaceRegexString = "[ \r\n\t]";
+ const controlWordRegexString = "\\\\[a-zA-Z@]+";
+-const controlSymbolRegexString = "\\\\[^\uD800-\uDFFF]";
++const controlSymbolRegexString = "\\\\[^\\uD800-\\uDFFF]";
+ const controlWordWhitespaceRegexString = `(${controlWordRegexString})${spaceRegexString}*`;
+ const controlSpaceRegexString = "\\\\(\n|[ \r\t]+\n?)[ \r\t]*";
+ const combiningDiacriticalMarkString = "[\u0300-\u036f]";
+@@ -11885,7 +11885,7 @@ const tokenRegexString =
+   `${controlSpaceRegexString}|` +  // whitespace
+   "([!-\\[\\]-\u2027\u202A-\uD7FF\uF900-\uFFFF]" + // single codepoint
+   `${combiningDiacriticalMarkString}*` + // ...plus accents
+-  "|[\uD800-\uDBFF][\uDC00-\uDFFF]" + // surrogate pair
++  "|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]" + // surrogate pair
+   `${combiningDiacriticalMarkString}*` + // ...plus accents
+   "|\\\\verb\\*([^]).*?\\4" + // \verb*
+   "|\\\\verb([^*a-zA-Z]).*?\\5" + // \verb unstarred

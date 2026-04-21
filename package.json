@@ -46,5 +46,8 @@
     "marked-highlight": "^2.2.4",
     "openai": "^6.34.0",
     "temml": "^0.13.2"
+  },
+  "patchedDependencies": {
+    "temml@0.13.2": "patches/temml@0.13.2.patch"
   }
 }
