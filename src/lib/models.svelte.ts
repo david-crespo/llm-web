@@ -17,6 +17,15 @@ export type Model = {
 
 export const models: Model[] = [
   {
+    provider: 'anthropic',
+    key: 'claude-opus-4-7',
+    id: 'Opus 4.7',
+    input: 5,
+    input_cached: 0.5,
+    output: 25,
+    search_cost: 0.01,
+  },
+  {
     provider: 'openai',
     key: 'gpt-5.4',
     id: 'GPT-5.4',
@@ -34,15 +43,6 @@ export const models: Model[] = [
     output: 12.0,
     // 5,000 search queries per month free, then $14/1000
     search_cost: 0,
-  },
-  {
-    provider: 'anthropic',
-    key: 'claude-opus-4-7',
-    id: 'Opus 4.7',
-    input: 5,
-    input_cached: 0.5,
-    output: 25,
-    search_cost: 0.01,
   },
 ]
 

@@ -24,7 +24,12 @@ export async function anthropicCreateMessage({
       cache_control: { type: 'ephemeral' },
       system: chat.systemPrompt,
       messages: chat.messages.map((m) => ({ role: m.role, content: m.content })),
-      max_tokens: 8192,
+      // SDK's non-streaming guard throws when max_tokens > ~21_333 (it assumes
+      // 128k tokens/hour and refuses requests estimated to take >10 min).
+      max_tokens: 20_000,
+      // Force display: "summarized" so reasoning is returned; Opus 4.7
+      // otherwise defaults to "omitted" and blanks the thinking text.
+      thinking: { type: 'adaptive', display: 'summarized' },
       output_config: { effort: think ? 'high' : 'low' },
       tools: search
         ? [
