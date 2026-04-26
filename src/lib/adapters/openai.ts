@@ -20,7 +20,7 @@ export async function openaiCreateMessage({
       model: model.key,
       input: chat.messages.map((m) => ({ role: m.role, content: m.content })),
       tools: search ? [{ type: 'web_search_preview' as const }] : undefined,
-      reasoning: { effort: think ? 'medium' : 'low' },
+      reasoning: { effort: think ? 'high' : 'low' },
       instructions: chat.systemPrompt,
     },
     { signal },
