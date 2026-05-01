@@ -246,6 +246,7 @@ export class ChatManager {
         stop_reason: response.stop_reason,
         cost,
         timeMs,
+        provider: response.provider,
       }
 
       chat.messages.push(assistantMessage)

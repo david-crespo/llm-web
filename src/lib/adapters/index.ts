@@ -1,4 +1,4 @@
-import type { Chat, TokenCounts } from '$lib/types'
+import type { Chat, ProviderData, TokenCounts } from '$lib/types'
 import type { Model } from '$lib/models.svelte'
 import { openaiCreateMessage } from './openai'
 import { anthropicCreateMessage } from './anthropic'
@@ -10,6 +10,7 @@ export type ModelResponse = {
   stop_reason: string
   reasoning?: string
   searches?: number
+  provider?: ProviderData
 }
 
 export type ChatInput = {

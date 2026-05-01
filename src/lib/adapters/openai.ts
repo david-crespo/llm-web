@@ -15,10 +15,23 @@ export async function openaiCreateMessage({
 
   const client = new OpenAI({ apiKey, dangerouslyAllowBrowser: true })
 
+  // If the most recent assistant turn was an OpenAI Responses call we have its
+  // response.id — chain via previous_response_id so encrypted reasoning items
+  // carry over and we only need to send the new user message.
+  // https://developers.openai.com/api/docs/guides/conversation-state
+  const lastAssistant = chat.messages.filter((m) => m.role === 'assistant').at(-1)
+  const previous_response_id =
+    lastAssistant?.provider?.type === 'openai' ? lastAssistant.provider.responseId : undefined
+  const inputMessages = previous_response_id ? chat.messages.slice(-1) : chat.messages
+
   const response = await client.responses.create(
     {
       model: model.key,
-      input: chat.messages.map((m) => ({ role: m.role, content: m.content })),
+      input: inputMessages.map((m) => ({ role: m.role, content: m.content })),
+      previous_response_id,
+      // Stable per-chat key so multi-turn requests route to the same backend
+      // and hit the prompt cache reliably.
+      prompt_cache_key: String(chat.id),
       tools: search ? [{ type: 'web_search_preview' as const }] : undefined,
       reasoning: { effort: think ? 'high' : 'low' },
       instructions: chat.systemPrompt,
@@ -40,5 +53,6 @@ export async function openaiCreateMessage({
     tokens,
     stop_reason: response.status || 'completed',
     searches: searches || undefined,
+    provider: { type: 'openai', responseId: response.id },
   }
 }

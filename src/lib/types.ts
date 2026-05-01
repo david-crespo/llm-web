@@ -10,6 +10,15 @@ export type UserMessage = {
   cache?: boolean
 }
 
+/** Provider-specific assistant-message data. Discriminated on `type` so we
+ * can add fields for other providers without widening every consumer. */
+export type ProviderData = {
+  type: 'openai'
+  /** Responses API response.id, used as previous_response_id on the next turn
+   * so reasoning items carry over and prompt caching hits. */
+  responseId: string
+}
+
 export type AssistantMessage = {
   role: 'assistant'
   model: string
@@ -24,6 +33,7 @@ export type AssistantMessage = {
   cost: number
   timeMs: number
   cache?: boolean
+  provider?: ProviderData
 }
 
 export type ChatMessage = UserMessage | AssistantMessage
