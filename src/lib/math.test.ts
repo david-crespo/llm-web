@@ -16,9 +16,12 @@ describe('hasLatexChar', () => {
     '(a)',
     'x',
     'N',
+    'dx',
+    'dy',
+    'hello',
   ])('true: %s', (s) => expect(hasLatexChar(s)).toBe(true))
 
-  test.each(['50', '100', '3.14', 'hello'])('false: %s', (s) => expect(hasLatexChar(s)).toBe(false))
+  test.each(['50', '100', '3.14'])('false: %s', (s) => expect(hasLatexChar(s)).toBe(false))
 })
 
 describe('renderMath', () => {
@@ -27,6 +30,7 @@ describe('renderMath', () => {
 
   test.each([
     '$x$',
+    '$dx$',
     '$a/b$',
     '$a,b$',
     '$x^2$',
