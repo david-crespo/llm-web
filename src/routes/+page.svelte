@@ -11,6 +11,8 @@
   let message = $state('')
   let chatToDelete = $state<number | null>(null)
   let showAboutModal = $state(false)
+  // The mobile composer is fixed, so the document-scrolled message list needs matching
+  // bottom padding to keep the last message reachable as the textarea grows.
   let inputBarHeight = $state(0)
 
   /**

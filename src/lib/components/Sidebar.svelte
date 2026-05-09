@@ -60,6 +60,28 @@
     mq.addEventListener('change', handler)
     return () => mq.removeEventListener('change', handler)
   })
+
+  $effect(() => {
+    if (isDesktop || !chatState.sidebarOpen) return
+
+    // Mobile uses document scrolling so Safari can collapse its toolbar, but the
+    // overlay still needs to freeze the page underneath without losing position.
+    const scrollY = window.scrollY
+    const previousPosition = document.body.style.position
+    const previousTop = document.body.style.top
+    const previousWidth = document.body.style.width
+
+    document.body.style.position = 'fixed'
+    document.body.style.top = `-${scrollY}px`
+    document.body.style.width = '100%'
+
+    return () => {
+      document.body.style.position = previousPosition
+      document.body.style.top = previousTop
+      document.body.style.width = previousWidth
+      window.scrollTo(0, scrollY)
+    }
+  })
 </script>
 
 {#snippet sidebarContent(isDesktop: boolean)}
