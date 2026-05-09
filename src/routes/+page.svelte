@@ -11,6 +11,7 @@
   let message = $state('')
   let chatToDelete = $state<number | null>(null)
   let showAboutModal = $state(false)
+  let inputBarHeight = $state(0)
 
   /**
    * Send message handler - clears input and delegates to ChatManager
@@ -47,7 +48,7 @@
     </div>
   </div>
 {:else if bootState.current.status === 'ready'}
-  <div class="flex h-dvh overflow-x-hidden overflow-y-hidden">
+  <div class="flex min-h-dvh overflow-x-hidden md:h-dvh md:overflow-y-hidden">
     <Sidebar
       onRequestDelete={(id) => (chatToDelete = id)}
       onOpenAbout={() => (showAboutModal = true)}
@@ -71,9 +72,13 @@
     <AboutModal open={showAboutModal} onClose={() => (showAboutModal = false)} />
 
     <div class="flex min-w-0 flex-1 flex-col">
-      <MessageList onFork={handleFork} onOpenAbout={() => (showAboutModal = true)} />
+      <MessageList
+        composerHeight={inputBarHeight}
+        onFork={handleFork}
+        onOpenAbout={() => (showAboutModal = true)}
+      />
 
-      <InputBar bind:message onSend={handleSend} />
+      <InputBar bind:message onHeightChange={(height) => (inputBarHeight = height)} onSend={handleSend} />
     </div>
   </div>
 {/if}

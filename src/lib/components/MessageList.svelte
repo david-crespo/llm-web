@@ -4,15 +4,19 @@
   import { getAvailableModels } from '$lib/models.svelte'
 
   interface Props {
+    composerHeight?: number
     onFork: (index: number) => void
     onOpenAbout: () => void
   }
 
-  let { onFork, onOpenAbout }: Props = $props()
+  let { composerHeight = 0, onFork, onOpenAbout }: Props = $props()
   const hasApiKeys = getAvailableModels().length > 0
 </script>
 
-<div class="flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto p-4">
+<div
+  class="flex min-h-0 flex-1 flex-col overflow-x-hidden p-4 pb-[calc(var(--composer-height)+1rem)] md:overflow-y-auto md:pb-4"
+  style={`--composer-height: ${composerHeight}px`}
+>
   {#if chatState.current.messages.length > 0}
     <div class="mx-auto w-full md:max-w-2xl">
       {#each chatState.current.messages as msg, index (index)}

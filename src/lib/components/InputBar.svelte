@@ -8,10 +8,11 @@
 
   interface Props {
     message: string
+    onHeightChange?: (height: number) => void
     onSend: () => void
   }
 
-  let { message = $bindable(), onSend }: Props = $props()
+  let { message = $bindable(), onHeightChange, onSend }: Props = $props()
 
   const availableModels = $derived(getAvailableModels())
   const hasAnyKeys = $derived(availableModels.length > 0)
@@ -37,6 +38,11 @@
   }
 
   let textarea: HTMLTextAreaElement | undefined = $state()
+  let height = $state(0)
+
+  $effect(() => {
+    onHeightChange?.(height)
+  })
 
   $effect(() => {
     if (message === '' && textarea) {
@@ -45,7 +51,10 @@
   })
 </script>
 
-<div class="w-full border-t border-edge bg-surface-alt p-3">
+<div
+  bind:clientHeight={height}
+  class="fixed inset-x-0 bottom-0 z-10 w-full border-t border-edge bg-surface-alt p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:static"
+>
   <div class="mx-auto md:max-w-2xl">
     <!-- Text input at top -->
     <div class="mb-2">
