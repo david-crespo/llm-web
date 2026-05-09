@@ -24,18 +24,21 @@ export function renderMath(text: string): string {
   })
   // Inline math: $...$ (not \$) or \(...\)
   // For $...$, require at least one LaTeX-ish char to avoid "$50 to $100" false positives
-  text = text.replace(/(?<!\\)\$(?! )([^$\n]+?)(?<! )\$|\\\((.+?)\\\)/g, (match, d1, d2) => {
-    // d1 is from $...$, d2 is from \(...\)
-    if (d1 !== undefined && !hasLatexChar(d1)) return match
-    // Skip dollar amounts paired across prose: **$30.7k** of depreciation, versus **$13.6k**
-    if (d1 !== undefined && /^\d/.test(d1) && /\s/.test(d1) && !/[\\^_{}]/.test(d1)) return match
-    const latex = (d1 ?? d2).trim()
-    try {
-      return temml.renderToString(latex, { displayMode: false })
-    } catch {
-      return `<code class="math-error">${latex}</code>`
-    }
-  })
+  text = text.replace(
+    /(?<!\\)\$(?! )([^$\n]+?)(?<! )\$|\\\((.+?)\\\)/g,
+    (match, d1, d2, offset, source) => {
+      // d1 is from $...$, d2 is from \(...\)
+      if (d1 !== undefined && !shouldRenderDollarMath(d1, source.slice(offset + match.length))) {
+        return match
+      }
+      const latex = (d1 ?? d2).trim()
+      try {
+        return temml.renderToString(latex, { displayMode: false })
+      } catch {
+        return `<code class="math-error">${latex}</code>`
+      }
+    },
+  )
 
   // Restore code blocks
   // eslint-disable-next-line no-control-regex
@@ -47,4 +50,13 @@ export function renderMath(text: string): string {
 // Used to avoid treating "$50 to $100" as math.
 export function hasLatexChar(s: string): boolean {
   return /[\\^_{}=/,+\-()]/.test(s) || /^[a-zA-Z]+$/.test(s)
+}
+
+function shouldRenderDollarMath(s: string, afterMatch: string): boolean {
+  if (!hasLatexChar(s)) return false
+  // Skip dollar amounts paired across prose: **$30.7k** of depreciation, versus **$13.6k**
+  if (/^\d/.test(s) && /\s/.test(s) && !/[\\^_{}]/.test(s)) return false
+  // In "$50-$100", the second dollar sign is the start of another amount, not a math closer.
+  if (/^\d[\d,.]*(?:[kKmMbB])?[-+]\s*$/.test(s) && /^\d/.test(afterMatch)) return false
+  return true
 }
