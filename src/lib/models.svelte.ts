@@ -83,5 +83,6 @@ export const systemBase = `
 - Put code within a triple-backtick fence block with a language key (like \`\`\`rust)
 - Never put markdown prose (or bullets or whatever) in a fenced code block
 - For math, use LaTeX: $...$ or \\(...\\) for inline, $$...$$ or \\[...\\] for block
+- Don't wrap dollar amounts in $...$ just to display them — write "$300", "$300-$500", "~$300" plainly. (Inside an actual equation, \\$ is fine.)
 - Today's date is ${new Date().toISOString().slice(0, 10)}`
 /* eslint-enable svelte/prefer-svelte-reactivity */
