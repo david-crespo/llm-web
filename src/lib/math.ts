@@ -23,9 +23,11 @@ export function renderMath(text: string): string {
     }
   })
   // Inline math: $...$ (not \$) or \(...\)
-  // For $...$, require at least one LaTeX-ish char to avoid "$50 to $100" false positives
+  // For $...$, require at least one LaTeX-ish char to avoid "$50 to $100" false positives.
+  // Content allows `\$` (LaTeX-escaped dollar) so it is not mistaken for a closer;
+  // the closing $ likewise must not be preceded by `\` (or a space).
   text = text.replace(
-    /(?<!\\)\$(?! )([^$\n]+?)(?<! )\$|\\\((.+?)\\\)/g,
+    /(?<!\\)\$(?! )((?:[^$\n]|\\\$)+?)(?<![ \\])\$|\\\((.+?)\\\)/g,
     (match, d1, d2, offset, source) => {
       // d1 is from $...$, d2 is from \(...\)
       if (d1 !== undefined && !shouldRenderDollarMath(d1, source.slice(offset + match.length))) {
@@ -54,6 +56,8 @@ export function hasLatexChar(s: string): boolean {
 
 function shouldRenderDollarMath(s: string, afterMatch: string): boolean {
   if (!hasLatexChar(s)) return false
+  // Markdown bold inside a $...$ span means the lazy match is straddling prose.
+  if (s.includes('**')) return false
   // Skip dollar amounts paired across prose: **$30.7k** of depreciation, versus **$13.6k**
   if (/^\d/.test(s) && /\s/.test(s) && !/[\\^_{}]/.test(s)) return false
   // In "$50-$100", the second dollar sign is the start of another amount, not a math closer.

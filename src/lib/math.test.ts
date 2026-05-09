@@ -51,8 +51,45 @@ describe('renderMath', () => {
     '\\(50\\)',
     '$$x^2 + y^2$$',
     '\\[x^2 + y^2\\]',
+    // \$ inside $...$ is a valid LaTeX escape for a literal dollar sign and
+    // must not break the surrounding match. (Regression: the closing $ was
+    // matching too eagerly — the regex saw "$\$" as a complete math span with
+    // content "\", which Temml then choked on.)
+    '$\\$300$',
+    '$\\sim\\$900$',
+    '$\\sim\\$450$',
   ])('renders: %s', (input) => {
     expect(hasMathML(renderMath(input))).toBe(true)
+  })
+
+  describe('LaTeX-escaped dollars inside math', () => {
+    test('renders both math spans in "$\\$300$–$\\$500$ billion"', () => {
+      const result = renderMath('roughly $\\$300$–$\\$500$ billion')
+      const mathCount = (result.match(/<math/g) ?? []).length
+      expect(mathCount).toBe(2)
+      expect(result).not.toContain('temml-error')
+      expect(result).not.toContain('math-error')
+    })
+
+    test('renders math containing both \\sim and \\$ without error', () => {
+      const result = renderMath('Hyperscaler capex $\\sim\\$900$B total')
+      expect(result).toContain('<math')
+      expect(result).not.toContain('temml-error')
+      expect(result).not.toContain('math-error')
+    })
+
+    test('long mixed paragraph: math spans render, prose preserved, no errors', () => {
+      const input =
+        '**\\$400$–$\\$650$B globally for U.S.-led LLM development/serving**, before geographic adjustment. If only counting **spending physically in the U.S.**, knock that down by perhaps **25–45%**, because a material fraction of data centers, cloud regions, power, and supply-chain spend is outside the U.S. That yields the **$300$–$\\$500$B** estimate.'
+      const result = renderMath(input)
+      expect(result).not.toContain('temml-error')
+      expect(result).not.toContain('math-error')
+      // The lazy match must not have spanned prose across sentences.
+      expect(result).not.toMatch(/<math[^>]*>[^<]*globally/)
+      // Prose markers from the surrounding text must survive.
+      expect(result).toContain('before geographic adjustment')
+      expect(result).toContain('25–45%')
+    })
   })
 
   test.each([
