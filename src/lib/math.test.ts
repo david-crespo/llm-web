@@ -49,6 +49,14 @@ describe('renderMath', () => {
     '$\\sqrt{x}$',
     '\\(x^2\\)',
     '\\(50\\)',
+    '\\(x + y\\)',
+    '\\(x = 1\\)',
+    '\\(\\frac{a}{b}\\)',
+    '\\(\\alpha + \\beta\\)',
+    '\\(\\sqrt{x}\\)',
+    // Currency inside an actual equation should still render as math.
+    '\\(P(x) = \\$3x + \\$5\\)',
+    '\\(\\$300 \\cdot 1.05\\)',
     '$$x^2 + y^2$$',
     '\\[x^2 + y^2\\]',
     // \$ inside $...$ is a valid LaTeX escape for a literal dollar sign and
@@ -114,6 +122,10 @@ describe('renderMath', () => {
     '\\$not math$',
     '$x\ny$',
     '**$30.7k** of depreciation, versus **$13.6k** for a Toyota',
+    // \(...\) inside code spans/blocks must be preserved verbatim.
+    'use `\\(x^2\\)` for inline math',
+    '```\n\\(x^2\\)\n```',
+    '```latex\n\\(x^2\\)\n```',
   ])('not math: %s', (input) => {
     expect(renderMath(input)).toBe(input)
   })
@@ -143,6 +155,41 @@ describe('renderMath', () => {
       const result = renderMath('$x$, then')
       expect(result).toContain('<math')
       expect(result).toContain(', then')
+    })
+  })
+
+  describe('\\(...\\) inline math', () => {
+    test('renders math inside bold', () => {
+      const result = renderMath('the value **\\(x^2\\)** is...')
+      expect(result).toContain('<math')
+      expect(result).toContain('**')
+      expect(result).toContain('** is...')
+    })
+
+    test('renders multiple \\(...\\) spans in one line', () => {
+      const result = renderMath('let \\(x\\) and \\(y\\) be variables')
+      const mathCount = (result.match(/<math/g) ?? []).length
+      expect(mathCount).toBe(2)
+    })
+
+    test('does not match across newlines', () => {
+      // (.+?) doesn't cross \n, so this should not be treated as math.
+      const input = '\\(x\ny\\)'
+      expect(renderMath(input)).toBe(input)
+    })
+
+    test('renders \\(...\\) following prose with parens', () => {
+      // (x) is just prose parens; \(y\) is math. Make sure the (x) doesn't
+      // confuse the regex.
+      const result = renderMath('a function f(x) where \\(y = f(x)\\)')
+      const mathCount = (result.match(/<math/g) ?? []).length
+      expect(mathCount).toBe(1)
+      expect(result).toContain('f(x) where')
+    })
+
+    test('empty \\(\\) is not rendered', () => {
+      // (.+?) requires at least one char.
+      expect(renderMath('foo \\(\\) bar')).toBe('foo \\(\\) bar')
     })
   })
 
