@@ -27,8 +27,8 @@ export const models: Model[] = [
   },
   {
     provider: 'anthropic',
-    key: 'claude-opus-4-7',
-    id: 'Opus 4.7',
+    key: 'claude-opus-4-8',
+    id: 'Opus 4.8',
     input: 5,
     input_cached: 0.5,
     output: 25,
@@ -36,11 +36,11 @@ export const models: Model[] = [
   },
   {
     provider: 'google',
-    key: 'gemini-3.1-pro-preview',
-    id: 'Gemini 3.1 Pro',
-    input: 2.0,
-    input_cached: 0.5,
-    output: 12.0,
+    key: 'gemini-3.5-flash',
+    id: 'Gemini 3.5 Flash',
+    input: 1.5,
+    input_cached: 0.15,
+    output: 9.0,
     // 5,000 search queries per month free, then $14/1000
     search_cost: 0,
   },
