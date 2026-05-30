@@ -11,7 +11,7 @@ An aggressively minimalist mobile web LLM client built as a static site with [Sv
 
 ## Features
 
-- Good on mobile (don't care about desktop)
+- Good on mobile (also works on desktop)
 - Static site: trivial to deploy
 - Hackable rather than configurable: fork it and deploy your own copy
 - Pretty markdown rendering with syntax highlighting for code blocks
