@@ -1,6 +1,7 @@
 <script lang="ts">
   import { getAvailableModels } from '$lib/models.svelte'
   import { chatState } from '$lib/chat.svelte'
+  import ChevronDownIcon from './icons/ChevronDownIcon.svelte'
   import CloseIcon from './icons/CloseIcon.svelte'
   import MenuIcon from './icons/MenuIcon.svelte'
   import SearchIcon from './icons/SearchIcon.svelte'
@@ -97,26 +98,31 @@
 
       <div class="flex items-center gap-2">
         <!-- Model selector -->
-        <select
-          value={hasAnyKeys ? chatState.selectedModel : undefined}
-          onchange={(e) => {
-            if (hasAnyKeys) {
-              const index = e.currentTarget.selectedIndex
-              chatState.selectedModel = availableModels[index]
-            }
-          }}
-          disabled={!hasAnyKeys}
-          class="h-10 w-32 rounded border border-edge bg-surface-alt px-2 py-2 text-sm text-fg disabled:text-fg-faint"
-          aria-label="Select model"
-        >
-          {#if !hasAnyKeys}
-            <option selected>No API keys</option>
-          {:else}
-            {#each availableModels as model (model.key)}
-              <option value={model}>{model.id}</option>
-            {/each}
-          {/if}
-        </select>
+        <div class="relative">
+          <select
+            value={hasAnyKeys ? chatState.selectedModel : undefined}
+            onchange={(e) => {
+              if (hasAnyKeys) {
+                const index = e.currentTarget.selectedIndex
+                chatState.selectedModel = availableModels[index]
+              }
+            }}
+            disabled={!hasAnyKeys}
+            class="h-10 w-32 appearance-none rounded border border-edge bg-surface-alt bg-none px-2 py-2 text-sm text-fg disabled:text-fg-faint sm:w-44 sm:pr-8"
+            aria-label="Select model"
+          >
+            {#if !hasAnyKeys}
+              <option selected>No API keys</option>
+            {:else}
+              {#each availableModels as model (model.key)}
+                <option value={model}>{model.id}</option>
+              {/each}
+            {/if}
+          </select>
+          <ChevronDownIcon
+            class="pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 text-fg-faint sm:block"
+          />
+        </div>
 
         <!-- Web Search Toggle Button -->
         <button
