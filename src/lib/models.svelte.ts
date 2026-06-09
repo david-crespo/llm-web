@@ -17,6 +17,16 @@ export type Model = {
 
 export const models: Model[] = [
   {
+    provider: 'google',
+    key: 'gemini-3.5-flash',
+    id: 'Gemini 3.5 Flash',
+    input: 1.5,
+    input_cached: 0.15,
+    output: 9.0,
+    // 5,000 search queries per month free, then $14/1000
+    search_cost: 0,
+  },
+  {
     provider: 'openai',
     key: 'gpt-5.5',
     id: 'GPT-5.5',
@@ -28,21 +38,20 @@ export const models: Model[] = [
   {
     provider: 'anthropic',
     key: 'claude-opus-4-8',
-    id: 'Opus 4.8',
+    id: 'Claude Opus 4.8',
     input: 5,
     input_cached: 0.5,
     output: 25,
     search_cost: 0.01,
   },
   {
-    provider: 'google',
-    key: 'gemini-3.5-flash',
-    id: 'Gemini 3.5 Flash',
-    input: 1.5,
-    input_cached: 0.15,
-    output: 9.0,
-    // 5,000 search queries per month free, then $14/1000
-    search_cost: 0,
+    provider: 'anthropic',
+    key: 'claude-fable-5',
+    id: 'Claude Fable 5',
+    input: 10,
+    input_cached: 1,
+    output: 50,
+    search_cost: 0.01,
   },
 ]
 
