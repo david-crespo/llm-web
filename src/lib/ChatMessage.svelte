@@ -1,7 +1,7 @@
 <script lang="ts">
   import Markdown from './Markdown.svelte'
   import type { ChatMessage } from './types'
-  import { formatTime, formatMoney, formatTokens } from '$lib/format'
+  import { formatTime, formatMoney, formatTokens, shortModel } from '$lib/format'
   import { clickOutside } from '$lib/actions/clickOutside'
 
   interface Props {
@@ -20,7 +20,7 @@
   {#if message.role === 'assistant'}
     <!-- Assistant message header -->
     <div class="mb-2 flex items-center gap-1.5 text-xs text-fg-muted">
-      <span class="font-medium">{message.model}</span>
+      <span class="font-medium">{shortModel(message.model)}</span>
       <span>•</span>
       <span>{formatTime(message.timeMs)}</span>
       <span>•</span>

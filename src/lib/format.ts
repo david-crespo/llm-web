@@ -21,6 +21,15 @@ export function formatMoney(amount: number): string {
   return moneyFmt.format(amount)
 }
 
+/** Strip the redundant brand/family word from a model name to keep the
+ * message metadata line short on narrow screens. */
+const brandPrefixes = ['Claude ', 'Gemini ']
+
+export function shortModel(name: string): string {
+  const prefix = brandPrefixes.find((p) => name.startsWith(p))
+  return prefix ? name.slice(prefix.length) : name
+}
+
 const tokenFmt = new Intl.NumberFormat()
 
 export function formatTokens(tokens: TokenCounts): string {
