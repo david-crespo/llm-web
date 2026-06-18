@@ -2,7 +2,7 @@ import { SvelteDate, SvelteMap } from 'svelte/reactivity'
 import { storage } from '$lib/storage'
 import { models, getCost, systemBase, getAvailableModels, type Model } from '$lib/models.svelte'
 import { createMessage } from '$lib/adapters'
-import { scrollToBottom } from '$lib/actions/autoScroll'
+import { scrollToBottom, scrollToAnswer } from '$lib/actions/autoScroll'
 import type { Chat, NewChat, ChatMessage } from '$lib/types'
 
 // --- App init state (checked by the page component to gate rendering) ---
@@ -142,7 +142,6 @@ export class ChatManager {
     }
 
     chat.messages.push(userMessage)
-    scrollToBottom()
 
     // Save the captured chat (not this.current which may change if the user switches)
     await storage.updateChat(chat.id, chat)
@@ -210,6 +209,11 @@ export class ChatManager {
     const controller = new AbortController()
     this.pendingRequests.set(chatId, controller)
 
+    // Scroll after isCurrentLoading flips so the loading placeholder is in the
+    // DOM by the time scrollToBottom's rAF runs; otherwise it would stop at the
+    // bottom of the user message and miss the placeholder.
+    if (this.current.id === chatId) scrollToBottom()
+
     // Prevent iOS from suspending the page while the request is in-flight
     let wakeLock: WakeLockSentinel | null = null
     try {
@@ -251,7 +255,7 @@ export class ChatManager {
 
       chat.messages.push(assistantMessage)
       // Don't yank the viewport if the user is viewing a different chat.
-      if (this.current.id === chatId) scrollToBottom()
+      if (this.current.id === chatId) scrollToAnswer()
 
       await storage.updateChat(chatId, chat)
     } catch (error) {

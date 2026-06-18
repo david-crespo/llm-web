@@ -28,7 +28,7 @@
         />
       {/each}
       {#if chatState.isCurrentLoading}
-        <div class="mb-6" data-message>
+        <div class="mb-6" data-message data-loading>
           <div class="mb-2 flex items-center gap-2 text-xs text-fg-muted">
             <span class="font-medium">{chatState.selectedModel?.id || 'Unknown model'}</span>
             <span>•</span>
