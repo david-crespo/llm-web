@@ -45,10 +45,21 @@
     onHeightChange?.(height)
   })
 
+  function resize() {
+    if (!textarea) return
+    textarea.style.height = 'auto'
+    if (message) textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`
+  }
+
+  export function focusInput() {
+    textarea?.focus()
+  }
+
+  // Resize on any `message` change, including programmatic ones (edit/fork),
+  // not just keystrokes — so the textarea expands to fit content put in by code.
   $effect(() => {
-    if (message === '' && textarea) {
-      textarea.style.height = 'auto'
-    }
+    message
+    resize()
   })
 </script>
 

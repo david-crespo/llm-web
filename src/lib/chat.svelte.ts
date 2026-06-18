@@ -58,6 +58,20 @@ export class ChatManager {
     )
   }
 
+  /**
+   * Index of the user message that can be edited in place, or -1 if none. Only
+   * the final user message is editable, and only when nothing succeeded after
+   * it: it's the last message, or the only thing following is a stopped/failed
+   * response. Editing isn't offered while a request is in flight.
+   */
+  get editableIndex(): number {
+    if (this.isCurrentLoading) return -1
+    const messages = this.current.messages
+    if (messages.at(-1)?.role === 'user') return messages.length - 1
+    if (this.lastMessageIsError && messages.at(-2)?.role === 'user') return messages.length - 2
+    return -1
+  }
+
   constructor(current: Chat, history: Chat[]) {
     this.history = $state(history)
     // Read from the reactive history proxy so current and history[0] share
@@ -163,6 +177,21 @@ export class ChatManager {
     chat.messages = chat.messages.slice(0, index + 1)
 
     await this.processResponse(chat, targetMessage.content)
+  }
+
+  /**
+   * Edit a user message in place: drop it (and anything after it) from the
+   * current chat and return its content so the caller can repopulate the input.
+   * Like fork(), but stays in the same chat rather than branching a new one.
+   */
+  async editMessage(index: number): Promise<string | null> {
+    const chat = this.current
+    const target = chat.messages[index]
+    if (target?.role !== 'user') return null
+
+    chat.messages = chat.messages.slice(0, index)
+    await storage.updateChat(chat.id, chat)
+    return target.content
   }
 
   /**

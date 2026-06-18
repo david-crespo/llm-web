@@ -6,9 +6,11 @@
   import ConfirmDialog from '$lib/components/ConfirmDialog.svelte'
   import { initTheme } from '$lib/theme.svelte'
   import { bootState, chatState } from '$lib/chat.svelte'
+  import { tick } from 'svelte'
 
   // Local UI state (not managed by ChatManager)
   let message = $state('')
+  let inputBar = $state<InputBar>()
   let chatToDelete = $state<number | null>(null)
   let showAboutModal = $state(false)
   // The mobile composer is fixed, so the document-scrolled message list needs matching
@@ -31,6 +33,19 @@
     const content = await chatState.fork(index)
     if (content) {
       message = content
+    }
+  }
+
+  /**
+   * Edit handler - pops the user message back into the input within the same chat
+   */
+  async function handleEdit(index: number) {
+    const content = await chatState.editMessage(index)
+    if (content) {
+      message = content
+      // Wait for the textarea to re-enable (lastMessageIsError flips) before focusing.
+      await tick()
+      inputBar?.focusInput()
     }
   }
 
@@ -77,10 +92,16 @@
       <MessageList
         composerHeight={inputBarHeight}
         onFork={handleFork}
+        onEdit={handleEdit}
         onOpenAbout={() => (showAboutModal = true)}
       />
 
-      <InputBar bind:message onHeightChange={(height) => (inputBarHeight = height)} onSend={handleSend} />
+      <InputBar
+        bind:this={inputBar}
+        bind:message
+        onHeightChange={(height) => (inputBarHeight = height)}
+        onSend={handleSend}
+      />
     </div>
   </div>
 {/if}

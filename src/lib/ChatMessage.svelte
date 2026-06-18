@@ -9,9 +9,11 @@
     messageIndex?: number
     onRegen: (index: number) => void
     onFork: (index: number) => void
+    onEdit: (index: number) => void
+    canEdit?: boolean
   }
 
-  let { message, messageIndex = -1, onRegen, onFork }: Props = $props()
+  let { message, messageIndex = -1, onRegen, onFork, onEdit, canEdit = false }: Props = $props()
 
   let showMenu = $state(false)
 </script>
@@ -89,6 +91,17 @@
             >
               Fork
             </button>
+            {#if canEdit}
+              <button
+                onclick={() => {
+                  showMenu = false
+                  onEdit(messageIndex)
+                }}
+                class="w-full px-3 py-2 text-left text-sm hover:bg-surface-hover"
+              >
+                Edit
+              </button>
+            {/if}
             <button
               onclick={() => {
                 showMenu = false

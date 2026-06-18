@@ -6,10 +6,11 @@
   interface Props {
     composerHeight?: number
     onFork: (index: number) => void
+    onEdit: (index: number) => void
     onOpenAbout: () => void
   }
 
-  let { composerHeight = 0, onFork, onOpenAbout }: Props = $props()
+  let { composerHeight = 0, onFork, onEdit, onOpenAbout }: Props = $props()
   const hasApiKeys = getAvailableModels().length > 0
 </script>
 
@@ -25,6 +26,8 @@
           messageIndex={index}
           onRegen={(i) => chatState.regenerate(i)}
           {onFork}
+          {onEdit}
+          canEdit={chatState.editableIndex === index}
         />
       {/each}
       {#if chatState.isCurrentLoading}
