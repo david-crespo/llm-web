@@ -17,6 +17,15 @@ export type Model = {
 
 export const models: Model[] = [
   {
+    provider: 'openai',
+    key: 'gpt-5.5',
+    id: 'GPT-5.5',
+    input: 5,
+    input_cached: 0.5,
+    output: 30,
+    search_cost: 0.01,
+  },
+  {
     provider: 'google',
     key: 'gemini-3.5-flash',
     id: 'Gemini 3.5 Flash',
@@ -25,15 +34,6 @@ export const models: Model[] = [
     output: 9.0,
     // 5,000 search queries per month free, then $14/1000
     search_cost: 0,
-  },
-  {
-    provider: 'openai',
-    key: 'gpt-5.5',
-    id: 'GPT-5.5',
-    input: 5,
-    input_cached: 0.5,
-    output: 30,
-    search_cost: 0.01,
   },
   {
     provider: 'anthropic',
