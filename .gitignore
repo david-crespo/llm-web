@@ -24,3 +24,12 @@ vite.config.ts.timestamp-*
 
 .eslintcache
 .helix
+
+# Playwright
+/test-results
+/playwright-report
+/blob-report
+/.playwright
+
+# Agent scratch notes (also ignored globally)
+/.claude/notes

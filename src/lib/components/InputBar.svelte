@@ -45,10 +45,10 @@
     onHeightChange?.(height)
   })
 
-  function resize() {
+  function resize(currentMessage = message) {
     if (!textarea) return
     textarea.style.height = 'auto'
-    if (message) textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`
+    if (currentMessage) textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`
   }
 
   export function focusInput() {
@@ -58,8 +58,7 @@
   // Resize on any `message` change, including programmatic ones (edit/fork),
   // not just keystrokes — so the textarea expands to fit content put in by code.
   $effect(() => {
-    message
-    resize()
+    resize(message)
   })
 </script>
 
@@ -87,6 +86,7 @@
         class="w-full resize-none overflow-y-auto rounded border border-edge px-3 py-2"
         style="min-height: 42px; max-height: 200px;"
         rows="1"
+        aria-label="Message"
         disabled={chatState.isCurrentLoading || chatState.lastMessageIsError}
       ></textarea>
     </div>
@@ -97,6 +97,8 @@
         onclick={() => (chatState.sidebarOpen = !chatState.sidebarOpen)}
         class="size-10 rounded border border-edge bg-surface-alt hover:bg-surface-hover md:hidden"
         aria-label="Toggle sidebar"
+        aria-expanded={chatState.sidebarOpen}
+        aria-controls="mobile-sidebar"
       >
         {#if chatState.sidebarOpen}
           <CloseIcon class="mx-auto" />
@@ -140,6 +142,7 @@
           onclick={() => (chatState.webSearch = !chatState.webSearch)}
           class={getToggleClasses(chatState.webSearch, 'md:gap-2 md:pl-2.5 md:pr-3')}
           title="Web Search"
+          aria-label="Search"
           aria-pressed={chatState.webSearch}
         >
           <SearchIcon />
@@ -151,6 +154,7 @@
           onclick={() => (chatState.reasoning = !chatState.reasoning)}
           class={getToggleClasses(chatState.reasoning, 'md:gap-1 md:pl-2 md:pr-3')}
           title="Reasoning"
+          aria-label="Think"
           aria-pressed={chatState.reasoning}
         >
           <ThinkingIcon />

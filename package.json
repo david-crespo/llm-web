@@ -14,16 +14,19 @@
     "lint": "oxfmt --check . && eslint .",
     "deploy": "npm run build && echo 'Static files ready in build/ directory'",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:e2e": "playwright test"
   },
   "devDependencies": {
     "@eslint/compat": "^2.0.5",
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.61.0",
     "@sveltejs/adapter-static": "^3.0.10",
     "@sveltejs/kit": "^2.57.1",
     "@sveltejs/vite-plugin-svelte": "^7.0.0",
     "@tailwindcss/forms": "^0.5.11",
     "@tailwindcss/vite": "^4.2.2",
+    "@vitejs/plugin-basic-ssl": "^2.3.0",
     "eslint": "^10.2.1",
     "eslint-plugin-svelte": "^3.17.0",
     "globals": "^17.5.0",

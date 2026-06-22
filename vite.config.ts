@@ -1,9 +1,17 @@
 import tailwindcss from '@tailwindcss/vite'
 import { sveltekit } from '@sveltejs/kit/vite'
-import { defineConfig } from 'vite'
+import basicSsl from '@vitejs/plugin-basic-ssl'
+import { defineConfig, type PluginOption } from 'vite'
+
+// The app's CSP sets `upgrade-insecure-requests`, which WebKit (unlike Chromium)
+// honors even on localhost — so over plain http the dev server's module scripts
+// get upgraded to https and fail with a TLS error. The deployed site is https,
+// so the e2e tests serve over https too (self-signed) when PW_HTTPS is set.
+const plugins: PluginOption[] = [tailwindcss(), sveltekit()]
+if (process.env.PW_HTTPS === '1') plugins.push(basicSsl())
 
 export default defineConfig({
-  plugins: [tailwindcss(), sveltekit()],
+  plugins,
   // Rolldown (Vite 8) corrupts lone surrogates in string literals when it
   // concatenates temml's tokenRegex fragments, rewriting \uD800/\uDBFF/etc.
   // to U+FFFD. The corrupted regex then lexes `\partial` as `\p`,`a`,`r`,...
