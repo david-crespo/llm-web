@@ -37,14 +37,14 @@
     "vitest": "^4.1.4"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.90.0",
-    "@google/genai": "^1.50.1",
+    "@anthropic-ai/sdk": "^0.105.0",
+    "@google/genai": "^2.9.0",
     "bits-ui": "^2.18.0",
     "dompurify": "^3.4.0",
     "highlight.js": "^11.11.1",
     "marked": "^18.0.2",
     "marked-highlight": "^2.2.4",
-    "openai": "^6.34.0",
+    "openai": "^6.44.0",
     "temml": "^0.13.2"
   },
   "patchedDependencies": {
