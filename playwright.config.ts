@@ -12,7 +12,10 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
-  reporter: process.env.CI ? 'github' : 'list',
+  // In CI, 'github' emits inline annotations and 'html' produces a report
+  // artifact uploaded by the workflow (kept closed so it doesn't try to open a
+  // browser on the runner).
+  reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',
   use: {
     baseURL,
     ignoreHTTPSErrors: true,

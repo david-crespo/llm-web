@@ -1,7 +1,8 @@
 import tailwindcss from '@tailwindcss/vite'
 import { sveltekit } from '@sveltejs/kit/vite'
 import basicSsl from '@vitejs/plugin-basic-ssl'
-import { defineConfig, type PluginOption } from 'vite'
+import type { PluginOption } from 'vite'
+import { configDefaults, defineConfig } from 'vitest/config'
 
 // The app's CSP sets `upgrade-insecure-requests`, which WebKit (unlike Chromium)
 // honors even on localhost — so over plain http the dev server's module scripts
@@ -20,4 +21,7 @@ export default defineConfig({
   // forms, which Rolldown passes through untouched. optimizeDeps.exclude
   // bypasses the same bundler in the dev pre-bundle pass.
   optimizeDeps: { exclude: ['temml'] },
+  // The Playwright e2e specs live in tests/e2e and use *.spec.ts names that
+  // match vitest's default glob, so exclude them — they run via `test:e2e`.
+  test: { exclude: [...configDefaults.exclude, 'tests/e2e/**'] },
 })
