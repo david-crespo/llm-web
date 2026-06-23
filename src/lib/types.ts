@@ -11,12 +11,44 @@ export type UserMessage = {
 }
 
 /** Provider-specific assistant-message data. Discriminated on `type` so we
- * can add fields for other providers without widening every consumer. */
-export type ProviderData = {
-  type: 'openai'
-  /** Responses API response.id, used as previous_response_id on the next turn
-   * so reasoning items carry over and prompt caching hits. */
-  responseId: string
+ * can add fields for other providers without widening every consumer.
+ * Anthropic has no chaining handle (it resends full history), so it sets none. */
+export type ProviderData =
+  | {
+      type: 'openai'
+      /** Responses API response.id, used as previous_response_id on the next turn
+       * so reasoning items carry over and prompt caching hits. */
+      responseId: string
+    }
+  | {
+      type: 'google'
+      /** Interactions API interaction.id, used as previous_interaction_id on the
+       * next turn so context carries over server-side. */
+      interactionId: string
+    }
+
+/** Durable, persistable reference to an in-flight provider request. For OpenAI
+ * and Google this is the server-side job id (survives reload → re-poll). For
+ * Anthropic it's a client-generated id keying an in-memory promise, so it does
+ * not survive reload (poll returns `unrecoverable` → the request is interrupted). */
+export type JobHandle = {
+  provider: 'openai' | 'google' | 'anthropic'
+  /** response.id / interaction.id, or a client-generated id for Anthropic. */
+  id: string
+}
+
+/** An assistant turn that has been submitted but not yet committed. Persisted on
+ * the chat so a reload can resume polling instead of losing the response. */
+export type PendingJob = {
+  job: JobHandle
+  /** ISO timestamp of submission; used for elapsed-time display and the poll
+   * timeout that converts a stuck job into an interrupted message. */
+  startedAt: string
+  /** Model id (Model.id) so commit can recompute cost and label the message
+   * even after a reload, when the live request closure is gone. */
+  modelId: string
+  /** Whether web search was on, recorded on the committed message. */
+  search: boolean
 }
 
 export type AssistantMessage = {
@@ -44,6 +76,10 @@ export type NewChat = {
   systemPrompt: string
   messages: ChatMessage[]
   createdAt: Date
+  /** In-flight assistant turn, if any. Present iff a request has been submitted
+   * but not yet committed to `messages`. Drives the loading placeholder and
+   * enables resume-after-reload. */
+  pending?: PendingJob
 }
 
 export type Chat = NewChat & { id: number }

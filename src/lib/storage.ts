@@ -65,6 +65,7 @@ class Storage {
         createdAt: chat.createdAt.toISOString(),
         systemPrompt: chat.systemPrompt,
         messages: chat.messages,
+        pending: chat.pending,
       }
 
       // Use JSON serialization to remove all proxy references
@@ -89,6 +90,7 @@ class Storage {
         createdAt: chat.createdAt.toISOString(),
         systemPrompt: chat.systemPrompt,
         messages: chat.messages,
+        pending: chat.pending,
       }
 
       // Use JSON serialization to remove all proxy references
