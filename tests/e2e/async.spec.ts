@@ -5,6 +5,7 @@ import {
   send,
   newChat,
   selectChat,
+  selectModel,
   openSidebar,
   chatRow,
   messageInput,
@@ -61,6 +62,19 @@ test('two concurrent requests resolve into their own chats', async ({ page }) =>
   expect(openai.calls()).toBe(2)
 })
 
+test('pending placeholder keeps the submitted model label', async ({ page }) => {
+  await mockOpenAI(page)
+
+  await setKeysThroughSettings(page, { openai: 'sk-test', anthropic: 'sk-ant-test' })
+  await selectModel(page, 'GPT-5.5')
+  await send(page, 'label me')
+  await expect(loadingPlaceholder(page)).toContainText('GPT-5.5')
+
+  await selectModel(page, 'Claude Opus 4.8')
+  await expect(loadingPlaceholder(page)).toContainText('GPT-5.5')
+  await expect(loadingPlaceholder(page)).not.toContainText('Claude Opus 4.8')
+})
+
 test('OpenAI background job survives a reload and lands its answer', async ({ page }) => {
   const openai = await mockOpenAI(page, { reply: (u) => `Reply: ${u}` })
 
@@ -81,6 +95,50 @@ test('OpenAI background job survives a reload and lands its answer', async ({ pa
   await selectChat(page, 'persist me')
   await expect(assistantMessages(page)).toContainText('Reply: persist me')
   await expect(responseLoadingIndicator(chatRow(page, 'persist me'))).toHaveCount(0)
+})
+
+test('OpenAI background job missing on resume becomes interrupted', async ({ page }) => {
+  const openai = await mockOpenAI(page, { reply: (u) => `Reply: ${u}` })
+
+  await setKeysThroughSettings(page, { openai: 'sk-test' })
+  await send(page, 'expire me')
+  await expect(loadingPlaceholder(page)).toBeVisible()
+
+  openai.fail(404)
+  await page.reload()
+
+  await selectChat(page, 'expire me')
+  await expect(assistantMessages(page)).toContainText('Request interrupted')
+  await expect(page.getByText('Stop: interrupted')).toBeVisible()
+  await expect(responseLoadingIndicator(chatRow(page, 'expire me'))).toHaveCount(0)
+})
+
+test('multiple OpenAI background jobs survive one reload', async ({ page }) => {
+  const openai = await mockOpenAI(page, { reply: (u) => `Reply: ${u}` })
+
+  await setKeysThroughSettings(page, { openai: 'sk-test' })
+  await send(page, 'alpha')
+  await expect(loadingPlaceholder(page)).toBeVisible()
+
+  await newChat(page)
+  await send(page, 'beta')
+  await expect(loadingPlaceholder(page)).toBeVisible()
+
+  await page.reload()
+  await openSidebar(page)
+  await expect(responseLoadingIndicator(chatRow(page, 'alpha'))).toBeVisible()
+  await expect(responseLoadingIndicator(chatRow(page, 'beta'))).toBeVisible()
+
+  openai.complete()
+
+  await selectChat(page, 'alpha')
+  await expect(assistantMessages(page)).toContainText('Reply: alpha')
+  await expect(responseLoadingIndicator(chatRow(page, 'alpha'))).toHaveCount(0)
+
+  await selectChat(page, 'beta')
+  await expect(assistantMessages(page)).toContainText('Reply: beta')
+  await expect(responseLoadingIndicator(chatRow(page, 'beta'))).toHaveCount(0)
+  expect(openai.calls()).toBe(2)
 })
 
 test('Anthropic request lost to a reload becomes an interrupted message', async ({ page }) => {
