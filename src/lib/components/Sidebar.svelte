@@ -101,6 +101,7 @@
         <div
           role="button"
           tabindex="0"
+          aria-label={`Select chat: ${preview}`}
           class="chat-row relative flex w-full border-b border-edge-muted py-3 pr-3 pl-3.5 focus:ring-2 focus:ring-gray-500 focus:outline-none focus:ring-inset {isActive
             ? 'bg-surface-active'
             : ''}"
@@ -113,7 +114,7 @@
             <div class="mt-1 flex items-center gap-1.5 text-xs leading-4 text-fg-muted">
               {chat.createdAt.toLocaleString()}
               {#if chatState.isLoading(chat.id)}
-                <span class="loading-dot"></span>
+                <span class="loading-dot" role="status" aria-label="Response loading"></span>
               {/if}
             </div>
           </div>
@@ -233,6 +234,7 @@
 
   <!-- Panel -->
   <div
+    id="mobile-sidebar"
     class="fixed top-0 left-0 z-50 flex w-4/5 max-w-sm flex-col overflow-hidden border-r border-edge bg-surface-alt transition-transform duration-150
       {chatState.sidebarOpen ? 'translate-x-0' : '-translate-x-full'}"
     style="height: 100dvh;"

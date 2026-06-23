@@ -18,7 +18,12 @@
   let showMenu = $state(false)
 </script>
 
-<div class="mb-6 scroll-mt-3" data-message>
+<div
+  class="mb-6 scroll-mt-3"
+  data-message
+  role="article"
+  aria-label={`${message.role} message`}
+>
   {#if message.role === 'assistant'}
     <!-- Assistant message header -->
     <div class="mb-2 flex items-center gap-1.5 text-xs text-fg-muted">

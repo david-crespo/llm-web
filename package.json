@@ -9,21 +9,22 @@
     "preview": "vite preview",
     "prepare": "svelte-kit sync || echo ''",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "fmt": "oxfmt .",
     "lint": "oxfmt --check . && eslint .",
     "deploy": "npm run build && echo 'Static files ready in build/ directory'",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:e2e": "playwright test"
   },
   "devDependencies": {
     "@eslint/compat": "^2.0.5",
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.61.0",
     "@sveltejs/adapter-static": "^3.0.10",
     "@sveltejs/kit": "^2.57.1",
     "@sveltejs/vite-plugin-svelte": "^7.0.0",
     "@tailwindcss/forms": "^0.5.11",
     "@tailwindcss/vite": "^4.2.2",
+    "@vitejs/plugin-basic-ssl": "^2.3.0",
     "eslint": "^10.2.1",
     "eslint-plugin-svelte": "^3.17.0",
     "globals": "^17.5.0",
@@ -34,17 +35,17 @@
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.58.2",
     "vite": "^8.0.9",
-    "vitest": "^4.1.4"
+    "vitest": "^4.1.9"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.90.0",
-    "@google/genai": "^1.50.1",
+    "@anthropic-ai/sdk": "^0.105.0",
+    "@google/genai": "^2.9.0",
     "bits-ui": "^2.18.0",
     "dompurify": "^3.4.0",
     "highlight.js": "^11.11.1",
     "marked": "^18.0.2",
     "marked-highlight": "^2.2.4",
-    "openai": "^6.34.0",
+    "openai": "^6.44.0",
     "temml": "^0.13.2"
   },
   "patchedDependencies": {

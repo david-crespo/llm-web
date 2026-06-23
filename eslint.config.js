@@ -19,7 +19,7 @@ export default defineConfig(
       globals: { ...globals.browser, ...globals.node },
       parserOptions: {
         projectService: {
-          allowDefaultProject: ['*.js', 'static/js/*.js'],
+          allowDefaultProject: ['*.js', 'static/js/*.js', 'playwright.config.ts'],
         },
       },
     },
