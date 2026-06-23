@@ -11,29 +11,23 @@ export type UserMessage = {
 }
 
 /** Provider-specific assistant-message data. Discriminated on `type` so we
- * can add fields for other providers without widening every consumer.
- * Anthropic has no chaining handle (it resends full history), so it sets none. */
-export type ProviderData =
-  | {
-      type: 'openai'
-      /** Responses API response.id, used as previous_response_id on the next turn
-       * so reasoning items carry over and prompt caching hits. */
-      responseId: string
-    }
-  | {
-      type: 'google'
-      /** Interactions API interaction.id, used as previous_interaction_id on the
-       * next turn so context carries over server-side. */
-      interactionId: string
-    }
+ * can add fields for other providers without widening every consumer. Anthropic
+ * and Google have no chaining handle (they resend full history), so they set
+ * none. */
+export type ProviderData = {
+  type: 'openai'
+  /** Responses API response.id, used as previous_response_id on the next turn
+   * so reasoning items carry over and prompt caching hits. */
+  responseId: string
+}
 
 /** Durable, persistable reference to an in-flight provider request. For OpenAI
- * and Google this is the server-side job id (survives reload → re-poll). For
- * Anthropic it's a client-generated id keying an in-memory promise, so it does
- * not survive reload (poll returns `unrecoverable` → the request is interrupted). */
+ * this is the server-side job id (survives reload → re-poll). For Anthropic and
+ * Google it's a client-generated id keying an in-memory promise, so it does not
+ * survive reload (poll returns `unrecoverable` → the request is interrupted). */
 export type JobHandle = {
   provider: 'openai' | 'google' | 'anthropic'
-  /** response.id / interaction.id, or a client-generated id for Anthropic. */
+  /** response.id for OpenAI, or a client-generated id for Anthropic/Google. */
   id: string
 }
 

@@ -1,8 +1,8 @@
 import type { Page, Route } from '@playwright/test'
 
 // Mock LLM provider APIs at the network boundary. The real SDK + adapter code
-// runs; only the provider servers are faked. OpenAI and Google submit a
-// background job then poll by id; Anthropic is a single synchronous request the
+// runs; only the provider servers are faked. OpenAI submits a background job
+// then polls by id; Anthropic and Google are a single synchronous request the
 // adapter wraps in a local promise. `complete()` releases the response (flips
 // the poll to completed); `fail()` makes it error.
 
@@ -258,20 +258,21 @@ export async function mockAnthropic(page: Page, opts: MockOpts = {}): Promise<Pr
   }
 }
 
-// --- Google Gemini Interactions API (background submit + poll by id) ---
+// --- Google Gemini API (single synchronous generateContent call) ---
 
-function geminiInteraction(text: string, status: string, id: string, reasoning?: string) {
-  const steps: unknown[] = []
-  if (status === 'completed') {
-    if (reasoning) steps.push({ type: 'thought', summary: [{ type: 'text', text: reasoning }] })
-    steps.push({ type: 'model_output', content: [{ type: 'text', text }] })
-  }
+function geminiResponse(text: string, reasoning?: string) {
+  const parts: unknown[] = []
+  if (reasoning) parts.push({ text: reasoning, thought: true })
+  parts.push({ text })
   return {
-    id,
-    object: 'interaction',
-    status,
-    steps,
-    usage: { total_input_tokens: 12, total_output_tokens: 8, total_cached_tokens: 0 },
+    candidates: [{ content: { parts, role: 'model' }, finishReason: 'STOP', index: 0 }],
+    usageMetadata: {
+      promptTokenCount: 12,
+      candidatesTokenCount: 8,
+      thoughtsTokenCount: reasoning ? 4 : 0,
+      cachedContentTokenCount: 0,
+      totalTokenCount: 24,
+    },
   }
 }
 
@@ -279,11 +280,6 @@ export async function mockGoogle(page: Page, opts: MockOpts = {}): Promise<Provi
   const gate = makeGate()
   if (opts.auto) gate.open()
   const fallback = opts.text ?? 'Hello from Gemini.'
-  // Per-request reply text keyed by interaction id (the create body has the user
-  // turn; the GET poll doesn't, so it looks the text up by id) — same scheme as
-  // the OpenAI mock so concurrent requests don't clobber each other.
-  const textById = new Map<string, string>()
-  let idCounter = 0
   let failStatus: number | null = null
   let calls = 0
   const bodies: Body[] = []
@@ -293,38 +289,19 @@ export async function mockGoogle(page: Page, opts: MockOpts = {}): Promise<Provi
     const req = route.request()
     const { pathname } = new URL(req.url())
 
-    // create: POST /{version}/interactions
-    if (pathname.endsWith('/interactions') && req.method() === 'POST') {
+    if (pathname.includes(':generateContent') && req.method() === 'POST') {
       calls++
       const body = (req.postDataJSON() ?? {}) as Body
       bodies.push(body)
-      const id = `interaction_test_${++idCounter}`
-      // input is a turn array (fresh chat) or a string (chained turn).
-      const input = body.input
-      const userText = Array.isArray(input)
-        ? lastText(input, (m) => m.content ?? '')
-        : String(input ?? '')
-      textById.set(id, opts.reply ? opts.reply(userText) : fallback)
-      return fulfillJSON(route, 200, geminiInteraction('', 'in_progress', id))
-    }
-
-    // cancel: POST /{version}/interactions/{id}/cancel
-    if (pathname.endsWith('/cancel') && req.method() === 'POST') {
-      const id = pathname.split('/').slice(-2)[0]
-      return fulfillJSON(route, 200, geminiInteraction('', 'cancelled', id))
-    }
-
-    // poll: GET /{version}/interactions/{id}
-    if (pathname.includes('/interactions/') && req.method() === 'GET') {
-      if (failStatus) {
-        return fulfillJSON(route, failStatus, {
-          error: { code: failStatus, message: 'Invalid API key', status: 'UNAUTHENTICATED' },
-        })
-      }
-      const id = pathname.split('/').pop()!
-      const text = textById.get(id) ?? fallback
-      const status = gate.settled() ? 'completed' : 'in_progress'
-      return fulfillJSON(route, 200, geminiInteraction(text, status, id, opts.reasoning))
+      const text = opts.reply
+        ? opts.reply(lastText(body.contents as unknown[], (c) => c.parts?.[0]?.text ?? ''))
+        : fallback
+      await gate.ready
+      return failStatus
+        ? fulfillJSON(route, failStatus, {
+            error: { code: failStatus, message: 'Invalid API key', status: 'UNAUTHENTICATED' },
+          })
+        : fulfillJSON(route, 200, geminiResponse(text, opts.reasoning))
     }
 
     return fulfillUnexpectedRequest(route, 'Google')

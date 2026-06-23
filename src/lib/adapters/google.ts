@@ -1,14 +1,27 @@
-import { GoogleGenAI, type Interactions } from '@google/genai'
+import { GoogleGenAI, ThinkingLevel, type GenerateContentResponse } from '@google/genai'
 import type { Adapter, ChatInput, ModelResponse, PollResult, StartResult } from './index'
 import type { JobHandle } from '$lib/types'
 import { settings } from '$lib/settings.svelte'
 
-// Google adapter using the Interactions API in background mode: create with
-// background+store, then poll interactions.get by id. The interaction id is
-// server-side and durable, so a reload re-polls and recovers — unlike the older
-// generateContent call, which was lost if the connection dropped.
-// Multi-turn chaining uses previous_interaction_id so prior context is retained
-// server-side and we only send the new user message.
+// Gemini's server-side background API (Interactions) is unusable from the
+// browser: the SDK sends an `Api-Revision` request header that the CORS endpoint
+// rejects, so every preflight fails. See:
+// https://github.com/googleapis/js-genai/issues/1723
+// So we use the synchronous generateContent call and fake the async shape
+// locally, exactly like Anthropic: start() fires the request and stashes the
+// in-flight promise in a map keyed by a client-generated id; poll() reports
+// whether it has settled. The handle is NOT durable — after a reload the map is
+// empty and poll() returns `unrecoverable`, which the driver turns into an
+// interrupted message. This keeps the call site branchless: Gemini flows through
+// the same submit→poll driver. Because the whole history is resent each turn,
+// there's no chaining handle to store (no ProviderData), same as Anthropic.
+
+/** A fired request whose settled state poll() can inspect without blocking. */
+type Tracked = {
+  settled: boolean
+  value?: ModelResponse
+  error?: unknown
+}
 
 function getClient(): GoogleGenAI {
   const apiKey = settings.getKey('google')
@@ -17,133 +30,103 @@ function getClient(): GoogleGenAI {
 }
 
 export class GoogleAdapter implements Adapter {
+  private inflight = new Map<string, Tracked>()
+
   async start({ chat, model, search, think, signal }: ChatInput): Promise<StartResult> {
     const genAI = getClient()
+    const id = crypto.randomUUID()
+    const tracked: Tracked = { settled: false }
 
-    const lastAssistant = chat.messages.filter((m) => m.role === 'assistant').at(-1)
-    const previous_interaction_id =
-      lastAssistant?.provider?.type === 'google' ? lastAssistant.provider.interactionId : undefined
-
-    // When chaining, the server already has prior turns; send only the new
-    // message. Otherwise send the whole history as turns (fresh or forked chat).
-    const input = previous_interaction_id
-      ? (chat.messages.at(-1)?.content ?? '')
-      : chat.messages.map((m) => ({
-          role: m.role === 'assistant' ? 'model' : 'user',
-          content: m.content,
-        }))
-
-    const interaction = await genAI.interactions.create(
-      {
-        model: model.key,
-        background: true,
-        store: true,
-        system_instruction: chat.systemPrompt,
-        previous_interaction_id,
-        tools: [{ type: 'url_context' }, ...(search ? [{ type: 'google_search' as const }] : [])],
-        generation_config: {
-          thinking_level: think ? 'high' : 'low',
-          // Ask for thought summaries so reasoning text comes back (analogous to
-          // Anthropic's display: 'summarized').
-          thinking_summaries: 'auto',
+    // Fire the request but don't await it here; poll() resolves it. The promise
+    // is tracked so poll() can tell pending from settled without blocking.
+    genAI.models
+      .generateContent({
+        config: {
+          thinkingConfig: {
+            thinkingLevel: think ? ThinkingLevel.HIGH : ThinkingLevel.LOW,
+          },
+          systemInstruction: chat.systemPrompt,
+          tools: [{ urlContext: {} }, ...(search ? [{ googleSearch: {} }] : [])],
+          abortSignal: signal,
         },
-        input,
-      },
-      { fetchOptions: { signal } },
-    )
+        model: model.key,
+        contents: chat.messages.map((msg) => ({
+          role: msg.role === 'assistant' ? 'model' : 'user',
+          parts: [{ text: msg.content }],
+        })),
+      })
+      .then(
+        (response) => {
+          tracked.value = parseResponse(response)
+          tracked.settled = true
+        },
+        (error) => {
+          tracked.error = error
+          tracked.settled = true
+        },
+      )
 
-    return { job: { provider: 'google', id: interaction.id } }
+    this.inflight.set(id, tracked)
+    return { job: { provider: 'google', id } }
   }
 
-  async poll(job: JobHandle, signal?: AbortSignal): Promise<PollResult> {
-    const genAI = getClient()
-    let interaction: Interactions.Interaction
-    try {
-      interaction = await genAI.interactions.get(job.id, null, { fetchOptions: { signal } })
-    } catch (error) {
-      // A stored interaction the server has since expired returns 404 — the
-      // shared not-recoverable arm. Other errors bubble up → driver marks failed.
-      if (isNotFound(error)) return { kind: 'unrecoverable' }
-      throw error
-    }
+  async poll(job: JobHandle): Promise<PollResult> {
+    const tracked = this.inflight.get(job.id)
+    // No live promise: we reloaded since submitting (or it was already consumed).
+    if (!tracked) return { kind: 'unrecoverable' }
+    if (!tracked.settled) return { kind: 'pending' }
 
-    switch (interaction.status) {
-      case 'in_progress':
-      case 'requires_action':
-        return { kind: 'pending' }
-      case 'failed':
-      case 'budget_exceeded':
-        return { kind: 'failed', error: `Interaction ${interaction.status}` }
-      case 'cancelled':
-        return { kind: 'unrecoverable' }
-      // 'completed' and 'incomplete' both carry steps; surface whatever we got.
-      default:
-        return { kind: 'final', response: parseInteraction(interaction) }
+    this.inflight.delete(job.id)
+    if (tracked.error) {
+      const message = tracked.error instanceof Error ? tracked.error.message : 'Unknown error'
+      return { kind: 'failed', error: message }
     }
+    return { kind: 'final', response: tracked.value! }
   }
 
   async cancel(job: JobHandle): Promise<void> {
-    await getClient().interactions.cancel(job.id)
+    // No server-side job; drop the in-memory promise (the underlying fetch is
+    // aborted via the request's AbortSignal by the driver).
+    this.inflight.delete(job.id)
   }
 }
 
-function isNotFound(error: unknown): boolean {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'status' in error &&
-    (error as { status: unknown }).status === 404
-  )
-}
-
-function parseInteraction(interaction: Interactions.Interaction): ModelResponse {
-  const steps = interaction.steps ?? []
-
-  const reasoning = steps
-    .filter((s): s is Interactions.ThoughtStep => s.type === 'thought')
-    .flatMap((s) => s.summary ?? [])
-    .filter((c): c is Interactions.TextContent => c.type === 'text')
-    .map((c) => c.text)
+function parseResponse(result: GenerateContentResponse): ModelResponse {
+  const parts = result.candidates?.[0].content?.parts ?? []
+  const reasoning = parts
+    .filter((p) => p.text && p.thought)
+    .map((p) => p.text!)
+    .join('\n\n')
+  let content = parts
+    .filter((p) => p.text && !p.thought)
+    .map((p) => p.text!)
     .join('\n\n')
 
-  const textBlocks = steps
-    .filter((s): s is Interactions.ModelOutputStep => s.type === 'model_output')
-    .flatMap((s) => s.content ?? [])
-    .filter((c): c is Interactions.TextContent => c.type === 'text')
+  const searchResults = result.candidates?.[0]?.groundingMetadata?.groundingChunks
+  const searches = searchResults && searchResults.length > 0 ? 1 : 0
+  const searchResultsMd = searchResults
+    ? '\n\n### Sources\n\n' +
+      searchResults
+        .filter((chunk) => chunk.web)
+        .map((chunk) => `- [${chunk.web!.title}](${chunk.web!.uri})`)
+        .join('\n')
+    : ''
 
-  let content = textBlocks.map((c) => c.text).join('')
+  content += searchResultsMd
 
-  // Cited sources come back as url_citation annotations on the text blocks.
-  // Dedupe by URL and append a Sources list, mirroring the old grounding output.
-  const citations = new Map<string, string>()
-  for (const block of textBlocks) {
-    for (const ann of block.annotations ?? []) {
-      if (ann.type === 'url_citation' && ann.url) {
-        citations.set(ann.url, ann.title || ann.url)
-      }
-    }
-  }
-  if (citations.size > 0) {
-    content +=
-      '\n\n### Sources\n\n' +
-      [...citations].map(([url, title]) => `- [${title}](${url})`).join('\n')
-  }
-
-  const searches = steps.filter((s) => s.type === 'google_search_result').length
-
-  const usage = interaction.usage
   const tokens = {
-    input: usage?.total_input_tokens || 0,
-    output: usage?.total_output_tokens || 0,
-    input_cache_hit: usage?.total_cached_tokens || 0,
+    input: result.usageMetadata?.promptTokenCount || 0,
+    output:
+      (result.usageMetadata?.candidatesTokenCount || 0) +
+      (result.usageMetadata?.thoughtsTokenCount || 0),
+    input_cache_hit: result.usageMetadata?.cachedContentTokenCount || 0,
   }
 
   return {
     content,
     reasoning,
     tokens,
-    stop_reason: interaction.status || 'completed',
+    stop_reason: result.candidates?.[0]?.finishReason || '',
     searches: searches || undefined,
-    provider: { type: 'google', interactionId: interaction.id },
   }
 }
