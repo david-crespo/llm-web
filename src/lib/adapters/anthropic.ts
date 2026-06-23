@@ -4,24 +4,13 @@ import type {
   ThinkingBlock,
   CitationsWebSearchResultLocation,
 } from '@anthropic-ai/sdk/resources/messages'
-import type { Adapter, ChatInput, ModelResponse, PollResult, StartResult } from './index'
-import type { JobHandle } from '$lib/types'
+import type { ChatInput, ModelResponse } from './index'
 import { settings } from '$lib/settings.svelte'
+import { NonDurableAdapter } from './non-durable'
 
-// Anthropic has no server-side background mode, so it fakes the async shape
-// locally: start() fires messages.create and stashes the in-flight promise in a
-// map keyed by a client-generated id; poll() reports whether that promise has
-// settled. The handle is NOT durable — after a reload the map is empty and
-// poll() returns `unrecoverable`, which the driver turns into an interrupted
-// message (matching the pre-async behavior exactly). This keeps the call site
-// branchless: Anthropic flows through the same submit→poll driver.
-
-/** A fired request whose settled state poll() can inspect without blocking. */
-type Tracked = {
-  settled: boolean
-  value?: ModelResponse
-  error?: unknown
-}
+// Anthropic has no server-side background mode, so it uses NonDurableAdapter to
+// fit the shared submit-then-poll driver while preserving the old reload
+// behavior: after reload, the local promise is gone and the turn is interrupted.
 
 function getClient(): Anthropic {
   const apiKey = settings.getKey('anthropic')
@@ -29,17 +18,15 @@ function getClient(): Anthropic {
   return new Anthropic({ apiKey, dangerouslyAllowBrowser: true })
 }
 
-export class AnthropicAdapter implements Adapter {
-  private inflight = new Map<string, Tracked>()
+export class AnthropicAdapter extends NonDurableAdapter {
+  constructor() {
+    super('anthropic')
+  }
 
-  async start({ chat, model, search, think, signal }: ChatInput): Promise<StartResult> {
+  protected create({ chat, model, search, think, signal }: ChatInput): Promise<ModelResponse> {
     const client = getClient()
-    const id = crypto.randomUUID()
-    const tracked: Tracked = { settled: false }
 
-    // Fire the request but don't await it here; poll() resolves it. The promise
-    // is tracked so poll() can tell pending from settled without blocking.
-    client.beta.messages
+    return client.beta.messages
       .create(
         {
           model: model.key,
@@ -64,39 +51,7 @@ export class AnthropicAdapter implements Adapter {
         },
         { signal },
       )
-      .then(
-        (response) => {
-          tracked.value = parseResponse(response)
-          tracked.settled = true
-        },
-        (error) => {
-          tracked.error = error
-          tracked.settled = true
-        },
-      )
-
-    this.inflight.set(id, tracked)
-    return { job: { provider: 'anthropic', id } }
-  }
-
-  async poll(job: JobHandle): Promise<PollResult> {
-    const tracked = this.inflight.get(job.id)
-    // No live promise: we reloaded since submitting (or it was already consumed).
-    if (!tracked) return { kind: 'unrecoverable' }
-    if (!tracked.settled) return { kind: 'pending' }
-
-    this.inflight.delete(job.id)
-    if (tracked.error) {
-      const message = tracked.error instanceof Error ? tracked.error.message : 'Unknown error'
-      return { kind: 'failed', error: message }
-    }
-    return { kind: 'final', response: tracked.value! }
-  }
-
-  async cancel(job: JobHandle): Promise<void> {
-    // No server-side job; drop the in-memory promise (the underlying fetch is
-    // aborted via the request's AbortSignal by the driver).
-    this.inflight.delete(job.id)
+      .then(parseResponse)
   }
 }
 

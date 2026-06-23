@@ -47,7 +47,7 @@ export class OpenAIAdapter implements Adapter {
       { signal },
     )
 
-    return { job: { provider: 'openai', id: response.id } }
+    return { job: { provider: 'openai', id: response.id, durable: true } }
   }
 
   async poll(job: JobHandle, signal?: AbortSignal): Promise<PollResult> {

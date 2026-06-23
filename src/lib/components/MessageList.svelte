@@ -31,9 +31,10 @@
         />
       {/each}
       {#if chatState.isCurrentLoading}
+        {@const loadingModel = chatState.current.pending?.modelId ?? chatState.selectedModel?.id ?? 'Unknown model'}
         <div class="mb-6" data-message data-loading role="status" aria-label="Waiting for response">
           <div class="mb-2 flex items-center gap-2 text-xs text-fg-muted">
-            <span class="font-medium">{chatState.selectedModel?.id || 'Unknown model'}</span>
+            <span class="font-medium">{loadingModel}</span>
             <span>•</span>
             <span>Thinking...</span>
             <button

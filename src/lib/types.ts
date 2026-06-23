@@ -21,14 +21,13 @@ export type ProviderData = {
   responseId: string
 }
 
-/** Durable, persistable reference to an in-flight provider request. For OpenAI
- * this is the server-side job id (survives reload → re-poll). For Anthropic and
- * Google it's a client-generated id keying an in-memory promise, so it does not
- * survive reload (poll returns `unrecoverable` → the request is interrupted). */
+/** Persistable reference to an in-flight provider request. Durable handles can
+ * be re-polled after reload; non-durable handles only key an in-memory promise
+ * and become unrecoverable after reload. */
 export type JobHandle = {
   provider: 'openai' | 'google' | 'anthropic'
-  /** response.id for OpenAI, or a client-generated id for Anthropic/Google. */
   id: string
+  durable: boolean
 }
 
 /** An assistant turn that has been submitted but not yet committed. Persisted on

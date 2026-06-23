@@ -1,27 +1,16 @@
 import { GoogleGenAI, ThinkingLevel, type GenerateContentResponse } from '@google/genai'
-import type { Adapter, ChatInput, ModelResponse, PollResult, StartResult } from './index'
-import type { JobHandle } from '$lib/types'
+import type { ChatInput, ModelResponse } from './index'
 import { settings } from '$lib/settings.svelte'
+import { NonDurableAdapter } from './non-durable'
 
 // Gemini's server-side background API (Interactions) is unusable from the
 // browser: the SDK sends an `Api-Revision` request header that the CORS endpoint
 // rejects, so every preflight fails. See:
 // https://github.com/googleapis/js-genai/issues/1723
-// So we use the synchronous generateContent call and fake the async shape
-// locally, exactly like Anthropic: start() fires the request and stashes the
-// in-flight promise in a map keyed by a client-generated id; poll() reports
-// whether it has settled. The handle is NOT durable — after a reload the map is
-// empty and poll() returns `unrecoverable`, which the driver turns into an
-// interrupted message. This keeps the call site branchless: Gemini flows through
-// the same submit→poll driver. Because the whole history is resent each turn,
-// there's no chaining handle to store (no ProviderData), same as Anthropic.
-
-/** A fired request whose settled state poll() can inspect without blocking. */
-type Tracked = {
-  settled: boolean
-  value?: ModelResponse
-  error?: unknown
-}
+// So we use the synchronous generateContent call through NonDurableAdapter. The
+// handle only points at an in-memory promise; after reload, the turn is
+// interrupted. Because the whole history is resent each turn, there's no
+// chaining handle to store (no ProviderData), same as Anthropic.
 
 function getClient(): GoogleGenAI {
   const apiKey = settings.getKey('google')
@@ -29,17 +18,15 @@ function getClient(): GoogleGenAI {
   return new GoogleGenAI({ apiKey })
 }
 
-export class GoogleAdapter implements Adapter {
-  private inflight = new Map<string, Tracked>()
+export class GoogleAdapter extends NonDurableAdapter {
+  constructor() {
+    super('google')
+  }
 
-  async start({ chat, model, search, think, signal }: ChatInput): Promise<StartResult> {
+  protected create({ chat, model, search, think, signal }: ChatInput): Promise<ModelResponse> {
     const genAI = getClient()
-    const id = crypto.randomUUID()
-    const tracked: Tracked = { settled: false }
 
-    // Fire the request but don't await it here; poll() resolves it. The promise
-    // is tracked so poll() can tell pending from settled without blocking.
-    genAI.models
+    return genAI.models
       .generateContent({
         config: {
           thinkingConfig: {
@@ -55,39 +42,7 @@ export class GoogleAdapter implements Adapter {
           parts: [{ text: msg.content }],
         })),
       })
-      .then(
-        (response) => {
-          tracked.value = parseResponse(response)
-          tracked.settled = true
-        },
-        (error) => {
-          tracked.error = error
-          tracked.settled = true
-        },
-      )
-
-    this.inflight.set(id, tracked)
-    return { job: { provider: 'google', id } }
-  }
-
-  async poll(job: JobHandle): Promise<PollResult> {
-    const tracked = this.inflight.get(job.id)
-    // No live promise: we reloaded since submitting (or it was already consumed).
-    if (!tracked) return { kind: 'unrecoverable' }
-    if (!tracked.settled) return { kind: 'pending' }
-
-    this.inflight.delete(job.id)
-    if (tracked.error) {
-      const message = tracked.error instanceof Error ? tracked.error.message : 'Unknown error'
-      return { kind: 'failed', error: message }
-    }
-    return { kind: 'final', response: tracked.value! }
-  }
-
-  async cancel(job: JobHandle): Promise<void> {
-    // No server-side job; drop the in-memory promise (the underlying fetch is
-    // aborted via the request's AbortSignal by the driver).
-    this.inflight.delete(job.id)
+      .then(parseResponse)
   }
 }
 

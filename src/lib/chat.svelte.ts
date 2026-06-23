@@ -522,9 +522,9 @@ export class ChatManager {
 
   /**
    * Resume any persisted pending jobs that aren't already being polled. Called
-   * on boot and on visibility/online wake. Anthropic jobs resolve to
-   * `unrecoverable` (no live promise after reload) → interrupted; OpenAI/Google
-   * re-poll the server and recover.
+   * on boot and on visibility/online wake. Durable jobs can recover after
+   * reload; non-durable jobs resolve to `unrecoverable` after reload and become
+   * interrupted messages.
    */
   resumePending() {
     for (const chat of this.history) {

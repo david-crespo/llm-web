@@ -26,9 +26,8 @@ export type ChatInput = {
 export type StartResult = { job: JobHandle }
 
 /** Result of a single poll. `unrecoverable` is the shared not-recoverable arm:
- * an expired/GC'd OpenAI/Google job and an Anthropic job after reload both land
- * here, and the caller turns them into an interrupted message — no per-provider
- * branch. */
+ * an expired/GC'd durable job and a non-durable job after reload both land here,
+ * and the caller turns them into an interrupted message. */
 export type PollResult =
   | { kind: 'pending' }
   | { kind: 'final'; response: ModelResponse }
