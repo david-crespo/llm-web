@@ -8,9 +8,14 @@ import type { Chat, NewChat, ChatMessage, JobHandle, PendingJob } from '$lib/typ
 // Poll backoff (ms): start fast for snappy short replies, then ease off.
 const POLL_START_MS = 1000
 const POLL_MAX_MS = 10_000
-// Stop polling a job that never terminates so a wedged request becomes an
-// interrupted message the user can regenerate rather than spinning forever.
-const JOB_TIMEOUT_MS = 10 * 60 * 1000
+// After this much elapsed time, ease off to a slower poll interval — the job
+// is long-running or we're resuming after the tab was closed for a while.
+const POLL_EASE_OFF_MS = 10 * 60 * 1000
+const POLL_EASE_OFF_INTERVAL_MS = 30_000
+// Give up on a job that never terminates so a wedged request becomes an
+// interrupted message. OpenAI stores responses with store=true for ~30 days,
+// so this catches truly stuck jobs rather than racing server-side expiry.
+const JOB_TIMEOUT_MS = 30 * 60 * 1000
 
 /** Turn a thrown submit error / abort into the message to show. */
 function classifyError(
@@ -388,12 +393,6 @@ export class ChatManager {
           return
         }
 
-        if (Date.now() - Date.parse(pending.startedAt) > JOB_TIMEOUT_MS) {
-          await this.cancelJob(job)
-          await this.commitError(chat, pending, 'interrupted')
-          return
-        }
-
         let result
         try {
           result = await adapter.poll(job, controller.signal)
@@ -419,7 +418,20 @@ export class ChatManager {
           return
         }
 
-        await sleep(delay, controller.signal)
+        // Poll before timing out: a job that completed while the tab was
+        // closed past the deadline still lands its answer. Only give up if
+        // the poll came back pending AND the deadline has passed.
+        const elapsed = Date.now() - Date.parse(pending.startedAt)
+        if (elapsed > JOB_TIMEOUT_MS) {
+          await this.cancelJob(job)
+          await this.commitError(chat, pending, 'interrupted')
+          return
+        }
+
+        // After the ease-off point, poll less frequently — the job is either
+        // long-running or we're resuming after a long absence.
+        const sleepMs = elapsed > POLL_EASE_OFF_MS ? POLL_EASE_OFF_INTERVAL_MS : delay
+        await sleep(sleepMs, controller.signal)
         delay = Math.min(delay * 2, POLL_MAX_MS)
       }
     } finally {
