@@ -11,15 +11,21 @@ export type UserMessage = {
 }
 
 /** Provider-specific assistant-message data. Discriminated on `type` so we
- * can add fields for other providers without widening every consumer. Anthropic
- * and Google have no chaining handle (they resend full history), so they set
- * none. */
-export type ProviderData = {
-  type: 'openai'
-  /** Responses API response.id, used as previous_response_id on the next turn
-   * so reasoning items carry over and prompt caching hits. */
-  responseId: string
-}
+ * can add fields for other providers without widening every consumer.
+ * Anthropic has no chaining handle (it resends full history), so it sets none. */
+export type ProviderData =
+  | {
+      type: 'openai'
+      /** Responses API response.id, used as previous_response_id on the next turn
+       * so reasoning items carry over and prompt caching hits. */
+      responseId: string
+    }
+  | {
+      type: 'google'
+      /** Interactions API interaction.id, used as previous_interaction_id on the
+       * next turn so context carries over server-side. */
+      interactionId: string
+    }
 
 /** Persistable reference to an in-flight provider request. Durable handles can
  * be re-polled after reload; non-durable handles only key an in-memory promise

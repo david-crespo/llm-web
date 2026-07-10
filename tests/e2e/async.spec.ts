@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { setKeysThroughSettings } from './helpers/settings'
-import { mockOpenAI, mockAnthropic } from './helpers/mocks'
+import { mockOpenAI, mockAnthropic, mockGoogle } from './helpers/mocks'
 import {
   send,
   newChat,
@@ -95,6 +95,29 @@ test('OpenAI background job survives a reload and lands its answer', async ({ pa
   await selectChat(page, 'persist me')
   await expect(assistantMessages(page)).toContainText('Reply: persist me')
   await expect(responseLoadingIndicator(chatRow(page, 'persist me'))).toHaveCount(0)
+})
+
+test('Google background job survives a reload and lands its answer', async ({ page }) => {
+  const google = await mockGoogle(page, { reply: (u) => `Reply: ${u}` })
+  const firstPoll = page.waitForRequest(
+    (request) => request.method() === 'GET' && request.url().includes('/interactions/'),
+  )
+
+  await setKeysThroughSettings(page, { google: 'gm-test' })
+  await send(page, 'persist with Gemini')
+  await expect(loadingPlaceholder(page)).toBeVisible()
+  // The immediate placeholder can precede submission. Seeing a poll proves the
+  // server handle has been persisted and is safe to resume after reload.
+  await firstPoll
+
+  await page.reload()
+  await openSidebar(page)
+  await expect(responseLoadingIndicator(chatRow(page, 'persist with Gemini'))).toBeVisible()
+
+  google.complete()
+  await selectChat(page, 'persist with Gemini')
+  await expect(assistantMessages(page)).toContainText('Reply: persist with Gemini')
+  await expect(responseLoadingIndicator(chatRow(page, 'persist with Gemini'))).toHaveCount(0)
 })
 
 test('OpenAI background job missing on resume becomes interrupted', async ({ page }) => {
