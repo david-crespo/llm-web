@@ -102,6 +102,24 @@ function lastText(items: unknown[] | undefined, getText: (item: LooseMsg) => str
   return ''
 }
 
+function lastInteractionInputText(items: unknown[]): string {
+  for (let i = items.length - 1; i >= 0; i--) {
+    const step = items[i] as { type?: string; content?: unknown }
+    if (step.type !== 'user_input' || !Array.isArray(step.content)) continue
+    const text = step.content.find(
+      (content): content is { type: 'text'; text: string } =>
+        typeof content === 'object' &&
+        content !== null &&
+        'type' in content &&
+        content.type === 'text' &&
+        'text' in content &&
+        typeof content.text === 'string',
+    )
+    if (text) return text.text
+  }
+  return ''
+}
+
 // --- OpenAI Responses API ---
 
 function openaiResponse(text: string, status = 'completed', id = 'resp_test_openai') {
@@ -296,9 +314,17 @@ export async function mockGoogle(page: Page, opts: MockOpts = {}): Promise<Provi
       bodies.push(body)
       const id = `interaction_test_${++idCounter}`
       const input = body.input
-      const userText = Array.isArray(input)
-        ? lastText(input, (m) => m.content ?? '')
-        : String(input ?? '')
+      if (Array.isArray(input) && input.some((item) => item.role != null)) {
+        return fulfillJSON(route, 400, {
+          error: {
+            code: 400,
+            message:
+              'When using the steps-based API version, use step_list input format instead of turn_list.',
+            status: 'INVALID_ARGUMENT',
+          },
+        })
+      }
+      const userText = Array.isArray(input) ? lastInteractionInputText(input) : String(input ?? '')
       textById.set(id, opts.reply ? opts.reply(userText) : fallback)
       return fulfillJSON(route, 200, geminiInteraction('', 'in_progress', id))
     }

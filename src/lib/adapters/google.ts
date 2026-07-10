@@ -24,13 +24,15 @@ export class GoogleAdapter implements Adapter {
       lastAssistant?.provider?.type === 'google' ? lastAssistant.provider.interactionId : undefined
 
     // When chaining, the server already has prior turns; send only the new
-    // message. Otherwise send the whole history as turns (fresh or forked chat).
+    // message. Otherwise send history in the steps format required by the
+    // current Interactions API (fresh, provider-switched, or forked chat).
     const input = previous_interaction_id
       ? (chat.messages.at(-1)?.content ?? '')
-      : chat.messages.map((m) => ({
-          role: m.role === 'assistant' ? 'model' : 'user',
-          content: m.content,
-        }))
+      : chat.messages.map((m): Interactions.UserInputStep | Interactions.ModelOutputStep =>
+          m.role === 'assistant'
+            ? { type: 'model_output', content: [{ type: 'text', text: m.content }] }
+            : { type: 'user_input', content: [{ type: 'text', text: m.content }] },
+        )
 
     const interaction = await genAI.interactions.create(
       {
