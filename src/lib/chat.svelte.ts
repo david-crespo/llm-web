@@ -19,6 +19,12 @@ const POLL_EASE_OFF_INTERVAL_MS = 30_000
 // interrupted message. OpenAI stores responses with store=true for ~30 days,
 // so this catches truly stuck jobs rather than racing server-side expiry.
 const JOB_TIMEOUT_MS = 30 * 60 * 1000
+// Transient poll failures (offline, provider 5xx) retry indefinitely on the
+// theory that the answer is waiting server-side, but give up after this much
+// continuous failure so a permanently broken endpoint doesn't spin forever.
+// Measured from the first failure in the current run, not job submission, so
+// a job resumed hours after submit still gets a full recovery window.
+const POLL_FAILURE_GIVE_UP_MS = 60 * 60 * 1000
 
 /** Turn a thrown submit error / abort into the message to show. */
 function classifyError(
@@ -375,7 +381,24 @@ export class ChatManager {
     const controller = existing ?? new AbortController()
     if (!existing) this.pendingRequests.set(chatId, controller)
 
+    // Keep the screen awake while a non-durable request is in flight: the
+    // in-memory fetch is the only copy of the answer, so if the phone sleeps
+    // and the OS suspends the page, the turn is lost. Durable jobs don't hold
+    // the lock — they recover by re-polling after the device wakes, and that's
+    // the whole point of background mode: the screen is allowed to sleep.
+    let wakeLock: WakeLockSentinel | null = null
+    if (!job.durable) {
+      try {
+        wakeLock = await navigator.wakeLock?.request('screen')
+      } catch {
+        // Wake Lock not supported or failed (e.g. low battery) — proceed without it
+      }
+    }
+
     let retryDelay = RETRY_START_MS
+    // Timestamp of the first of the current streak of failed polls, 0 when the
+    // last poll succeeded. Bounds retries by continuous failure time.
+    let failingSince = 0
     try {
       while (true) {
         // Superseded by a newer job for this chat (regenerate/edit) — bail and
@@ -398,6 +421,7 @@ export class ChatManager {
         let transientFailure = false
         try {
           result = await adapter.poll(job, controller.signal)
+          failingSince = 0
         } catch (error) {
           // Abort surfaces as a throw — loop back so the aborted branch handles it.
           if (controller.signal.aborted) continue
@@ -405,6 +429,7 @@ export class ChatManager {
             // Keep the persisted handle. A visibility or online event can
             // restart this loop immediately; otherwise retry with backoff.
             transientFailure = true
+            failingSince ||= Date.now()
             result = { kind: 'pending' as const }
           } else {
             result = {
@@ -413,6 +438,12 @@ export class ChatManager {
             }
           }
         }
+
+        // An abort can land between the poll resolving and this point — e.g.
+        // the chat was deleted while the final answer was in flight. Committing
+        // here would re-persist (resurrect) the deleted chat, so loop back and
+        // let the aborted branch decide what to do.
+        if (controller.signal.aborted) continue
 
         if (result.kind === 'final') {
           await this.commitResponse(chat, pending, result.response)
@@ -428,10 +459,14 @@ export class ChatManager {
         }
 
         // Poll before timing out: a job that completed while the tab was
-        // closed past the deadline still lands its answer. Only give up if
-        // the poll came back pending AND the deadline has passed.
+        // closed past the deadline still lands its answer. Only give up once
+        // the poll came back pending past the deadline, or polls have been
+        // failing continuously for the give-up window.
         const elapsed = Date.now() - Date.parse(pending.startedAt)
-        if (!transientFailure && elapsed > JOB_TIMEOUT_MS) {
+        const timedOut = transientFailure
+          ? Date.now() - failingSince > POLL_FAILURE_GIVE_UP_MS
+          : elapsed > JOB_TIMEOUT_MS
+        if (timedOut) {
           await this.cancelJob(job)
           await this.commitError(chat, pending, 'interrupted')
           return
@@ -448,6 +483,7 @@ export class ChatManager {
         retryDelay = transientFailure ? Math.min(retryDelay * 2, RETRY_MAX_MS) : RETRY_START_MS
       }
     } finally {
+      await wakeLock?.release()
       if (this.pendingRequests.get(chatId) === controller) {
         this.pendingRequests.delete(chatId)
       }
