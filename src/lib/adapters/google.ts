@@ -70,16 +70,20 @@ export class GoogleAdapter implements Adapter {
 
     switch (interaction.status) {
       case 'in_progress':
-      case 'requires_action':
         return { kind: 'pending' }
+      case 'requires_action':
+        return { kind: 'failed', error: 'Interaction requires client action' }
       case 'failed':
       case 'budget_exceeded':
         return { kind: 'failed', error: `Interaction ${interaction.status}` }
       case 'cancelled':
         return { kind: 'unrecoverable' }
-      // 'completed' and 'incomplete' both carry steps; surface whatever we got.
-      default:
+      // Both terminal states can carry useful output steps.
+      case 'completed':
+      case 'incomplete':
         return { kind: 'final', response: parseInteraction(interaction) }
+      default:
+        return { kind: 'failed', error: `Unsupported interaction status: ${interaction.status}` }
     }
   }
 

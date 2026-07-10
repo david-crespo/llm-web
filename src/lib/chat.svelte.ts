@@ -5,9 +5,12 @@ import { getAdapter, type ModelResponse } from '$lib/adapters'
 import { scrollToBottom, scrollToAnswer } from '$lib/actions/autoScroll'
 import type { Chat, NewChat, ChatMessage, JobHandle, PendingJob } from '$lib/types'
 
-// Poll backoff (ms): start fast for snappy short replies, then ease off.
-const POLL_START_MS = 1000
-const POLL_MAX_MS = 10_000
+// Poll frequently while the answer is likely to finish soon. Provider polling
+// is cheap relative to generation, and a long backoff makes a chat UI feel
+// noticeably slower after the answer is already available.
+const POLL_INTERVAL_MS = 2000
+const RETRY_START_MS = 1000
+const RETRY_MAX_MS = 30_000
 // After this much elapsed time, ease off to a slower poll interval — the job
 // is long-running or we're resuming after the tab was closed for a while.
 const POLL_EASE_OFF_MS = 10 * 60 * 1000
@@ -43,16 +46,30 @@ function classifyError(
 function sleep(ms: number, signal: AbortSignal): Promise<void> {
   return new Promise((resolve) => {
     if (signal.aborted) return resolve()
-    const timer = setTimeout(resolve, ms)
-    signal.addEventListener(
-      'abort',
-      () => {
-        clearTimeout(timer)
-        resolve()
-      },
-      { once: true },
-    )
+    const finish = () => {
+      clearTimeout(timer)
+      signal.removeEventListener('abort', finish)
+      resolve()
+    }
+    const timer = setTimeout(finish, ms)
+    signal.addEventListener('abort', finish, { once: true })
   })
+}
+
+/** Durable polling survives connectivity failures. Authentication and ordinary
+ * request errors require user action; timeouts, rate limits, server errors, and
+ * errors without an HTTP status are safe to retry. */
+function isRetryablePollError(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null || !('status' in error)) return true
+  const status = error.status
+  return (
+    typeof status !== 'number' ||
+    status === 408 ||
+    status === 409 ||
+    status === 425 ||
+    status === 429 ||
+    status >= 500
+  )
 }
 
 // --- App init state (checked by the page component to gate rendering) ---
@@ -309,55 +326,41 @@ export class ChatManager {
     // bottom of the user message and miss the placeholder.
     if (this.current.id === chatId) scrollToBottom()
 
-    // Prevent iOS from suspending the page while we submit and poll. Background
-    // jobs survive sleep server-side, but holding the lock keeps the live poll
-    // loop running so the answer lands without waiting for a visibility wake.
-    let wakeLock: WakeLockSentinel | null = null
+    let job: JobHandle
     try {
-      wakeLock = await navigator.wakeLock?.request('screen')
-    } catch {
-      // Wake Lock not supported or failed (e.g. low battery) — proceed without it
-    }
-
-    try {
-      let job: JobHandle
-      try {
-        const result = await adapter.start({
-          chat,
-          input,
-          model,
-          search,
-          think: this.reasoning,
-          signal: controller.signal,
-        })
-        job = result.job
-      } catch (error) {
-        // Submit failed (bad key, network, or user stopped before it landed).
-        // No pending was written, so push the error message directly.
-        if (this.pendingRequests.get(chatId) !== controller) return
-        this.pendingRequests.delete(chatId)
-        const reason = controller.signal.reason as string | undefined
-        if (reason === 'replaced') return
-        this.pushErrorMessage(chat, model.id, classifyError(error, controller.signal, reason))
-        await storage.updateChat(chatId, chat)
-        return
-      }
-
-      // Persist the handle before polling so a reload (or visibility wake) can
-      // resume this exact job instead of losing it.
-      const pending: PendingJob = {
-        job,
-        startedAt: new SvelteDate().toISOString(),
-        modelId: model.id,
+      const result = await adapter.start({
+        chat,
+        input,
+        model,
         search,
-      }
-      chat.pending = pending
+        think: this.reasoning,
+        signal: controller.signal,
+      })
+      job = result.job
+    } catch (error) {
+      // Submit failed (bad key, network, or user stopped before it landed).
+      // No pending was written, so push the error message directly.
+      if (this.pendingRequests.get(chatId) !== controller) return
+      this.pendingRequests.delete(chatId)
+      const reason = controller.signal.reason as string | undefined
+      if (reason === 'replaced') return
+      this.pushErrorMessage(chat, model.id, classifyError(error, controller.signal, reason))
       await storage.updateChat(chatId, chat)
-
-      await this.runJob(chat, pending, controller)
-    } finally {
-      await wakeLock?.release()
+      return
     }
+
+    // Persist the handle before polling so a reload (or visibility wake) can
+    // resume this exact job instead of losing it.
+    const pending: PendingJob = {
+      job,
+      startedAt: new SvelteDate().toISOString(),
+      modelId: model.id,
+      search,
+    }
+    chat.pending = pending
+    await storage.updateChat(chatId, chat)
+
+    await this.runJob(chat, pending, controller)
   }
 
   /**
@@ -374,7 +377,7 @@ export class ChatManager {
     const controller = existing ?? new AbortController()
     if (!existing) this.pendingRequests.set(chatId, controller)
 
-    let delay = POLL_START_MS
+    let retryDelay = RETRY_START_MS
     try {
       while (true) {
         // Superseded by a newer job for this chat (regenerate/edit) — bail and
@@ -383,7 +386,7 @@ export class ChatManager {
 
         if (controller.signal.aborted) {
           const reason = controller.signal.reason as string | undefined
-          if (reason === 'replaced') return
+          if (reason === 'replaced' || reason === 'restart') return
           await this.cancelJob(job)
           await this.commitError(
             chat,
@@ -394,14 +397,22 @@ export class ChatManager {
         }
 
         let result
+        let transientFailure = false
         try {
           result = await adapter.poll(job, controller.signal)
         } catch (error) {
           // Abort surfaces as a throw — loop back so the aborted branch handles it.
           if (controller.signal.aborted) continue
-          result = {
-            kind: 'failed' as const,
-            error: error instanceof Error ? error.message : 'Unknown error',
+          if (job.durable && isRetryablePollError(error)) {
+            // Keep the persisted handle. A visibility or online event can
+            // restart this loop immediately; otherwise retry with backoff.
+            transientFailure = true
+            result = { kind: 'pending' as const }
+          } else {
+            result = {
+              kind: 'failed' as const,
+              error: error instanceof Error ? error.message : 'Unknown error',
+            }
           }
         }
 
@@ -422,7 +433,7 @@ export class ChatManager {
         // closed past the deadline still lands its answer. Only give up if
         // the poll came back pending AND the deadline has passed.
         const elapsed = Date.now() - Date.parse(pending.startedAt)
-        if (elapsed > JOB_TIMEOUT_MS) {
+        if (!transientFailure && elapsed > JOB_TIMEOUT_MS) {
           await this.cancelJob(job)
           await this.commitError(chat, pending, 'interrupted')
           return
@@ -430,9 +441,13 @@ export class ChatManager {
 
         // After the ease-off point, poll less frequently — the job is either
         // long-running or we're resuming after a long absence.
-        const sleepMs = elapsed > POLL_EASE_OFF_MS ? POLL_EASE_OFF_INTERVAL_MS : delay
+        const sleepMs = transientFailure
+          ? retryDelay
+          : elapsed > POLL_EASE_OFF_MS
+            ? POLL_EASE_OFF_INTERVAL_MS
+            : POLL_INTERVAL_MS
         await sleep(sleepMs, controller.signal)
-        delay = Math.min(delay * 2, POLL_MAX_MS)
+        retryDelay = transientFailure ? Math.min(retryDelay * 2, RETRY_MAX_MS) : RETRY_START_MS
       }
     } finally {
       if (this.pendingRequests.get(chatId) === controller) {
@@ -526,11 +541,17 @@ export class ChatManager {
    * reload; non-durable jobs resolve to `unrecoverable` after reload and become
    * interrupted messages.
    */
-  resumePending() {
+  resumePending(restartActive = false) {
     for (const chat of this.history) {
-      if (chat.pending && !this.pendingRequests.has(chat.id)) {
-        void this.runJob(chat, chat.pending)
-      }
+      if (!chat.pending) continue
+      const active = this.pendingRequests.get(chat.id)
+      if (active && !restartActive) continue
+      // A non-durable request cannot be restarted: aborting its controller also
+      // aborts the only underlying fetch. Its existing promise will resume with
+      // the page instead.
+      if (active && !chat.pending.job.durable) continue
+      if (active) active.abort('restart')
+      void this.runJob(chat, chat.pending)
     }
   }
 
@@ -580,11 +601,11 @@ async function boot() {
     chatState.resumePending()
     if (typeof document !== 'undefined') {
       document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') chatState.resumePending()
+        if (document.visibilityState === 'visible') chatState.resumePending(true)
       })
     }
     if (typeof window !== 'undefined') {
-      window.addEventListener('online', () => chatState.resumePending())
+      window.addEventListener('online', () => chatState.resumePending(true))
     }
   } catch (error) {
     console.error('Failed to initialize chat storage:', error)

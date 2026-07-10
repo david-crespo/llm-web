@@ -70,9 +70,12 @@ export class OpenAIAdapter implements Adapter {
         return { kind: 'failed', error: response.error?.message ?? 'Request failed' }
       case 'cancelled':
         return { kind: 'unrecoverable' }
-      // 'completed' and 'incomplete' both carry output; surface whatever we got.
-      default:
+      // Both terminal states can carry useful output.
+      case 'completed':
+      case 'incomplete':
         return { kind: 'final', response: parseResponse(response) }
+      default:
+        return { kind: 'failed', error: `Unsupported response status: ${response.status}` }
     }
   }
 
