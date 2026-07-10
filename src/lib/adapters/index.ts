@@ -15,15 +15,11 @@ export type ModelResponse = {
 
 export type ChatInput = {
   chat: Chat
-  input: string
   model: Model
   search: boolean
   think: boolean
   signal?: AbortSignal
 }
-
-/** Submitting a request returns a durable-or-not handle the driver then polls. */
-export type StartResult = { job: JobHandle }
 
 /** Result of a single poll. `unrecoverable` is the shared not-recoverable arm:
  * an expired/GC'd durable job and a non-durable job after reload both land here,
@@ -37,7 +33,8 @@ export type PollResult =
 /** Uniform submit-then-poll interface. Every provider implements it; the driver
  * in chat.svelte.ts never branches on provider. */
 export interface Adapter {
-  start(input: ChatInput): Promise<StartResult>
+  /** Submit a request, returning a durable-or-not handle the driver then polls. */
+  start(input: ChatInput): Promise<JobHandle>
   poll(job: JobHandle, signal?: AbortSignal): Promise<PollResult>
   /** Best-effort server-side cancel. No-op for Anthropic (no server job). */
   cancel(job: JobHandle): Promise<void>

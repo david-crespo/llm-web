@@ -1,5 +1,5 @@
 import type { JobHandle } from '$lib/types'
-import type { Adapter, ChatInput, ModelResponse, PollResult, StartResult } from './index'
+import type { Adapter, ChatInput, ModelResponse, PollResult } from './index'
 
 type TrackedResult = { ok: true; response: ModelResponse } | { ok: false; error: unknown }
 
@@ -13,7 +13,7 @@ export abstract class NonDurableAdapter implements Adapter {
 
   constructor(private readonly provider: JobHandle['provider']) {}
 
-  async start(input: ChatInput): Promise<StartResult> {
+  async start(input: ChatInput): Promise<JobHandle> {
     const id = crypto.randomUUID()
     const tracked = this.create(input).then<TrackedResult, TrackedResult>(
       (response) => ({ ok: true, response }),
@@ -21,7 +21,7 @@ export abstract class NonDurableAdapter implements Adapter {
     )
 
     this.inflight.set(id, tracked)
-    return { job: { provider: this.provider, id, durable: false } }
+    return { provider: this.provider, id, durable: false }
   }
 
   async poll(job: JobHandle, signal?: AbortSignal): Promise<PollResult> {

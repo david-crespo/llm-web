@@ -1,5 +1,5 @@
 import { GoogleGenAI, type Interactions } from '@google/genai'
-import type { Adapter, ChatInput, ModelResponse, PollResult, StartResult } from './index'
+import type { Adapter, ChatInput, ModelResponse, PollResult } from './index'
 import type { JobHandle } from '$lib/types'
 import { settings } from '$lib/settings.svelte'
 
@@ -16,7 +16,7 @@ function getClient(): GoogleGenAI {
 }
 
 export class GoogleAdapter implements Adapter {
-  async start({ chat, model, search, think, signal }: ChatInput): Promise<StartResult> {
+  async start({ chat, model, search, think, signal }: ChatInput): Promise<JobHandle> {
     const genAI = getClient()
 
     const lastAssistant = chat.messages.filter((m) => m.role === 'assistant').at(-1)
@@ -53,7 +53,7 @@ export class GoogleAdapter implements Adapter {
       { fetchOptions: { signal } },
     )
 
-    return { job: { provider: 'google', id: interaction.id, durable: true } }
+    return { provider: 'google', id: interaction.id, durable: true }
   }
 
   async poll(job: JobHandle, signal?: AbortSignal): Promise<PollResult> {

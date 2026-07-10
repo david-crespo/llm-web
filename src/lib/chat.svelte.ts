@@ -239,7 +239,7 @@ export class ChatManager {
     // Save the captured chat (not this.current which may change if the user switches)
     await storage.updateChat(chat.id, chat)
 
-    await this.processResponse(chat, content.trim())
+    await this.processResponse(chat)
   }
 
   /**
@@ -255,7 +255,7 @@ export class ChatManager {
     // Truncate messages after this point
     chat.messages = chat.messages.slice(0, index + 1)
 
-    await this.processResponse(chat, targetMessage.content)
+    await this.processResponse(chat)
   }
 
   /**
@@ -306,7 +306,7 @@ export class ChatManager {
    * submit→poll adapter. Operates on the specific `chat` reference so it stays
    * correct even if the user switches chats while the request is in flight.
    */
-  private async processResponse(chat: Chat, input: string) {
+  private async processResponse(chat: Chat) {
     if (!this.selectedModel) return
     const chatId = chat.id
     const model = this.selectedModel
@@ -328,15 +328,13 @@ export class ChatManager {
 
     let job: JobHandle
     try {
-      const result = await adapter.start({
+      job = await adapter.start({
         chat,
-        input,
         model,
         search,
         think: this.reasoning,
         signal: controller.signal,
       })
-      job = result.job
     } catch (error) {
       // Submit failed (bad key, network, or user stopped before it landed).
       // No pending was written, so push the error message directly.

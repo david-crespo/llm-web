@@ -1,6 +1,6 @@
 import OpenAI from 'openai'
 import type { Response } from 'openai/resources/responses/responses'
-import type { Adapter, ChatInput, ModelResponse, PollResult, StartResult } from './index'
+import type { Adapter, ChatInput, ModelResponse, PollResult } from './index'
 import type { JobHandle } from '$lib/types'
 import { settings } from '$lib/settings.svelte'
 
@@ -16,7 +16,7 @@ function getClient(): OpenAI {
 }
 
 export class OpenAIAdapter implements Adapter {
-  async start({ chat, model, search, think, signal }: ChatInput): Promise<StartResult> {
+  async start({ chat, model, search, think, signal }: ChatInput): Promise<JobHandle> {
     const client = getClient()
 
     // If the most recent assistant turn was an OpenAI Responses call we have its
@@ -47,7 +47,7 @@ export class OpenAIAdapter implements Adapter {
       { signal },
     )
 
-    return { job: { provider: 'openai', id: response.id, durable: true } }
+    return { provider: 'openai', id: response.id, durable: true }
   }
 
   async poll(job: JobHandle, signal?: AbortSignal): Promise<PollResult> {
