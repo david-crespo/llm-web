@@ -77,6 +77,17 @@ export type ProviderMock = {
   bodies: () => Body[]
 }
 
+export type BackgroundProviderMock = ProviderMock & {
+  /** Complete only the job created from this user input. */
+  completeRequest: (userText: string) => void
+  /** Fail the next N poll HTTP requests, then resume normal responses. */
+  failNextPolls: (count: number, status?: number) => void
+  /** Make polls fail after the next main-frame navigation, but not before it. */
+  failAfterNavigation: (status?: number) => void
+  polls: () => number
+  cancels: () => number
+}
+
 export type MockOpts = {
   /** Assistant text to return. */
   text?: string
@@ -149,7 +160,7 @@ function openaiResponse(text: string, status = 'completed', id = 'resp_test_open
   }
 }
 
-export async function mockOpenAI(page: Page, opts: MockOpts = {}): Promise<ProviderMock> {
+export async function mockOpenAI(page: Page, opts: MockOpts = {}): Promise<BackgroundProviderMock> {
   const gate = makeGate()
   if (opts.auto) gate.open()
   const fallback = opts.text ?? 'Hello from GPT-5.6.'
@@ -157,10 +168,23 @@ export async function mockOpenAI(page: Page, opts: MockOpts = {}): Promise<Provi
   // clobber each other (the create body has the user message; the GET poll
   // doesn't, so it looks the text up by id).
   const textById = new Map<string, string>()
+  const idByUserText = new Map<string, string>()
+  const completedIds = new Set<string>()
   let idCounter = 0
   let failStatus: number | null = null
+  let failAfterNavigationStatus: number | null = null
+  let transientFailStatus = 503
+  let transientFailuresRemaining = 0
   let calls = 0
+  let polls = 0
+  let cancels = 0
   const bodies: Body[] = []
+
+  page.on('framenavigated', (frame) => {
+    if (frame !== page.mainFrame() || failAfterNavigationStatus === null) return
+    failStatus = failAfterNavigationStatus
+    failAfterNavigationStatus = null
+  })
 
   await page.route('https://api.openai.com/**', async (route) => {
     if (await fulfillPreflight(route)) return
@@ -173,10 +197,10 @@ export async function mockOpenAI(page: Page, opts: MockOpts = {}): Promise<Provi
       const body = (req.postDataJSON() ?? {}) as Body
       bodies.push(body)
       const id = `resp_test_openai_${++idCounter}`
-      const text = opts.reply
-        ? opts.reply(lastText(body.input as unknown[], (m) => m.content ?? ''))
-        : fallback
+      const userText = lastText(body.input as unknown[], (m) => m.content ?? '')
+      const text = opts.reply ? opts.reply(userText) : fallback
       textById.set(id, text)
+      idByUserText.set(userText, id)
       if (body.background) {
         // Background submit returns immediately, queued. Must be a full Response
         // shape (with output: []) — the SDK materializes output_text from it.
@@ -190,19 +214,29 @@ export async function mockOpenAI(page: Page, opts: MockOpts = {}): Promise<Provi
 
     // cancel (background stop): .../v1/responses/{id}/cancel
     if (pathname.endsWith('/cancel') && req.method() === 'POST') {
+      cancels++
       const id = pathname.split('/').slice(-2)[0]
       return fulfillJSON(route, 200, openaiResponse('', 'cancelled', id))
     }
 
     // poll (async mode only)
     if (pathname.startsWith('/v1/responses/') && req.method() === 'GET') {
+      polls++
+      if (transientFailuresRemaining > 0) {
+        transientFailuresRemaining--
+        return fulfillJSON(route, transientFailStatus, errorBody('Temporary provider failure'))
+      }
       if (failStatus) return fulfillJSON(route, failStatus, errorBody('Invalid API key'))
       const id = pathname.split('/').pop()!
       const text = textById.get(id) ?? fallback
       return fulfillJSON(
         route,
         200,
-        openaiResponse(text, gate.settled() ? 'completed' : 'in_progress', id),
+        openaiResponse(
+          text,
+          gate.settled() || completedIds.has(id) ? 'completed' : 'in_progress',
+          id,
+        ),
       )
     }
 
@@ -211,10 +245,24 @@ export async function mockOpenAI(page: Page, opts: MockOpts = {}): Promise<Provi
 
   return {
     complete: gate.open,
+    completeRequest: (userText) => {
+      const id = idByUserText.get(userText)
+      if (!id) throw new Error(`OpenAI mock: no request found for ${JSON.stringify(userText)}`)
+      completedIds.add(id)
+    },
     fail: (status = 401) => {
       failStatus = status
       gate.open()
     },
+    failNextPolls: (count, status = 503) => {
+      transientFailuresRemaining = count
+      transientFailStatus = status
+    },
+    failAfterNavigation: (status = 404) => {
+      failAfterNavigationStatus = status
+    },
+    polls: () => polls,
+    cancels: () => cancels,
     calls: () => calls,
     bodies: () => bodies.slice(),
   }
@@ -293,15 +341,28 @@ function geminiInteraction(text: string, status: string, id: string, reasoning?:
   }
 }
 
-export async function mockGoogle(page: Page, opts: MockOpts = {}): Promise<ProviderMock> {
+export async function mockGoogle(page: Page, opts: MockOpts = {}): Promise<BackgroundProviderMock> {
   const gate = makeGate()
   if (opts.auto) gate.open()
   const fallback = opts.text ?? 'Hello from Gemini.'
   const textById = new Map<string, string>()
+  const idByUserText = new Map<string, string>()
+  const completedIds = new Set<string>()
   let idCounter = 0
   let failStatus: number | null = null
+  let failAfterNavigationStatus: number | null = null
+  let transientFailStatus = 503
+  let transientFailuresRemaining = 0
   let calls = 0
+  let polls = 0
+  let cancels = 0
   const bodies: Body[] = []
+
+  page.on('framenavigated', (frame) => {
+    if (frame !== page.mainFrame() || failAfterNavigationStatus === null) return
+    failStatus = failAfterNavigationStatus
+    failAfterNavigationStatus = null
+  })
 
   await page.route('https://generativelanguage.googleapis.com/**', async (route) => {
     if (await fulfillPreflight(route)) return
@@ -326,15 +387,24 @@ export async function mockGoogle(page: Page, opts: MockOpts = {}): Promise<Provi
       }
       const userText = Array.isArray(input) ? lastInteractionInputText(input) : String(input ?? '')
       textById.set(id, opts.reply ? opts.reply(userText) : fallback)
+      idByUserText.set(userText, id)
       return fulfillJSON(route, 200, geminiInteraction('', 'in_progress', id))
     }
 
     if (pathname.endsWith('/cancel') && req.method() === 'POST') {
+      cancels++
       const id = pathname.split('/').slice(-2)[0]
       return fulfillJSON(route, 200, geminiInteraction('', 'cancelled', id))
     }
 
     if (pathname.includes('/interactions/') && req.method() === 'GET') {
+      polls++
+      if (transientFailuresRemaining > 0) {
+        transientFailuresRemaining--
+        return fulfillJSON(route, transientFailStatus, {
+          error: { code: transientFailStatus, message: 'Temporary provider failure' },
+        })
+      }
       if (failStatus) {
         return fulfillJSON(route, failStatus, {
           error: { code: failStatus, message: 'Invalid API key', status: 'UNAUTHENTICATED' },
@@ -342,7 +412,7 @@ export async function mockGoogle(page: Page, opts: MockOpts = {}): Promise<Provi
       }
       const id = pathname.split('/').pop()!
       const text = textById.get(id) ?? fallback
-      const status = gate.settled() ? 'completed' : 'in_progress'
+      const status = gate.settled() || completedIds.has(id) ? 'completed' : 'in_progress'
       return fulfillJSON(route, 200, geminiInteraction(text, status, id, opts.reasoning))
     }
 
@@ -351,10 +421,24 @@ export async function mockGoogle(page: Page, opts: MockOpts = {}): Promise<Provi
 
   return {
     complete: gate.open,
+    completeRequest: (userText) => {
+      const id = idByUserText.get(userText)
+      if (!id) throw new Error(`Google mock: no request found for ${JSON.stringify(userText)}`)
+      completedIds.add(id)
+    },
     fail: (status = 401) => {
       failStatus = status
       gate.open()
     },
+    failNextPolls: (count, status = 503) => {
+      transientFailuresRemaining = count
+      transientFailStatus = status
+    },
+    failAfterNavigation: (status = 404) => {
+      failAfterNavigationStatus = status
+    },
+    polls: () => polls,
+    cancels: () => cancels,
     calls: () => calls,
     bodies: () => bodies.slice(),
   }
