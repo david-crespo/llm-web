@@ -45,7 +45,7 @@
     "highlight.js": "^11.11.1",
     "marked": "^18.0.2",
     "marked-highlight": "^2.2.4",
-    "openai": "^6.44.0",
+    "openai": "^6.46.0",
     "temml": "^0.13.2"
   },
   "patchedDependencies": {

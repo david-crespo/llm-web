@@ -28,7 +28,7 @@ test('all keys: every model is listed in order', async ({ page }) => {
   await setKeysThroughSettings(page, { openai: 'a', anthropic: 'b', google: 'c' })
 
   await expect(modelOptions(page)).toHaveText([
-    'GPT-5.5',
+    'GPT-5.6',
     'Gemini 3.5 Flash',
     'Claude Opus 4.8',
     'Claude Fable 5',

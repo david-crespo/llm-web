@@ -14,7 +14,7 @@ test('Search and Think toggles affect the next request', async ({ page }) => {
   await expect(think).toHaveAttribute('aria-pressed', 'false')
 
   await send(page, 'defaults')
-  await expect(assistantMessages(page)).toContainText('Hello from GPT-5.5.')
+  await expect(assistantMessages(page)).toContainText('Hello from GPT-5.6.')
 
   await newChat(page)
   await search.click()
@@ -24,9 +24,10 @@ test('Search and Think toggles affect the next request', async ({ page }) => {
   await expect(think).toHaveAttribute('aria-pressed', 'true')
 
   await send(page, 'changed')
-  await expect(assistantMessages(page)).toContainText('Hello from GPT-5.5.')
+  await expect(assistantMessages(page)).toContainText('Hello from GPT-5.6.')
 
   const [defaults, changed] = openai.bodies()
+  expect(defaults.model).toBe('gpt-5.6')
   expect(defaults.tools).toEqual([{ type: 'web_search_preview' }])
   expect(defaults.reasoning).toEqual({ effort: 'low' })
   expect(changed.tools).toBeUndefined()
