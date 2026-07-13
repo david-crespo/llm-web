@@ -42,8 +42,8 @@ export class AnthropicAdapter extends NonDurableAdapter {
           output_config: { effort: think ? 'high' : 'low' },
           tools: search
             ? [
-                { type: 'web_search_20260209', name: 'web_search', max_uses: 5 },
-                { type: 'web_fetch_20260209', name: 'web_fetch' },
+                { type: 'web_search_20260318', name: 'web_search', max_uses: 5 },
+                { type: 'web_fetch_20260318', name: 'web_fetch' },
                 { type: 'code_execution_20260120', name: 'code_execution' },
               ]
             : undefined,

@@ -29,6 +29,11 @@ test('Anthropic happy path with reasoning', async ({ page }) => {
   // Reasoning (from Anthropic `thinking` blocks) is collapsed until expanded.
   await expectReasoning(page, 'Thinking about the greeting.')
   expect(anthropic.calls()).toBe(1)
+  expect(anthropic.bodies()[0]?.tools).toEqual([
+    { type: 'web_search_20260318', name: 'web_search', max_uses: 5 },
+    { type: 'web_fetch_20260318', name: 'web_fetch' },
+    { type: 'code_execution_20260120', name: 'code_execution' },
+  ])
   expect(openai.calls()).toBe(0)
   expect(google.calls()).toBe(0)
 })
