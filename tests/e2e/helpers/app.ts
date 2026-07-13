@@ -32,6 +32,42 @@ export async function selectModel(page: Page, id: string): Promise<void> {
   await page.getByLabel('Select model').selectOption({ label: id })
 }
 
+/** Wait until the submitted turn, including its provider handle, has committed
+ * to IndexedDB. A loading placeholder appears earlier and is not a persistence
+ * barrier for reload tests. */
+export async function expectPendingJobPersisted(page: Page, userText: string): Promise<void> {
+  await expect
+    .poll(() =>
+      page.evaluate(
+        (text) =>
+          new Promise<boolean>((resolve, reject) => {
+            const request = indexedDB.open('llm-web')
+            request.onerror = () => reject(request.error)
+            request.onsuccess = () => {
+              const db = request.result
+              const getAll = db.transaction('chats').objectStore('chats').getAll()
+              getAll.onerror = () => reject(getAll.error)
+              getAll.onsuccess = () => {
+                resolve(
+                  getAll.result.some(
+                    (chat) =>
+                      chat.pending != null &&
+                      chat.messages?.some(
+                        (message: { role?: string; content?: string }) =>
+                          message.role === 'user' && message.content === text,
+                      ),
+                  ),
+                )
+                db.close()
+              }
+            }
+          }),
+        userText,
+      ),
+    )
+    .toBe(true)
+}
+
 // Sidebar is a drawer below the 768px breakpoint and always-visible above it.
 // Idempotent: checks the toggle's expanded state, then waits for the open state
 // so the CSS slide-in settles before callers click rows inside it.

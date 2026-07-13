@@ -1,9 +1,82 @@
 import { SvelteDate, SvelteMap } from 'svelte/reactivity'
 import { storage } from '$lib/storage'
 import { models, getCost, systemBase, getAvailableModels, type Model } from '$lib/models.svelte'
-import { createMessage } from '$lib/adapters'
+import { getAdapter, type ModelResponse } from '$lib/adapters'
 import { scrollToBottom, scrollToAnswer } from '$lib/actions/autoScroll'
-import type { Chat, NewChat, ChatMessage } from '$lib/types'
+import type { Chat, NewChat, ChatMessage, JobHandle, PendingJob } from '$lib/types'
+
+// Poll frequently while the answer is likely to finish soon. Provider polling
+// is cheap relative to generation, and a long backoff makes a chat UI feel
+// noticeably slower after the answer is already available.
+const POLL_INTERVAL_MS = 2000
+const RETRY_START_MS = 1000
+const RETRY_MAX_MS = 30_000
+// After this much elapsed time, ease off to a slower poll interval — the job
+// is long-running or we're resuming after the tab was closed for a while.
+const POLL_EASE_OFF_MS = 10 * 60 * 1000
+const POLL_EASE_OFF_INTERVAL_MS = 30_000
+// Give up on a job that never terminates so a wedged request becomes an
+// interrupted message. OpenAI stores responses with store=true for ~30 days,
+// so this catches truly stuck jobs rather than racing server-side expiry.
+const JOB_TIMEOUT_MS = 30 * 60 * 1000
+// Transient poll failures (offline, provider 5xx) retry indefinitely on the
+// theory that the answer is waiting server-side, but give up after this much
+// continuous failure so a permanently broken endpoint doesn't spin forever.
+// Measured from the first failure in the current run, not job submission, so
+// a job resumed hours after submit still gets a full recovery window.
+const POLL_FAILURE_GIVE_UP_MS = 60 * 60 * 1000
+
+/** Turn a thrown submit error / abort into the message to show. */
+function classifyError(
+  error: unknown,
+  signal: AbortSignal,
+  reason: string | undefined,
+): { content: string; stopReason: string } {
+  if (reason === 'user_stopped') return { content: 'Stopped by user', stopReason: 'stopped' }
+  const isAbort = signal.aborted || (error instanceof Error && error.name === 'AbortError')
+  if (isAbort) {
+    return {
+      content: 'Request interrupted (connection lost or tab backgrounded)',
+      stopReason: 'interrupted',
+    }
+  }
+  console.error('Error sending message:', error)
+  return {
+    content: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+    stopReason: 'error',
+  }
+}
+
+/** Resolve after `ms`, or immediately if `signal` aborts (so a Stop during a
+ * backoff wait doesn't have to wait out the full delay). */
+function sleep(ms: number, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve) => {
+    if (signal.aborted) return resolve()
+    const finish = () => {
+      clearTimeout(timer)
+      signal.removeEventListener('abort', finish)
+      resolve()
+    }
+    const timer = setTimeout(finish, ms)
+    signal.addEventListener('abort', finish, { once: true })
+  })
+}
+
+/** Durable polling survives connectivity failures. Authentication and ordinary
+ * request errors require user action; timeouts, rate limits, server errors, and
+ * errors without an HTTP status are safe to retry. */
+function isRetryablePollError(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null || !('status' in error)) return true
+  const status = error.status
+  return (
+    typeof status !== 'number' ||
+    status === 408 ||
+    status === 409 ||
+    status === 425 ||
+    status === 429 ||
+    status >= 500
+  )
+}
 
 // --- App init state (checked by the page component to gate rendering) ---
 
@@ -35,16 +108,21 @@ export class ChatManager {
   webSearch = $state(true)
   reasoning = $state(false)
 
-  // Per-chat in-flight requests so switching chats doesn't block, cancel, or
-  // mis-attribute replies.
+  // Per-chat live poll loops so switching chats doesn't block, cancel, or
+  // mis-attribute replies. Holds the AbortController for cancel/stop; the
+  // durable source of truth for "is loading" is the persisted chat.pending.
   private pendingRequests = new SvelteMap<number, AbortController>()
 
+  // A chat is loading if a job is persisted (survives reload) or a live request
+  // is mid-submit before its pending field is written. The map keeps the
+  // placeholder instant on send; chat.pending keeps it across reloads.
   get isCurrentLoading(): boolean {
-    return this.pendingRequests.has(this.current.id)
+    return this.pendingRequests.has(this.current.id) || this.current.pending != null
   }
 
   isLoading(chatId: number): boolean {
-    return this.pendingRequests.has(chatId)
+    if (this.pendingRequests.has(chatId)) return true
+    return this.history.find((c) => c.id === chatId)?.pending != null
   }
 
   /**
@@ -128,6 +206,13 @@ export class ChatManager {
    * Delete a chat by ID
    */
   async deleteChat(id: number) {
+    // Stop any in-flight poll loop for this chat first. 'replaced' makes runJob
+    // bail without committing, so it can't re-persist (resurrect) the deleted
+    // chat; also cancel the server-side job so it doesn't keep running.
+    this.pendingRequests.get(id)?.abort('replaced')
+    const pendingJob = this.history.find((c) => c.id === id)?.pending?.job
+    if (pendingJob) void this.cancelJob(pendingJob)
+
     await storage.deleteChat(id)
     this.history = this.history.filter((c) => c.id !== id)
 
@@ -160,7 +245,7 @@ export class ChatManager {
     // Save the captured chat (not this.current which may change if the user switches)
     await storage.updateChat(chat.id, chat)
 
-    await this.processResponse(chat, content.trim())
+    await this.processResponse(chat)
   }
 
   /**
@@ -176,7 +261,7 @@ export class ChatManager {
     // Truncate messages after this point
     chat.messages = chat.messages.slice(0, index + 1)
 
-    await this.processResponse(chat, targetMessage.content)
+    await this.processResponse(chat)
   }
 
   /**
@@ -223,18 +308,22 @@ export class ChatManager {
   }
 
   /**
-   * Process AI response for a given input.
-   * Operates on the specific `chat` reference so it remains correct even if
-   * the user switches to a different chat while the request is in-flight.
+   * Submit a request for `chat` and drive it to completion via the uniform
+   * submit→poll adapter. Operates on the specific `chat` reference so it stays
+   * correct even if the user switches chats while the request is in flight.
    */
-  private async processResponse(chat: Chat, input: string) {
+  private async processResponse(chat: Chat) {
     if (!this.selectedModel) return
     const chatId = chat.id
     const model = this.selectedModel
     const search = this.webSearch
+    const adapter = getAdapter(model.provider)
 
-    // Abort any prior request for this same chat
+    // Supersede any prior in-flight job for this chat: drop its poll loop and
+    // cancel the server-side job so we don't pay for an answer we'll discard.
     this.pendingRequests.get(chatId)?.abort('replaced')
+    if (chat.pending) void this.cancelJob(chat.pending.job)
+
     const controller = new AbortController()
     this.pendingRequests.set(chatId, controller)
 
@@ -243,96 +332,260 @@ export class ChatManager {
     // bottom of the user message and miss the placeholder.
     if (this.current.id === chatId) scrollToBottom()
 
-    // Prevent iOS from suspending the page while the request is in-flight
-    let wakeLock: WakeLockSentinel | null = null
+    let job: JobHandle
     try {
-      wakeLock = await navigator.wakeLock?.request('screen')
-    } catch {
-      // Wake Lock not supported or failed (e.g. low battery) — proceed without it
-    }
-
-    try {
-      const startTime = performance.now()
-
-      const response = await createMessage(model.provider, {
+      job = await adapter.start({
         chat,
-        input,
         model,
         search,
         think: this.reasoning,
         signal: controller.signal,
       })
-
-      // Ignore stale results: only the most recent request for this chat is allowed to append.
-      if (this.pendingRequests.get(chatId) !== controller) return
-
-      const timeMs = performance.now() - startTime
-      const cost = getCost(model, response.tokens, response.searches)
-
-      const assistantMessage: ChatMessage = {
-        role: 'assistant',
-        model: model.id,
-        content: response.content,
-        reasoning: response.reasoning,
-        search,
-        tokens: response.tokens,
-        stop_reason: response.stop_reason,
-        cost,
-        timeMs,
-        provider: response.provider,
-      }
-
-      chat.messages.push(assistantMessage)
-      // Don't yank the viewport if the user is viewing a different chat.
-      if (this.current.id === chatId) scrollToAnswer()
-
-      await storage.updateChat(chatId, chat)
     } catch (error) {
-      // Stale error from a replaced request — ignore silently
+      // Submit failed (bad key, network, or user stopped before it landed).
+      // No pending was written, so push the error message directly.
       if (this.pendingRequests.get(chatId) !== controller) return
-
+      this.pendingRequests.delete(chatId)
       const reason = controller.signal.reason as string | undefined
       if (reason === 'replaced') return
-
-      console.error('Error sending message:', error)
-
-      const isAbort =
-        controller.signal.aborted || (error instanceof Error && error.name === 'AbortError')
-      const wasUserStopped = reason === 'user_stopped'
-
-      let errorContent: string
-      let stopReason: string
-      if (wasUserStopped) {
-        errorContent = 'Stopped by user'
-        stopReason = 'stopped'
-      } else if (isAbort) {
-        errorContent = 'Request interrupted (connection lost or tab backgrounded)'
-        stopReason = 'interrupted'
-      } else {
-        errorContent = `Error: ${error instanceof Error ? error.message : 'Unknown error'}`
-        stopReason = 'error'
-      }
-
-      const errorMessage: ChatMessage = {
-        role: 'assistant',
-        model: model.id,
-        content: errorContent,
-        tokens: { input: 0, output: 0 },
-        stop_reason: stopReason,
-        cost: 0,
-        timeMs: 0,
-      }
-
-      chat.messages.push(errorMessage)
-      if (this.current.id === chatId) scrollToBottom()
-
+      this.pushErrorMessage(chat, model.id, classifyError(error, controller.signal, reason))
       await storage.updateChat(chatId, chat)
+      return
+    }
+
+    // Persist the handle before polling so a reload (or visibility wake) can
+    // resume this exact job instead of losing it.
+    const pending: PendingJob = {
+      job,
+      startedAt: new SvelteDate().toISOString(),
+      modelId: model.id,
+      search,
+    }
+    chat.pending = pending
+    await storage.updateChat(chatId, chat)
+
+    await this.runJob(chat, pending, controller)
+  }
+
+  /**
+   * Poll a job to completion and commit the result. Shared by live sends and by
+   * resume-on-boot/visibility, so it must reconstruct everything it needs from
+   * the persisted `pending` rather than a live closure.
+   */
+  private async runJob(chat: Chat, pending: PendingJob, existing?: AbortController) {
+    const chatId = chat.id
+    const { job } = pending
+    const adapter = getAdapter(job.provider)
+
+    // Resume paths have no live controller yet; create one so Stop still works.
+    const controller = existing ?? new AbortController()
+    if (!existing) this.pendingRequests.set(chatId, controller)
+
+    // Keep the screen awake while a non-durable request is in flight: the
+    // in-memory fetch is the only copy of the answer, so if the phone sleeps
+    // and the OS suspends the page, the turn is lost. Durable jobs don't hold
+    // the lock — they recover by re-polling after the device wakes, and that's
+    // the whole point of background mode: the screen is allowed to sleep.
+    let wakeLock: WakeLockSentinel | null = null
+    if (!job.durable) {
+      try {
+        wakeLock = await navigator.wakeLock?.request('screen')
+      } catch {
+        // Wake Lock not supported or failed (e.g. low battery) — proceed without it
+      }
+    }
+
+    let retryDelay = RETRY_START_MS
+    // Timestamp of the first of the current streak of failed polls, 0 when the
+    // last poll succeeded. Bounds retries by continuous failure time.
+    let failingSince = 0
+    try {
+      while (true) {
+        // Superseded by a newer job for this chat (regenerate/edit) — bail and
+        // let the newer loop own chat.pending.
+        if (chat.pending?.job.id !== job.id) return
+
+        if (controller.signal.aborted) {
+          const reason = controller.signal.reason as string | undefined
+          if (reason === 'replaced' || reason === 'restart') return
+          await this.cancelJob(job)
+          await this.commitError(
+            chat,
+            pending,
+            reason === 'user_stopped' ? 'stopped' : 'interrupted',
+          )
+          return
+        }
+
+        let result
+        let transientFailure = false
+        try {
+          result = await adapter.poll(job, controller.signal)
+          failingSince = 0
+        } catch (error) {
+          // Abort surfaces as a throw — loop back so the aborted branch handles it.
+          if (controller.signal.aborted) continue
+          if (job.durable && isRetryablePollError(error)) {
+            // Keep the persisted handle. A visibility or online event can
+            // restart this loop immediately; otherwise retry with backoff.
+            transientFailure = true
+            failingSince ||= Date.now()
+            result = { kind: 'pending' as const }
+          } else {
+            result = {
+              kind: 'failed' as const,
+              error: error instanceof Error ? error.message : 'Unknown error',
+            }
+          }
+        }
+
+        // An abort can land between the poll resolving and this point — e.g.
+        // the chat was deleted while the final answer was in flight. Committing
+        // here would re-persist (resurrect) the deleted chat, so loop back and
+        // let the aborted branch decide what to do.
+        if (controller.signal.aborted) continue
+
+        if (result.kind === 'final') {
+          await this.commitResponse(chat, pending, result.response)
+          return
+        }
+        if (result.kind === 'failed') {
+          await this.commitError(chat, pending, 'error', result.error)
+          return
+        }
+        if (result.kind === 'unrecoverable') {
+          await this.commitError(chat, pending, 'interrupted')
+          return
+        }
+
+        // Poll before timing out: a job that completed while the tab was
+        // closed past the deadline still lands its answer. Only give up once
+        // the poll came back pending past the deadline, or polls have been
+        // failing continuously for the give-up window.
+        const elapsed = Date.now() - Date.parse(pending.startedAt)
+        const timedOut = transientFailure
+          ? Date.now() - failingSince > POLL_FAILURE_GIVE_UP_MS
+          : elapsed > JOB_TIMEOUT_MS
+        if (timedOut) {
+          await this.cancelJob(job)
+          await this.commitError(chat, pending, 'interrupted')
+          return
+        }
+
+        // After the ease-off point, poll less frequently — the job is either
+        // long-running or we're resuming after a long absence.
+        const sleepMs = transientFailure
+          ? retryDelay
+          : elapsed > POLL_EASE_OFF_MS
+            ? POLL_EASE_OFF_INTERVAL_MS
+            : POLL_INTERVAL_MS
+        await sleep(sleepMs, controller.signal)
+        retryDelay = transientFailure ? Math.min(retryDelay * 2, RETRY_MAX_MS) : RETRY_START_MS
+      }
     } finally {
       await wakeLock?.release()
-      // Only clean up if we're still the active request for this chat
       if (this.pendingRequests.get(chatId) === controller) {
         this.pendingRequests.delete(chatId)
       }
+    }
+  }
+
+  /** Commit a successful response: build the assistant message, clear pending. */
+  private async commitResponse(
+    chat: Chat,
+    pending: PendingJob,
+    response: ModelResponse,
+  ): Promise<void> {
+    // Superseded while polling — a newer job owns this chat's turn now.
+    if (chat.pending?.job.id !== pending.job.id) return
+
+    const model = models.find((m) => m.id === pending.modelId)
+    const cost = model ? getCost(model, response.tokens, response.searches) : 0
+    const timeMs = Date.now() - Date.parse(pending.startedAt)
+
+    const assistantMessage: ChatMessage = {
+      role: 'assistant',
+      model: pending.modelId,
+      content: response.content,
+      reasoning: response.reasoning,
+      search: pending.search,
+      tokens: response.tokens,
+      stop_reason: response.stop_reason,
+      cost,
+      timeMs,
+      provider: response.provider,
+    }
+
+    chat.pending = undefined
+    chat.messages.push(assistantMessage)
+    // Don't yank the viewport if the user is viewing a different chat.
+    if (this.current.id === chat.id) scrollToAnswer()
+    await storage.updateChat(chat.id, chat)
+  }
+
+  /** Push an interrupted/stopped/error message in place of the pending job. */
+  private async commitError(
+    chat: Chat,
+    pending: PendingJob,
+    kind: 'stopped' | 'interrupted' | 'error',
+    detail?: string,
+  ): Promise<void> {
+    if (chat.pending?.job.id !== pending.job.id) return
+    const content =
+      kind === 'stopped'
+        ? 'Stopped by user'
+        : kind === 'interrupted'
+          ? 'Request interrupted (connection lost or tab backgrounded)'
+          : `Error: ${detail ?? 'Unknown error'}`
+    chat.pending = undefined
+    this.pushErrorMessage(chat, pending.modelId, { content, stopReason: kind })
+    if (this.current.id === chat.id) scrollToBottom()
+    await storage.updateChat(chat.id, chat)
+  }
+
+  private pushErrorMessage(
+    chat: Chat,
+    modelId: string,
+    e: { content: string; stopReason: string },
+  ) {
+    const errorMessage: ChatMessage = {
+      role: 'assistant',
+      model: modelId,
+      content: e.content,
+      tokens: { input: 0, output: 0 },
+      stop_reason: e.stopReason,
+      cost: 0,
+      timeMs: 0,
+    }
+    chat.messages.push(errorMessage)
+  }
+
+  /** Best-effort cancel of a server-side job; never throws. */
+  private async cancelJob(job: JobHandle): Promise<void> {
+    try {
+      await getAdapter(job.provider).cancel(job)
+    } catch {
+      // Cancel is best-effort; the job timing out server-side is acceptable.
+    }
+  }
+
+  /**
+   * Resume any persisted pending jobs that aren't already being polled. Called
+   * on boot and on visibility/online wake. Durable jobs can recover after
+   * reload; non-durable jobs resolve to `unrecoverable` after reload and become
+   * interrupted messages.
+   */
+  resumePending(restartActive = false) {
+    for (const chat of this.history) {
+      if (!chat.pending) continue
+      const active = this.pendingRequests.get(chat.id)
+      if (active && !restartActive) continue
+      // A non-durable request cannot be restarted: aborting its controller also
+      // aborts the only underlying fetch. Its existing promise will resume with
+      // the page instead.
+      if (active && !chat.pending.job.durable) continue
+      if (active) active.abort('restart')
+      void this.runJob(chat, chat.pending)
     }
   }
 
@@ -375,6 +628,19 @@ async function boot() {
 
     chatState = new ChatManager(current, history)
     _boot = { status: 'ready' }
+
+    // Resume jobs that were in flight when the page last closed, and re-check on
+    // every wake — a phone that slept mid-request lands here, re-polls the
+    // server-side job, and the answer appears without the user resending.
+    chatState.resumePending()
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') chatState.resumePending(true)
+      })
+    }
+    if (typeof window !== 'undefined') {
+      window.addEventListener('online', () => chatState.resumePending(true))
+    }
   } catch (error) {
     console.error('Failed to initialize chat storage:', error)
     _boot = {

@@ -1,48 +1,61 @@
 import Anthropic from '@anthropic-ai/sdk'
+import type { BetaMessage } from '@anthropic-ai/sdk/resources/beta/messages/messages'
 import type {
   ThinkingBlock,
   CitationsWebSearchResultLocation,
 } from '@anthropic-ai/sdk/resources/messages'
 import type { ChatInput, ModelResponse } from './index'
 import { settings } from '$lib/settings.svelte'
+import { NonDurableAdapter } from './non-durable'
 
-export async function anthropicCreateMessage({
-  chat,
-  model,
-  search,
-  think,
-  signal,
-}: ChatInput): Promise<ModelResponse> {
+// Anthropic has no server-side background mode, so it uses NonDurableAdapter to
+// fit the shared submit-then-poll driver while preserving the old reload
+// behavior: after reload, the local promise is gone and the turn is interrupted.
+
+function getClient(): Anthropic {
   const apiKey = settings.getKey('anthropic')
   if (!apiKey) throw new Error('Anthropic API key not found')
+  return new Anthropic({ apiKey, dangerouslyAllowBrowser: true })
+}
 
-  const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true })
+export class AnthropicAdapter extends NonDurableAdapter {
+  constructor() {
+    super('anthropic')
+  }
 
-  const response = await client.beta.messages.create(
-    {
-      model: model.key,
-      cache_control: { type: 'ephemeral' },
-      system: chat.systemPrompt,
-      messages: chat.messages.map((m) => ({ role: m.role, content: m.content })),
-      // SDK's non-streaming guard throws when max_tokens > ~21_333 (it assumes
-      // 128k tokens/hour and refuses requests estimated to take >10 min).
-      max_tokens: 20_000,
-      // Force display: "summarized" so reasoning is returned; Opus 4.7
-      // otherwise defaults to "omitted" and blanks the thinking text.
-      thinking: { type: 'adaptive', display: 'summarized' },
-      output_config: { effort: think ? 'high' : 'low' },
-      tools: search
-        ? [
-            { type: 'web_search_20260209', name: 'web_search', max_uses: 5 },
-            { type: 'web_fetch_20260209', name: 'web_fetch' },
-            { type: 'code_execution_20260120', name: 'code_execution' },
-          ]
-        : undefined,
-      betas: ['code-execution-web-tools-2026-02-09'],
-    },
-    { signal },
-  )
+  protected create({ chat, model, search, think, signal }: ChatInput): Promise<ModelResponse> {
+    const client = getClient()
 
+    return client.beta.messages
+      .create(
+        {
+          model: model.key,
+          cache_control: { type: 'ephemeral' },
+          system: chat.systemPrompt,
+          messages: chat.messages.map((m) => ({ role: m.role, content: m.content })),
+          // SDK's non-streaming guard throws when max_tokens > ~21_333 (it assumes
+          // 128k tokens/hour and refuses requests estimated to take >10 min).
+          max_tokens: 20_000,
+          // Force display: "summarized" so reasoning is returned; Opus 4.7
+          // otherwise defaults to "omitted" and blanks the thinking text.
+          thinking: { type: 'adaptive', display: 'summarized' },
+          output_config: { effort: think ? 'high' : 'low' },
+          tools: search
+            ? [
+                { type: 'web_search_20260209', name: 'web_search', max_uses: 5 },
+                { type: 'web_fetch_20260209', name: 'web_fetch' },
+                { type: 'code_execution_20260120', name: 'code_execution' },
+              ]
+            : undefined,
+          betas: ['code-execution-web-tools-2026-02-09'],
+        },
+        { signal },
+      )
+      .then(parseResponse)
+  }
+}
+
+function parseResponse(response: BetaMessage): ModelResponse {
   const content = response.content
     .map((block): string | null => {
       if (block.type === 'text') {

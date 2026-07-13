@@ -40,6 +40,12 @@ test('Google happy path with reasoning', async ({ page }) => {
     text: 'Hello from Gemini.',
     reasoning: 'Pondering the greeting.',
   })
+  let createHeaders: Record<string, string> | undefined
+  page.on('request', (request) => {
+    if (request.method() === 'POST' && request.url().endsWith('/interactions')) {
+      createHeaders = request.headers()
+    }
+  })
 
   await setKeysThroughSettings(page, { google: 'gm-test' })
   await send(page, 'Hi')
@@ -47,6 +53,9 @@ test('Google happy path with reasoning', async ({ page }) => {
   await expect(assistantMessages(page)).toContainText('Hello from Gemini.')
   await expectReasoning(page, 'Pondering the greeting.')
   expect(google.calls()).toBe(1)
+  // @google/genai 2.11 removed this header because it failed browser CORS
+  // preflights: https://github.com/googleapis/js-genai/issues/1723
+  expect(createHeaders).not.toHaveProperty('api-revision')
 })
 
 test('error path: failed request shows error and disables input', async ({ page }) => {

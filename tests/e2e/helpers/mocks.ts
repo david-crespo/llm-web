@@ -1,9 +1,10 @@
 import type { Page, Route } from '@playwright/test'
 
 // Mock LLM provider APIs at the network boundary. The real SDK + adapter code
-// runs; only the provider servers are faked. Each mock is written to respond to
-// *whatever the app requests* (sync today, background+poll after the async
-// refactor) so the test bodies don't change when the adapters change.
+// runs; only the provider servers are faked. OpenAI and Google submit a
+// background job then poll by id; Anthropic is a single synchronous request the
+// adapter wraps in a local promise. `complete()` releases the response (flips
+// the poll to completed); `fail()` makes it error.
 
 // --- shared gate: a test-controlled deferred the route handler awaits ---
 
@@ -76,6 +77,17 @@ export type ProviderMock = {
   bodies: () => Body[]
 }
 
+export type BackgroundProviderMock = ProviderMock & {
+  /** Complete only the job created from this user input. */
+  completeRequest: (userText: string) => void
+  /** Fail the next N poll HTTP requests, then resume normal responses. */
+  failNextPolls: (count: number, status?: number) => void
+  /** Make polls fail after the next main-frame navigation, but not before it. */
+  failAfterNavigation: (status?: number) => void
+  polls: () => number
+  cancels: () => number
+}
+
 export type MockOpts = {
   /** Assistant text to return. */
   text?: string
@@ -97,6 +109,24 @@ function lastText(items: unknown[] | undefined, getText: (item: LooseMsg) => str
   for (let i = items.length - 1; i >= 0; i--) {
     const item = items[i] as LooseMsg
     if (item.role === 'user') return getText(item)
+  }
+  return ''
+}
+
+function lastInteractionInputText(items: unknown[]): string {
+  for (let i = items.length - 1; i >= 0; i--) {
+    const step = items[i] as { type?: string; content?: unknown }
+    if (step.type !== 'user_input' || !Array.isArray(step.content)) continue
+    const text = step.content.find(
+      (content): content is { type: 'text'; text: string } =>
+        typeof content === 'object' &&
+        content !== null &&
+        'type' in content &&
+        content.type === 'text' &&
+        'text' in content &&
+        typeof content.text === 'string',
+    )
+    if (text) return text.text
   }
   return ''
 }
@@ -130,7 +160,7 @@ function openaiResponse(text: string, status = 'completed', id = 'resp_test_open
   }
 }
 
-export async function mockOpenAI(page: Page, opts: MockOpts = {}): Promise<ProviderMock> {
+export async function mockOpenAI(page: Page, opts: MockOpts = {}): Promise<BackgroundProviderMock> {
   const gate = makeGate()
   if (opts.auto) gate.open()
   const fallback = opts.text ?? 'Hello from GPT-5.6.'
@@ -138,10 +168,23 @@ export async function mockOpenAI(page: Page, opts: MockOpts = {}): Promise<Provi
   // clobber each other (the create body has the user message; the GET poll
   // doesn't, so it looks the text up by id).
   const textById = new Map<string, string>()
+  const idByUserText = new Map<string, string>()
+  const completedIds = new Set<string>()
   let idCounter = 0
   let failStatus: number | null = null
+  let failAfterNavigationStatus: number | null = null
+  let transientFailStatus = 503
+  let transientFailuresRemaining = 0
   let calls = 0
+  let polls = 0
+  let cancels = 0
   const bodies: Body[] = []
+
+  page.on('framenavigated', (frame) => {
+    if (frame !== page.mainFrame() || failAfterNavigationStatus === null) return
+    failStatus = failAfterNavigationStatus
+    failAfterNavigationStatus = null
+  })
 
   await page.route('https://api.openai.com/**', async (route) => {
     if (await fulfillPreflight(route)) return
@@ -154,12 +197,14 @@ export async function mockOpenAI(page: Page, opts: MockOpts = {}): Promise<Provi
       const body = (req.postDataJSON() ?? {}) as Body
       bodies.push(body)
       const id = `resp_test_openai_${++idCounter}`
-      const text = opts.reply
-        ? opts.reply(lastText(body.input as unknown[], (m) => m.content ?? ''))
-        : fallback
+      const userText = lastText(body.input as unknown[], (m) => m.content ?? '')
+      const text = opts.reply ? opts.reply(userText) : fallback
       textById.set(id, text)
+      idByUserText.set(userText, id)
       if (body.background) {
-        return fulfillJSON(route, 200, { id, object: 'response', status: 'queued' })
+        // Background submit returns immediately, queued. Must be a full Response
+        // shape (with output: []) — the SDK materializes output_text from it.
+        return fulfillJSON(route, 200, openaiResponse('', 'queued', id))
       }
       await gate.ready
       return failStatus
@@ -167,15 +212,31 @@ export async function mockOpenAI(page: Page, opts: MockOpts = {}): Promise<Provi
         : fulfillJSON(route, 200, openaiResponse(text, 'completed', id))
     }
 
+    // cancel (background stop): .../v1/responses/{id}/cancel
+    if (pathname.endsWith('/cancel') && req.method() === 'POST') {
+      cancels++
+      const id = pathname.split('/').slice(-2)[0]
+      return fulfillJSON(route, 200, openaiResponse('', 'cancelled', id))
+    }
+
     // poll (async mode only)
     if (pathname.startsWith('/v1/responses/') && req.method() === 'GET') {
+      polls++
+      if (transientFailuresRemaining > 0) {
+        transientFailuresRemaining--
+        return fulfillJSON(route, transientFailStatus, errorBody('Temporary provider failure'))
+      }
       if (failStatus) return fulfillJSON(route, failStatus, errorBody('Invalid API key'))
       const id = pathname.split('/').pop()!
       const text = textById.get(id) ?? fallback
       return fulfillJSON(
         route,
         200,
-        openaiResponse(text, gate.settled() ? 'completed' : 'in_progress', id),
+        openaiResponse(
+          text,
+          gate.settled() || completedIds.has(id) ? 'completed' : 'in_progress',
+          id,
+        ),
       )
     }
 
@@ -184,10 +245,24 @@ export async function mockOpenAI(page: Page, opts: MockOpts = {}): Promise<Provi
 
   return {
     complete: gate.open,
+    completeRequest: (userText) => {
+      const id = idByUserText.get(userText)
+      if (!id) throw new Error(`OpenAI mock: no request found for ${JSON.stringify(userText)}`)
+      completedIds.add(id)
+    },
     fail: (status = 401) => {
       failStatus = status
       gate.open()
     },
+    failNextPolls: (count, status = 503) => {
+      transientFailuresRemaining = count
+      transientFailStatus = status
+    },
+    failAfterNavigation: (status = 404) => {
+      failAfterNavigationStatus = status
+    },
+    polls: () => polls,
+    cancels: () => cancels,
     calls: () => calls,
     bodies: () => bodies.slice(),
   }
@@ -249,63 +324,121 @@ export async function mockAnthropic(page: Page, opts: MockOpts = {}): Promise<Pr
   }
 }
 
-// --- Google Gemini API ---
+// --- Google Gemini Interactions API (background submit + poll by id) ---
 
-function geminiResponse(text: string, reasoning?: string) {
-  const parts: unknown[] = []
-  if (reasoning) parts.push({ text: reasoning, thought: true })
-  parts.push({ text })
+function geminiInteraction(text: string, status: string, id: string, reasoning?: string) {
+  const steps: unknown[] = []
+  if (status === 'completed') {
+    if (reasoning) steps.push({ type: 'thought', summary: [{ type: 'text', text: reasoning }] })
+    steps.push({ type: 'model_output', content: [{ type: 'text', text }] })
+  }
   return {
-    candidates: [{ content: { parts, role: 'model' }, finishReason: 'STOP', index: 0 }],
-    usageMetadata: {
-      promptTokenCount: 12,
-      candidatesTokenCount: 8,
-      thoughtsTokenCount: reasoning ? 4 : 0,
-      cachedContentTokenCount: 0,
-      totalTokenCount: 24,
-    },
+    id,
+    object: 'interaction',
+    status,
+    steps,
+    usage: { total_input_tokens: 12, total_output_tokens: 8, total_cached_tokens: 0 },
   }
 }
 
-export async function mockGoogle(page: Page, opts: MockOpts = {}): Promise<ProviderMock> {
+export async function mockGoogle(page: Page, opts: MockOpts = {}): Promise<BackgroundProviderMock> {
   const gate = makeGate()
   if (opts.auto) gate.open()
   const fallback = opts.text ?? 'Hello from Gemini.'
+  const textById = new Map<string, string>()
+  const idByUserText = new Map<string, string>()
+  const completedIds = new Set<string>()
+  let idCounter = 0
   let failStatus: number | null = null
+  let failAfterNavigationStatus: number | null = null
+  let transientFailStatus = 503
+  let transientFailuresRemaining = 0
   let calls = 0
+  let polls = 0
+  let cancels = 0
   const bodies: Body[] = []
+
+  page.on('framenavigated', (frame) => {
+    if (frame !== page.mainFrame() || failAfterNavigationStatus === null) return
+    failStatus = failAfterNavigationStatus
+    failAfterNavigationStatus = null
+  })
 
   await page.route('https://generativelanguage.googleapis.com/**', async (route) => {
     if (await fulfillPreflight(route)) return
     const req = route.request()
     const { pathname } = new URL(req.url())
-    // today: .../models/{model}:generateContent ; after: .../interactions
-    const isCreate =
-      req.method() === 'POST' &&
-      (pathname.includes(':generateContent') || pathname.endsWith('/interactions'))
-    if (isCreate) {
+
+    if (pathname.endsWith('/interactions') && req.method() === 'POST') {
       calls++
       const body = (req.postDataJSON() ?? {}) as Body
       bodies.push(body)
-      const text = opts.reply
-        ? opts.reply(lastText(body.contents as unknown[], (c) => c.parts?.[0]?.text ?? ''))
-        : fallback
-      await gate.ready
-      return failStatus
-        ? fulfillJSON(route, failStatus, {
-            error: { code: failStatus, message: 'Invalid API key', status: 'UNAUTHENTICATED' },
-          })
-        : fulfillJSON(route, 200, geminiResponse(text, opts.reasoning))
+      const id = `interaction_test_${++idCounter}`
+      const input = body.input
+      if (Array.isArray(input) && input.some((item) => item.role != null)) {
+        return fulfillJSON(route, 400, {
+          error: {
+            code: 400,
+            message:
+              'When using the steps-based API version, use step_list input format instead of turn_list.',
+            status: 'INVALID_ARGUMENT',
+          },
+        })
+      }
+      const userText = Array.isArray(input) ? lastInteractionInputText(input) : String(input ?? '')
+      textById.set(id, opts.reply ? opts.reply(userText) : fallback)
+      idByUserText.set(userText, id)
+      return fulfillJSON(route, 200, geminiInteraction('', 'in_progress', id))
     }
+
+    if (pathname.endsWith('/cancel') && req.method() === 'POST') {
+      cancels++
+      const id = pathname.split('/').slice(-2)[0]
+      return fulfillJSON(route, 200, geminiInteraction('', 'cancelled', id))
+    }
+
+    if (pathname.includes('/interactions/') && req.method() === 'GET') {
+      polls++
+      if (transientFailuresRemaining > 0) {
+        transientFailuresRemaining--
+        return fulfillJSON(route, transientFailStatus, {
+          error: { code: transientFailStatus, message: 'Temporary provider failure' },
+        })
+      }
+      if (failStatus) {
+        return fulfillJSON(route, failStatus, {
+          error: { code: failStatus, message: 'Invalid API key', status: 'UNAUTHENTICATED' },
+        })
+      }
+      const id = pathname.split('/').pop()!
+      const text = textById.get(id) ?? fallback
+      const status = gate.settled() || completedIds.has(id) ? 'completed' : 'in_progress'
+      return fulfillJSON(route, 200, geminiInteraction(text, status, id, opts.reasoning))
+    }
+
     return fulfillUnexpectedRequest(route, 'Google')
   })
 
   return {
     complete: gate.open,
+    completeRequest: (userText) => {
+      const id = idByUserText.get(userText)
+      if (!id) throw new Error(`Google mock: no request found for ${JSON.stringify(userText)}`)
+      completedIds.add(id)
+    },
     fail: (status = 401) => {
       failStatus = status
       gate.open()
     },
+    failNextPolls: (count, status = 503) => {
+      transientFailuresRemaining = count
+      transientFailStatus = status
+    },
+    failAfterNavigation: (status = 404) => {
+      failAfterNavigationStatus = status
+    },
+    polls: () => polls,
+    cancels: () => cancels,
     calls: () => calls,
     bodies: () => bodies.slice(),
   }

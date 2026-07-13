@@ -35,7 +35,7 @@ test('Search and Think toggles affect the next request', async ({ page }) => {
 })
 
 test('Stop cancels an in-flight response and gates the input', async ({ page }) => {
-  await mockOpenAI(page)
+  const openai = await mockOpenAI(page)
   await setKeysThroughSettings(page, { openai: 'sk-test' })
 
   await send(page, 'stop this')
@@ -48,4 +48,5 @@ test('Stop cancels an in-flight response and gates the input', async ({ page }) 
   await expect(page.getByText('Stop: stopped')).toBeVisible()
   await expect(page.getByPlaceholder('Regen or fork to continue after error')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Send' })).toBeDisabled()
+  await expect.poll(openai.cancels).toBe(1)
 })
