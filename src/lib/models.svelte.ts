@@ -81,7 +81,6 @@ export function getAvailableModels(): Model[] {
   return models.filter((model) => !!settings.getKey(model.provider))
 }
 
-/* eslint-disable svelte/prefer-svelte-reactivity -- static date string for system prompt */
 export const systemBase = `
 - Answer questions precisely, without much elaboration
 - Write natural, clear prose for a sophisticated reader, without unnecessary
@@ -94,4 +93,3 @@ export const systemBase = `
 - For inline math, use \\(...\\), not $...$. For block math, $$...$$ or \\[...\\]. \\(...\\) is parsed as math anywhere it appears, so don't write \\( or \\) in prose; for a literal "\\(" use a code span.
 - Don't wrap dollar amounts in math just to display them — write "$300", "$300-$500", "~$300" plainly. (Inside an actual equation, \\$ is fine.)
 - Today's date is ${new Date().toISOString().slice(0, 10)}`
-/* eslint-enable svelte/prefer-svelte-reactivity */

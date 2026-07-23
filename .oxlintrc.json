@@ -1,0 +1,19 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["eslint", "typescript", "unicorn", "oxc", "import", "promise", "vitest"],
+  "categories": {
+    "correctness": "error"
+  },
+  "options": {
+    "denyWarnings": true,
+    "reportUnusedDisableDirectives": "error",
+    "typeAware": true
+  },
+  "rules": {
+    "typescript/no-base-to-string": "off",
+    "typescript/no-floating-promises": "error",
+    "typescript/no-misused-promises": "error",
+    "typescript/no-unnecessary-type-assertion": "error",
+    "unicorn/no-empty-file": "off"
+  }
+}

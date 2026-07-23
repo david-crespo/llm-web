@@ -97,7 +97,6 @@
 </script>
 
 <div class="prose max-w-none {className}">
-  <!-- eslint-disable-next-line svelte/no-at-html-tags -->
   {@html html}
 </div>
 

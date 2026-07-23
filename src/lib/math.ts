@@ -43,7 +43,7 @@ export function renderMath(text: string): string {
   )
 
   // Restore code blocks
-  // eslint-disable-next-line no-control-regex
+  // oxlint-disable-next-line no-control-regex
   text = text.replace(/\x00CODE(\d+)\x00/g, (_, i) => codeBlocks[parseInt(i)])
   return text
 }
