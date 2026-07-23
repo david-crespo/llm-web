@@ -5,8 +5,8 @@
   import AboutModal from '$lib/components/AboutModal.svelte'
   import ConfirmDialog from '$lib/components/ConfirmDialog.svelte'
   import { initTheme } from '$lib/theme.svelte'
-  import { bootState, chatState } from '$lib/chat.svelte'
-  import { tick } from 'svelte'
+  import { bootComplete, bootState, chatState, loadStoredHistory } from '$lib/chat.svelte'
+  import { onMount, tick } from 'svelte'
 
   // Local UI state (not managed by ChatManager)
   let message = $state('')
@@ -51,6 +51,14 @@
 
   // Initialize theme on mount
   initTheme()
+
+  onMount(() => {
+    void (async () => {
+      await bootComplete
+      await tick()
+      await loadStoredHistory()
+    })()
+  })
 </script>
 
 {#if bootState.current.status === 'error'}

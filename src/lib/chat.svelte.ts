@@ -1,5 +1,6 @@
 import { SvelteDate, SvelteMap } from 'svelte/reactivity'
 import { storage } from '$lib/storage'
+import { mergeHistory } from '$lib/history'
 import { models, getCost, systemBase, getAvailableModels, type Model } from '$lib/models.svelte'
 import { getAdapter, type ModelResponse } from '$lib/adapters'
 import { scrollToBottom, scrollToAnswer } from '$lib/actions/autoScroll'
@@ -178,6 +179,15 @@ export class ChatManager {
     this.history.unshift({ ...newChat, id })
     this.current = this.history[0]
     this.sidebarOpen = false
+  }
+
+  /** Merge the asynchronous IndexedDB snapshot without overwriting chats that
+   * changed in memory while it was loading. */
+  loadHistory(stored: Chat[]) {
+    const currentId = this.current.id
+    this.history = mergeHistory(this.history, stored)
+    const currentIndex = this.history.findIndex((chat) => chat.id === currentId)
+    if (currentIndex >= 0) this.current = this.history[currentIndex]
   }
 
   /**
@@ -607,32 +617,55 @@ export class ChatManager {
 
 // --- Boot ---
 
-async function boot() {
+export async function loadStoredHistory() {
+  // If boot failed there's no chatState to merge into (and the error screen is
+  // already up) — don't clobber its message with a TypeError from below.
+  if (_boot.status !== 'ready') return
   try {
-    await storage.init()
-    const history = await storage.getAllChats()
-
-    let current: Chat
-    if (history.length > 0 && history[0].messages.length === 0) {
-      current = history[0]
-    } else {
-      const newChat: NewChat = {
-        createdAt: new SvelteDate(),
-        systemPrompt: systemBase,
-        messages: [],
-      }
-      const id = await storage.createChat(newChat)
-      current = { ...newChat, id }
-      history.unshift(current)
-    }
-
-    chatState = new ChatManager(current, history)
-    _boot = { status: 'ready' }
+    const stored = await storage.getAllChats()
+    const localIds = new Set(chatState.history.map((chat) => chat.id))
+    const obsoleteEmptyChats = stored.filter(
+      (chat) => !localIds.has(chat.id) && chat.messages.length === 0 && !chat.pending,
+    )
+    const history = stored.filter(
+      (chat) => localIds.has(chat.id) || chat.messages.length > 0 || chat.pending,
+    )
+    chatState.loadHistory(history)
 
     // Resume jobs that were in flight when the page last closed, and re-check on
     // every wake — a phone that slept mid-request lands here, re-polls the
     // server-side job, and the answer appears without the user resending.
     chatState.resumePending()
+
+    // Each page load intentionally starts a fresh chat. Remove superseded empty
+    // records after rendering so repeated reloads do not fill history with them.
+    void Promise.allSettled(obsoleteEmptyChats.map((chat) => storage.deleteChat(chat.id)))
+  } catch (error) {
+    // Silently showing an empty history would look like data loss, so treat a
+    // failed read the same as a failed init: replace the app with the error
+    // screen rather than letting the user keep typing into a broken session.
+    console.error('Failed to load chat history:', error)
+    _boot = {
+      status: 'error',
+      error: error instanceof Error ? error.message : 'Failed to load chat history',
+    }
+  }
+}
+
+async function boot() {
+  try {
+    await storage.init()
+    const newChat: NewChat = {
+      createdAt: new SvelteDate(),
+      systemPrompt: systemBase,
+      messages: [],
+    }
+    const id = await storage.createChat(newChat)
+    const current = { ...newChat, id }
+
+    chatState = new ChatManager(current, [current])
+    _boot = { status: 'ready' }
+
     if (typeof document !== 'undefined') {
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') chatState.resumePending(true)
@@ -650,4 +683,4 @@ async function boot() {
   }
 }
 
-void boot()
+export const bootComplete = boot()
