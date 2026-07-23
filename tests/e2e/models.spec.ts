@@ -29,7 +29,7 @@ test('all keys: every model is listed in order', async ({ page }) => {
 
   await expect(modelOptions(page)).toHaveText([
     'GPT-5.6',
-    'Gemini 3.5 Flash',
+    'Gemini 3.6 Flash',
     'Claude Opus 4.8',
     'Claude Fable 5',
   ])
