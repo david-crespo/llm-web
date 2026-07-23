@@ -18,7 +18,7 @@
   "devDependencies": {
     "@playwright/test": "^1.61.0",
     "@sveltejs/adapter-static": "^3.0.10",
-    "@sveltejs/kit": "^2.57.1",
+    "@sveltejs/kit": "^2.70.1",
     "@sveltejs/vite-plugin-svelte": "^7.0.0",
     "@tailwindcss/forms": "^0.5.11",
     "@tailwindcss/vite": "^4.2.2",
@@ -35,16 +35,16 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.111.0",
-    "@google/genai": "^2.11.0",
-    "bits-ui": "^2.18.0",
-    "dompurify": "^3.4.0",
+    "@google/genai": "^2.13.0",
+    "bits-ui": "^2.18.1",
+    "dompurify": "^3.4.12",
     "highlight.js": "^11.11.1",
-    "marked": "^18.0.2",
+    "marked": "^18.0.7",
     "marked-highlight": "^2.2.4",
     "openai": "^6.46.0",
-    "temml": "^0.13.2"
+    "temml": "^0.13.3"
   },
   "patchedDependencies": {
-    "temml@0.13.2": "patches/temml@0.13.2.patch"
+    "temml@0.13.3": "patches/temml@0.13.3.patch"
   }
 }

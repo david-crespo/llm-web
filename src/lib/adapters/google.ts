@@ -69,6 +69,7 @@ export class GoogleAdapter implements Adapter {
     }
 
     switch (interaction.status) {
+      case 'queued':
       case 'in_progress':
         return { kind: 'pending' }
       case 'requires_action':

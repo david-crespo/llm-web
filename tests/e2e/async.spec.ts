@@ -130,6 +130,16 @@ test('Google background job survives a reload and lands its answer', async ({ pa
   await expect(responseLoadingIndicator(chatRow(page, 'persist with Gemini'))).toHaveCount(0)
 })
 
+test('Google background job remains pending while queued', async ({ page }) => {
+  const google = await mockGoogle(page, { auto: true, queuedPolls: 1 })
+
+  await setKeysThroughSettings(page, { google: 'gm-test' })
+  await send(page, 'wait in queue')
+
+  await expect(assistantMessages(page)).toContainText('Hello from Gemini.')
+  expect(google.polls()).toBeGreaterThanOrEqual(2)
+})
+
 test('OpenAI background job missing on resume becomes interrupted', async ({ page }) => {
   const openai = await mockOpenAI(page, { reply: (u) => `Reply: ${u}` })
 

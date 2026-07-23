@@ -97,6 +97,8 @@ export type MockOpts = {
   reply?: (userText: string) => string
   /** Reasoning text to include (Anthropic/Google). */
   reasoning?: string
+  /** Number of queued statuses returned before normal Google polling. */
+  queuedPolls?: number
 }
 
 type Body = Record<string, unknown>
@@ -353,6 +355,7 @@ export async function mockGoogle(page: Page, opts: MockOpts = {}): Promise<Backg
   let failAfterNavigationStatus: number | null = null
   let transientFailStatus = 503
   let transientFailuresRemaining = 0
+  let queuedPollsRemaining = opts.queuedPolls ?? 0
   let calls = 0
   let polls = 0
   let cancels = 0
@@ -412,6 +415,10 @@ export async function mockGoogle(page: Page, opts: MockOpts = {}): Promise<Backg
       }
       const id = pathname.split('/').pop()!
       const text = textById.get(id) ?? fallback
+      if (queuedPollsRemaining > 0) {
+        queuedPollsRemaining--
+        return fulfillJSON(route, 200, geminiInteraction('', 'queued', id))
+      }
       const status = gate.settled() || completedIds.has(id) ? 'completed' : 'in_progress'
       return fulfillJSON(route, 200, geminiInteraction(text, status, id, opts.reasoning))
     }
