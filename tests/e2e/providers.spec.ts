@@ -20,7 +20,7 @@ test('Anthropic happy path with reasoning', async ({ page }) => {
   const google = await mockGoogle(page)
 
   await setKeysThroughSettings(page, { openai: 'a', anthropic: 'b', google: 'c' })
-  await selectModel(page, 'Claude Opus 4.8')
+  await selectModel(page, 'Claude Opus')
   await send(page, 'Hi')
   await expect(loadingPlaceholder(page)).toBeVisible()
 

@@ -5,7 +5,8 @@ import {
   send,
   newChat,
   selectChat,
-  selectModel,
+  selectedModel,
+  selectOtherModel,
   openSidebar,
   chatRow,
   messageInput,
@@ -73,14 +74,13 @@ test('pending placeholder keeps the submitted model label', async ({ page }) => 
   await mockOpenAI(page)
 
   await setKeysThroughSettings(page, { openai: 'sk-test', anthropic: 'sk-ant-test' })
-  const modelSelect = page.getByLabel('Select model')
-  const submittedModel = (await modelSelect.locator('option:checked').textContent())!
+  const submittedModel = await selectedModel(page)
   await send(page, 'label me')
   await expect(loadingPlaceholder(page)).toContainText(submittedModel)
 
-  await selectModel(page, 'Claude Opus 4.8')
+  const otherModel = await selectOtherModel(page)
   await expect(loadingPlaceholder(page)).toContainText(submittedModel)
-  await expect(loadingPlaceholder(page)).not.toContainText('Claude Opus 4.8')
+  await expect(loadingPlaceholder(page)).not.toContainText(otherModel)
 })
 
 test('OpenAI background job survives a reload and lands its answer', async ({ page }) => {

@@ -28,8 +28,34 @@ export async function send(page: Page, text: string): Promise<void> {
   await page.getByRole('button', { name: 'Send' }).click()
 }
 
-export async function selectModel(page: Page, id: string): Promise<void> {
-  await page.getByLabel('Select model').selectOption({ label: id })
+export function modelSelect(page: Page): Locator {
+  return page.getByLabel('Select model')
+}
+
+export function selectedModel(page: Page): Promise<string> {
+  return modelSelect(page).locator('option:checked').innerText()
+}
+
+/** Select the first model whose label contains `text`, so specs can name a
+ * model family ("Claude Opus") without pinning the version. Exact labels and
+ * their order are asserted in models.spec.ts; nothing else should hardcode
+ * them. */
+export async function selectModel(page: Page, text: string): Promise<void> {
+  const select = modelSelect(page)
+  const label = await select.locator('option', { hasText: text }).first().innerText()
+  await select.selectOption({ label })
+}
+
+/** Select any model other than the one currently selected, and return its
+ * label. Used where the point is that the model changed, not which one. */
+export async function selectOtherModel(page: Page): Promise<string> {
+  const select = modelSelect(page)
+  const current = await selectedModel(page)
+  const labels = await select.locator('option').allInnerTexts()
+  const label = labels.find((l) => l !== current)
+  if (!label) throw new Error(`only one model available: ${current}`)
+  await select.selectOption({ label })
+  return label
 }
 
 /** Wait until the submitted turn, including its provider handle, has committed

@@ -21,16 +21,16 @@ test('anthropic key: shows both Claude models and nothing else', async ({ page }
   // the keyed provider's models are offered (no OpenAI/Gemini leakage).
   await expect(page.getByText(noKeysMessage)).toHaveCount(0)
   await expect(page.getByLabel('Select model')).toBeEnabled()
-  await expect(modelOptions(page)).toHaveText(['Claude Opus 4.8', 'Claude Fable 5'])
+  await expect(modelOptions(page)).toHaveText(['Claude Opus 5', 'Claude Fable 5'])
 })
 
 test('all keys: every model is listed in order', async ({ page }) => {
   await setKeysThroughSettings(page, { openai: 'a', anthropic: 'b', google: 'c' })
 
   await expect(modelOptions(page)).toHaveText([
+    'Claude Opus 5',
+    'Claude Fable 5',
     'GPT-5.6',
     'Gemini 3.6 Flash',
-    'Claude Opus 4.8',
-    'Claude Fable 5',
   ])
 })

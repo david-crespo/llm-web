@@ -280,7 +280,7 @@ function anthropicResponse(text: string, reasoning?: string) {
     id: 'msg_test_anthropic',
     type: 'message',
     role: 'assistant',
-    model: 'claude-opus-4-8',
+    model: 'claude-opus-5',
     content,
     stop_reason: 'end_turn',
     stop_sequence: null,
