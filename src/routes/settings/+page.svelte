@@ -8,7 +8,10 @@
   let storageUsage = $state<{ used: string; quota: string } | null>(null)
 
   onMount(() => {
-    void navigator.storage.estimate().then((estimate) => {
+    // Not every browser has the Storage API — notably the Linux WebKit build
+    // Playwright runs in CI — and throwing here would take the whole app down
+    // through the boundary in +layout.svelte. Without it, usage is just hidden.
+    void navigator.storage?.estimate().then((estimate) => {
       const used = estimate.usage ?? 0
       const quota = estimate.quota ?? 0
       storageUsage = {
