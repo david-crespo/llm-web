@@ -44,7 +44,7 @@
 </script>
 
 <div
-  class="space-y-3 rounded border border-danger bg-surface-elevated p-4 text-left"
+  class="space-y-3 rounded border border-danger bg-surface-danger p-4 text-left"
   role="alert"
 >
   <h2 class="font-medium text-danger">Something broke</h2>

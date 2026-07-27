@@ -46,6 +46,7 @@
 
   /* Danger/error */
   --color-danger: oklch(55% 0.22 25);
+  --color-surface-danger: oklch(97% 0.025 25);
 }
 
 @layer theme {
@@ -83,6 +84,7 @@
     --color-btn-disabled: oklch(42% 0.015 260);
 
     --color-danger: oklch(68% 0.18 25);
+    --color-surface-danger: oklch(20% 0.035 25);
   }
 }
 
