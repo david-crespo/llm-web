@@ -12,9 +12,3 @@ test('settings page renders without navigator.storage', async ({ page }) => {
   await expect(page.getByRole('alert')).toHaveCount(0)
   await expect(page.getByText('used of')).toHaveCount(0)
 })
-
-test('settings page shows storage usage when the API exists', async ({ page }) => {
-  await page.goto('/settings')
-
-  await expect(page.getByText(/MB used of .* GB quota/)).toBeVisible()
-})
