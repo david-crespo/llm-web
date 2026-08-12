@@ -20,8 +20,10 @@ export class OpenAIAdapter implements Adapter {
     const client = getClient()
 
     // If the most recent assistant turn was an OpenAI Responses call we have its
-    // response.id — chain via previous_response_id so encrypted reasoning items
-    // carry over and we only need to send the new user message.
+    // response.id — chain via previous_response_id so the reasoning from that
+    // turn carries over and we only need to send the new user message. Whether
+    // it carries over is set by reasoning.context, which we leave unset: that
+    // means 'auto', which gpt-5.6 resolves to 'all_turns'.
     // https://developers.openai.com/api/docs/guides/conversation-state
     const lastAssistant = chat.messages.filter((m) => m.role === 'assistant').at(-1)
     const previous_response_id =
