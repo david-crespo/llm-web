@@ -1,4 +1,9 @@
-export type ErrorSource = 'render' | 'window' | 'unhandledrejection' | 'navigation'
+export type ErrorSource =
+  | 'render'
+  | 'window'
+  | 'unhandledrejection'
+  | 'navigation'
+  | 'abnormal-exit'
 
 export type ReportedError = {
   message: string

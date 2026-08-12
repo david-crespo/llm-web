@@ -4,6 +4,7 @@ import { mergeHistory } from '$lib/history'
 import { models, getCost, systemBase, getAvailableModels, type Model } from '$lib/models.svelte'
 import { getAdapter, type ModelResponse } from '$lib/adapters'
 import { scrollToBottom, scrollToAnswer } from '$lib/actions/autoScroll'
+import { recordDiagnosticEvent } from '$lib/crash-diagnostics'
 import type { Chat, NewChat, ChatMessage, JobHandle, PendingJob } from '$lib/types'
 
 // Poll frequently while the answer is likely to finish soon. Provider polling
@@ -26,6 +27,20 @@ const JOB_TIMEOUT_MS = 30 * 60 * 1000
 // Measured from the first failure in the current run, not job submission, so
 // a job resumed hours after submit still gets a full recovery window.
 const POLL_FAILURE_GIVE_UP_MS = 60 * 60 * 1000
+
+function chatDiagnostic(chat: Chat) {
+  return {
+    messages: chat.messages.length,
+    chars: chat.messages.reduce(
+      (sum, message) =>
+        sum +
+        message.content.length +
+        (message.role === 'assistant' ? (message.reasoning?.length ?? 0) : 0),
+      0,
+    ),
+    pending: chat.pending != null,
+  }
+}
 
 /** Turn a thrown submit error / abort into the message to show. */
 function classifyError(
@@ -197,8 +212,31 @@ export class ChatManager {
     const chat = this.history.find((c) => c.id === id)
     if (!chat) return
 
+    const from = this.current
+    const fromDiagnostic = chatDiagnostic(from)
+    const toDiagnostic = chatDiagnostic(chat)
+    recordDiagnosticEvent('chat-select-start', {
+      fromChatId: from.id,
+      toChatId: chat.id,
+      fromMessages: fromDiagnostic.messages,
+      fromChars: fromDiagnostic.chars,
+      fromPending: fromDiagnostic.pending,
+      toMessages: toDiagnostic.messages,
+      toChars: toDiagnostic.chars,
+      toPending: toDiagnostic.pending,
+    })
+
     this.current = chat
     this.sidebarOpen = false
+
+    requestAnimationFrame(() => {
+      recordDiagnosticEvent('chat-select-rendered', {
+        chatId: chat.id,
+        messages: toDiagnostic.messages,
+        chars: toDiagnostic.chars,
+        pending: toDiagnostic.pending,
+      })
+    })
 
     // Auto-select model from last assistant message
     const lastAssistant = chat.messages
@@ -372,6 +410,13 @@ export class ChatManager {
       search,
     }
     chat.pending = pending
+    recordDiagnosticEvent('request-started', {
+      chatId,
+      provider: job.provider,
+      model: model.id,
+      messages: chat.messages.length,
+      chars: chatDiagnostic(chat).chars,
+    })
     await storage.updateChat(chatId, chat)
 
     await this.runJob(chat, pending, controller)
@@ -528,6 +573,13 @@ export class ChatManager {
 
     chat.pending = undefined
     chat.messages.push(assistantMessage)
+    recordDiagnosticEvent('request-completed', {
+      chatId: chat.id,
+      provider: pending.job.provider,
+      model: pending.modelId,
+      elapsedMs: Math.round(timeMs),
+      responseChars: response.content.length,
+    })
     // Don't yank the viewport if the user is viewing a different chat.
     if (this.current.id === chat.id) scrollToAnswer()
     await storage.updateChat(chat.id, chat)
