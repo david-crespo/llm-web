@@ -18,19 +18,30 @@
 
   let { onRequestDelete, onOpenAbout }: Props = $props()
 
-  const HISTORY_PAGE_SIZE = 100
-  let historyPage = $state(0)
-  const historyPageCount = $derived(
-    Math.max(1, Math.ceil(chatState.history.length / HISTORY_PAGE_SIZE)),
+  const HISTORY_ROW_HEIGHT = 68
+  const HISTORY_OVERSCAN = 5
+  let historyScroller = $state<HTMLDivElement>()
+  let historyScrollTop = $state(0)
+  let historyViewportHeight = $state(0)
+  const historyStart = $derived(
+    Math.max(0, Math.floor(historyScrollTop / HISTORY_ROW_HEIGHT) - HISTORY_OVERSCAN),
   )
-  const historyPageStart = $derived(historyPage * HISTORY_PAGE_SIZE)
+  const historyEnd = $derived(
+    Math.min(
+      chatState.history.length,
+      Math.ceil((historyScrollTop + historyViewportHeight) / HISTORY_ROW_HEIGHT) +
+        HISTORY_OVERSCAN,
+    ),
+  )
   const visibleHistory = $derived(
-    chatState.history.slice(historyPageStart, historyPageStart + HISTORY_PAGE_SIZE),
+    chatState.history.slice(historyStart, historyEnd),
   )
 
-  $effect(() => {
-    if (historyPage >= historyPageCount) historyPage = historyPageCount - 1
-  })
+  function createNewChat() {
+    historyScrollTop = 0
+    if (historyScroller) historyScroller.scrollTop = 0
+    chatState.createNew()
+  }
 
   function getChatPreview(chat: Chat): string {
     const firstUserMessage = chat.messages.find((m) => m.role === 'user')
@@ -105,26 +116,39 @@
   </div>
 
   <!-- Chat history -->
-  <div class="flex-1 overflow-y-auto pt-2">
+  <div
+    class="flex-1 overflow-y-auto"
+    role="region"
+    aria-label="Chat history"
+    bind:this={historyScroller}
+    bind:clientHeight={historyViewportHeight}
+    onscroll={(event) => (historyScrollTop = event.currentTarget.scrollTop)}
+  >
     {#if chatState.history.length === 0}
       <div class="p-4 text-sm text-fg-muted">No chats yet</div>
     {:else}
-      {#each visibleHistory as chat (chat.id)}
+      <div
+        class="relative"
+        style:height={`${chatState.history.length * HISTORY_ROW_HEIGHT + 8}px`}
+      >
+        {#each visibleHistory as chat, index (chat.id)}
         {@const isActive = chat.id === chatState.current.id}
         {@const preview = getChatPreview(chat)}
         <div
           role="button"
           tabindex="0"
           aria-label={`Select chat: ${preview}`}
-          class="chat-row relative flex w-full border-b border-edge-muted py-3 pr-3 pl-3.5 focus:ring-2 focus:ring-gray-500 focus:outline-none focus:ring-inset {isActive
+          class="chat-row absolute right-0 left-0 flex border-b border-edge-muted py-3 pr-3 pl-3.5 focus:ring-2 focus:ring-gray-500 focus:outline-none focus:ring-inset {isActive
             ? 'bg-surface-active'
             : ''}"
+          style:height={`${HISTORY_ROW_HEIGHT}px`}
+          style:transform={`translateY(${8 + (historyStart + index) * HISTORY_ROW_HEIGHT}px)`}
           onclick={() => chatState.selectChat(chat.id)}
           onkeydown={(e) =>
             (e.key === 'Enter' || e.key === ' ') && chatState.selectChat(chat.id)}
         >
           <div class="min-w-0 pr-10">
-            <div class="line-clamp-2 text-sm font-medium break-words">{preview}</div>
+            <div class="truncate text-sm font-medium">{preview}</div>
             <div class="mt-1 flex items-center gap-1.5 text-xs leading-4 text-fg-muted">
               {chat.createdAt.toLocaleString()}
               {#if chatState.isLoading(chat.id)}
@@ -162,31 +186,8 @@
             </DropdownMenu.Portal>
           </DropdownMenu.Root>
         </div>
-      {/each}
-      {#if historyPageCount > 1}
-        <div class="flex items-center justify-between gap-2 border-b border-edge-muted p-3 text-xs">
-          <button
-            class="rounded border border-edge bg-surface-alt px-2 py-1 disabled:text-fg-faint"
-            disabled={historyPage === 0}
-            onclick={() => historyPage--}
-          >
-            Newer chats
-          </button>
-          <span class="text-fg-muted">
-            {historyPageStart + 1}–{Math.min(
-              historyPageStart + HISTORY_PAGE_SIZE,
-              chatState.history.length,
-            )} of {chatState.history.length}
-          </span>
-          <button
-            class="rounded border border-edge bg-surface-alt px-2 py-1 disabled:text-fg-faint"
-            disabled={historyPage === historyPageCount - 1}
-            onclick={() => historyPage++}
-          >
-            Older chats
-          </button>
-        </div>
-      {/if}
+        {/each}
+      </div>
     {/if}
   </div>
 
@@ -244,10 +245,7 @@
         class="flex size-10 items-center justify-center rounded border border-edge bg-surface-alt text-fg hover:bg-surface-hover"
         title="New Chat"
         aria-label="New Chat"
-        onclick={() => {
-          historyPage = 0
-          chatState.createNew()
-        }}
+        onclick={createNewChat}
       >
         <PlusIcon />
       </button>
@@ -308,11 +306,4 @@
     }
   }
 
-  .line-clamp-2 {
-    display: -webkit-box;
-    line-clamp: 2;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
 </style>

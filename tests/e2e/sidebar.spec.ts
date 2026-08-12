@@ -51,7 +51,7 @@ test('deleting a resumed pending chat cancels its provider job', async ({ page }
   await expect.poll(openai.cancels).toBe(1)
 })
 
-test('large histories are paginated to bound the rendered sidebar', async ({ page }) => {
+test('large histories are virtualized to bound the rendered sidebar', async ({ page }) => {
   await page.goto('/settings')
   await page.evaluate(
     () =>
@@ -87,12 +87,14 @@ test('large histories are paginated to bound the rendered sidebar', async ({ pag
   await page.goto('/')
   await openSidebar(page)
 
-  // The new current chat plus 105 stored chats are split 100 + 6 rather than
-  // mounting all 106 rows (and their menus) at once.
-  await expect(sidebarRows(page)).toHaveCount(100)
-  await expect(page.getByText('1–100 of 106')).toBeVisible()
+  // Only the visible rows plus a small overscan are mounted, while every chat
+  // remains reachable through one continuous scroll area.
+  await expect(sidebarRows(page)).not.toHaveCount(106)
+  expect(await sidebarRows(page).count()).toBeLessThan(30)
+  await expect(sidebarRows(page).first()).toHaveCSS('height', '68px')
 
-  await page.getByRole('button', { name: 'Older chats' }).click()
-  await expect(sidebarRows(page)).toHaveCount(6)
-  await expect(page.getByText('101–106 of 106')).toBeVisible()
+  const history = page.getByRole('region', { name: 'Chat history' })
+  await history.evaluate((element) => (element.scrollTop = element.scrollHeight))
+  await expect(chatRow(page, 'seeded chat 104')).toBeVisible()
+  expect(await sidebarRows(page).count()).toBeLessThan(30)
 })
