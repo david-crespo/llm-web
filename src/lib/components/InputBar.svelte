@@ -102,6 +102,7 @@
             chatId: chatState.current.id,
             messages: chatState.current.messages.length,
             pending: chatState.isCurrentLoading,
+            history: chatState.history.length,
           })
           chatState.sidebarOpen = open
         }}

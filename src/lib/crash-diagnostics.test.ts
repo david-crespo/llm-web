@@ -24,7 +24,7 @@ describe('reportForUnexpectedExit', () => {
 
     expect(report).toMatchObject({
       source: 'abnormal-exit',
-      message: expect.stringContaining('without a pagehide event'),
+      message: expect.stringContaining('unexpectedly after chat-select-start'),
     })
     expect(report?.stack).toContain('chat-select-start')
     expect(report?.stack).toContain('"toChars": 50000')
@@ -33,5 +33,28 @@ describe('reportForUnexpectedExit', () => {
   test('ignores invalid persisted data', () => {
     expect(reportForUnexpectedExit(null)).toBeNull()
     expect(reportForUnexpectedExit({ ...activeRun, version: 2 } as never)).toBeNull()
+  })
+
+  test('summarizes the last snapshot and recent sidebar state', () => {
+    const report = reportForUnexpectedExit({
+      ...activeRun,
+      updatedAt: '2026-08-12T00:00:06.100Z',
+      events: [
+        {
+          at: '2026-08-12T00:00:05.000Z',
+          name: 'sidebar-toggle',
+          details: { open: true, pending: true, history: 1064, domNodes: 5418 },
+        },
+        {
+          at: '2026-08-12T00:00:06.100Z',
+          name: 'request-started',
+          details: { provider: 'openai', domNodes: 5417 },
+        },
+      ],
+    })
+
+    expect(report?.message).toContain('after request-started with 5,417 DOM nodes')
+    expect(report?.message).toContain('sidebar had been opened 1.1s earlier')
+    expect(report?.message).toContain('History contained 1,064 chats')
   })
 })

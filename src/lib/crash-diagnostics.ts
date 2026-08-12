@@ -112,10 +112,32 @@ function getRuntime(): Runtime | undefined {
 
 export function reportForUnexpectedExit(run: DiagnosticRun | null): ReportedError | null {
   if (!isDiagnosticRun(run)) return null
+  const lastEvent = run.events.at(-1)
+  const lastDomNodes = lastEvent?.details?.domNodes
+  const sidebarOpen = run.events
+    .slice()
+    .reverse()
+    .find((event) => event.name === 'sidebar-toggle' && event.details?.open === true)
+
+  let message = 'The previous document ended unexpectedly'
+  if (lastEvent) message += ` after ${lastEvent.name}`
+  if (typeof lastDomNodes === 'number')
+    message += ` with ${lastDomNodes.toLocaleString()} DOM nodes`
+  message +=
+    '. No pagehide event was recorded, which is consistent with a browser process termination.'
+
+  if (sidebarOpen && sidebarOpen !== lastEvent) {
+    const elapsedMs = Date.parse(lastEvent?.at ?? run.updatedAt) - Date.parse(sidebarOpen.at)
+    const pending = sidebarOpen.details?.pending === true ? ' while a request was pending' : ''
+    message += ` The sidebar had been opened ${Math.max(0, elapsedMs / 1000).toFixed(1)}s earlier${pending}.`
+  }
+  if (typeof sidebarOpen?.details?.history === 'number') {
+    message += ` History contained ${sidebarOpen.details.history.toLocaleString()} chats.`
+  }
+
   return {
     source: 'abnormal-exit',
-    message:
-      'The previous document disappeared without a pagehide event. Safari may have terminated its WebContent process; memory pressure is one possible cause.',
+    message,
     stack: `Abnormal page exit diagnostic\n${JSON.stringify(run, null, 2)}`,
   }
 }

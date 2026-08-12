@@ -18,6 +18,20 @@
 
   let { onRequestDelete, onOpenAbout }: Props = $props()
 
+  const HISTORY_PAGE_SIZE = 100
+  let historyPage = $state(0)
+  const historyPageCount = $derived(
+    Math.max(1, Math.ceil(chatState.history.length / HISTORY_PAGE_SIZE)),
+  )
+  const historyPageStart = $derived(historyPage * HISTORY_PAGE_SIZE)
+  const visibleHistory = $derived(
+    chatState.history.slice(historyPageStart, historyPageStart + HISTORY_PAGE_SIZE),
+  )
+
+  $effect(() => {
+    if (historyPage >= historyPageCount) historyPage = historyPageCount - 1
+  })
+
   function getChatPreview(chat: Chat): string {
     const firstUserMessage = chat.messages.find((m) => m.role === 'user')
     if (!firstUserMessage) return 'New Chat'
@@ -95,7 +109,7 @@
     {#if chatState.history.length === 0}
       <div class="p-4 text-sm text-fg-muted">No chats yet</div>
     {:else}
-      {#each chatState.history as chat (chat.id)}
+      {#each visibleHistory as chat (chat.id)}
         {@const isActive = chat.id === chatState.current.id}
         {@const preview = getChatPreview(chat)}
         <div
@@ -149,6 +163,30 @@
           </DropdownMenu.Root>
         </div>
       {/each}
+      {#if historyPageCount > 1}
+        <div class="flex items-center justify-between gap-2 border-b border-edge-muted p-3 text-xs">
+          <button
+            class="rounded border border-edge bg-surface-alt px-2 py-1 disabled:text-fg-faint"
+            disabled={historyPage === 0}
+            onclick={() => historyPage--}
+          >
+            Newer chats
+          </button>
+          <span class="text-fg-muted">
+            {historyPageStart + 1}–{Math.min(
+              historyPageStart + HISTORY_PAGE_SIZE,
+              chatState.history.length,
+            )} of {chatState.history.length}
+          </span>
+          <button
+            class="rounded border border-edge bg-surface-alt px-2 py-1 disabled:text-fg-faint"
+            disabled={historyPage === historyPageCount - 1}
+            onclick={() => historyPage++}
+          >
+            Older chats
+          </button>
+        </div>
+      {/if}
     {/if}
   </div>
 
@@ -206,7 +244,10 @@
         class="flex size-10 items-center justify-center rounded border border-edge bg-surface-alt text-fg hover:bg-surface-hover"
         title="New Chat"
         aria-label="New Chat"
-        onclick={() => chatState.createNew()}
+        onclick={() => {
+          historyPage = 0
+          chatState.createNew()
+        }}
       >
         <PlusIcon />
       </button>
