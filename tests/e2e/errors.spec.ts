@@ -1,6 +1,5 @@
 import { test, expect } from '@playwright/test'
 import { messageInput, selectChat } from './helpers/app'
-import { DIAGNOSTICS_RUN_PREFIX, DIAGNOSTICS_TAB_KEY } from '$lib/crash-diagnostics'
 
 // The app runs on a phone, where there is no console. These cover the three
 // channels that make an error readable there: `<svelte:boundary>` for render
@@ -37,51 +36,6 @@ test('an unhandled rejection surfaces a report', async ({ page }) => {
   })
 
   await expect(report(page)).toContainText('boom from a promise')
-})
-
-test('an abandoned run marker surfaces after a browser-initiated reload', async ({ page }) => {
-  await page.addInitScript(
-    ({ runPrefix, tabKey }) => {
-      if (sessionStorage.getItem('diagnostic-test-seeded')) return
-      sessionStorage.setItem('diagnostic-test-seeded', 'true')
-      sessionStorage.setItem(tabKey, 'diagnostic-test-tab')
-      localStorage.setItem(
-        `${runPrefix}diagnostic-test-tab`,
-        JSON.stringify({
-          version: 1,
-          runId: 'terminated-run',
-          startedAt: '2026-08-12T00:00:00.000Z',
-          updatedAt: '2026-08-12T00:00:05.000Z',
-          navigationType: 'navigate',
-          url: location.href,
-          userAgent: navigator.userAgent,
-          events: [
-            {
-              at: '2026-08-12T00:00:05.000Z',
-              name: 'chat-select-start',
-              details: { fromPending: true, toMessages: 20, toChars: 50_000 },
-            },
-          ],
-        }),
-      )
-    },
-    { runPrefix: DIAGNOSTICS_RUN_PREFIX, tabKey: DIAGNOSTICS_TAB_KEY },
-  )
-
-  await page.goto('/')
-
-  await expect(report(page)).toContainText('Previous page ended unexpectedly')
-  await report(page).getByText('Details', { exact: true }).click()
-  await expect(report(page).locator('pre')).toContainText('chat-select-start')
-  await expect(report(page).locator('pre')).toContainText('"toChars": 50000')
-
-  await report(page).getByRole('button', { name: 'Dismiss' }).click()
-  await expect(report(page)).toHaveCount(0)
-
-  // An ordinary reload fires pagehide, so it must not recreate the warning.
-  await page.reload()
-  await expect(messageInput(page)).toBeVisible()
-  await expect(report(page)).toHaveCount(0)
 })
 
 test('a bad route renders the error page rather than a bare SvelteKit 404', async ({ page }) => {

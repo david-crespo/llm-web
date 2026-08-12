@@ -47,9 +47,7 @@
   class="space-y-3 rounded border border-danger bg-surface-danger p-4 text-left"
   role="alert"
 >
-  <h2 class="font-medium text-danger">
-    {error.source === 'abnormal-exit' ? 'Previous page ended unexpectedly' : 'Something broke'}
-  </h2>
+  <h2 class="font-medium text-danger">Something broke</h2>
   <p class="text-sm break-words">{error.message}</p>
   {#if error.stack}
     <details class="text-xs text-fg-muted" bind:open={detailsOpen}>

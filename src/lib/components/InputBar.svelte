@@ -6,7 +6,6 @@
   import MenuIcon from './icons/MenuIcon.svelte'
   import SearchIcon from './icons/SearchIcon.svelte'
   import ThinkingIcon from './icons/ThinkingIcon.svelte'
-  import { recordDiagnosticEvent } from '$lib/crash-diagnostics'
 
   interface Props {
     message: string
@@ -95,17 +94,7 @@
     <!-- Button row -->
     <div class="flex items-center gap-1">
       <button
-        onclick={() => {
-          const open = !chatState.sidebarOpen
-          recordDiagnosticEvent('sidebar-toggle', {
-            open,
-            chatId: chatState.current.id,
-            messages: chatState.current.messages.length,
-            pending: chatState.isCurrentLoading,
-            history: chatState.history.length,
-          })
-          chatState.sidebarOpen = open
-        }}
+        onclick={() => (chatState.sidebarOpen = !chatState.sidebarOpen)}
         class="size-10 rounded border border-edge bg-surface-alt hover:bg-surface-hover md:hidden"
         aria-label="Toggle sidebar"
         aria-expanded={chatState.sidebarOpen}

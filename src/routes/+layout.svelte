@@ -3,10 +3,9 @@
   import favicon from '$lib/assets/favicon.svg'
   import ErrorReport from '$lib/components/ErrorReport.svelte'
   import { toReportedError, type ReportedError } from '$lib/errors'
-  import { dismissUnexpectedExitReport, startCrashDiagnostics } from '$lib/crash-diagnostics'
 
   let { children } = $props()
-  let lastError = $state<ReportedError | null>(startCrashDiagnostics())
+  let lastError = $state<ReportedError | null>(null)
 
   function showError(error: unknown, source: ReportedError['source']) {
     console.error(`Error (${source}):`, error)
@@ -41,13 +40,7 @@
     {@const error = lastError}
     <div class="fixed inset-x-0 top-0 z-60 p-3">
       <div class="mx-auto max-w-2xl shadow-lg">
-        <ErrorReport
-          {error}
-          onDismiss={() => {
-            if (error.source === 'abnormal-exit') dismissUnexpectedExitReport()
-            lastError = null
-          }}
-        />
+        <ErrorReport {error} onDismiss={() => (lastError = null)} />
       </div>
     </div>
   {/if}
