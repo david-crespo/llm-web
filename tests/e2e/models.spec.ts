@@ -31,6 +31,6 @@ test('all keys: every model is listed in order', async ({ page }) => {
     'GPT-5.6',
     'Claude Opus 5',
     'Claude Fable 5',
-    'Gemini 3.6 Flash',
+    'Gemini 3.7 Flash',
   ])
 })
