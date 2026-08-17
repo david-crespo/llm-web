@@ -9,10 +9,32 @@ export interface ApiKeys {
   google?: string
 }
 
-class Storage {
+/**
+ * Safari can close an IndexedDB connection out from under us while the page is
+ * backgrounded, without always firing `close` first. The dead handle then
+ * throws this on the next `transaction()` call.
+ */
+function isConnectionClosed(error: unknown): boolean {
+  return error instanceof DOMException && error.name === 'InvalidStateError'
+}
+
+export class Storage {
   private db: IDBDatabase | null = null
+  private opening: Promise<IDBDatabase> | null = null
 
   async init(): Promise<void> {
+    await this.open()
+  }
+
+  private open(): Promise<IDBDatabase> {
+    if (this.db) return Promise.resolve(this.db)
+    this.opening ??= this.openDb().finally(() => {
+      this.opening = null
+    })
+    return this.opening
+  }
+
+  private openDb(): Promise<IDBDatabase> {
     return new Promise((resolve, reject) => {
       if (typeof indexedDB === 'undefined') {
         reject(new Error('IndexedDB is not available in this environment'))
@@ -23,8 +45,20 @@ class Storage {
 
       request.onerror = () => reject(request.error)
       request.onsuccess = () => {
-        this.db = request.result
-        resolve()
+        const db = request.result
+
+        // Drop our reference when the connection goes away so the next
+        // operation reopens instead of using a dead handle.
+        db.onclose = () => {
+          if (this.db === db) this.db = null
+        }
+        db.onversionchange = () => {
+          db.close()
+          if (this.db === db) this.db = null
+        }
+
+        this.db = db
+        resolve(db)
       }
 
       request.onupgradeneeded = (event) => {
@@ -47,19 +81,22 @@ class Storage {
     })
   }
 
-  private async ensureInit(): Promise<void> {
-    if (!this.db) {
-      await this.init()
+  /** Open a transaction on `chats`, reopening the database once if it's dead. */
+  private async chatStore(mode: IDBTransactionMode): Promise<IDBObjectStore> {
+    const db = await this.open()
+    try {
+      return db.transaction(['chats'], mode).objectStore('chats')
+    } catch (error) {
+      if (!isConnectionClosed(error)) throw error
+      if (this.db === db) this.db = null
+      return (await this.open()).transaction(['chats'], mode).objectStore('chats')
     }
   }
 
   // Chat methods
   async createChat(chat: NewChat): Promise<number> {
-    await this.ensureInit()
+    const store = await this.chatStore('readwrite')
     return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction(['chats'], 'readwrite')
-      const store = transaction.objectStore('chats')
-
       // Create a plain object copy to avoid proxy serialization issues
       const plainChat = {
         createdAt: chat.createdAt.toISOString(),
@@ -79,11 +116,8 @@ class Storage {
   }
 
   async updateChat(id: number, chat: Chat): Promise<void> {
-    await this.ensureInit()
+    const store = await this.chatStore('readwrite')
     return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction(['chats'], 'readwrite')
-      const store = transaction.objectStore('chats')
-
       // Create a plain object copy to avoid proxy serialization issues
       const plainChat = {
         id,
@@ -104,10 +138,8 @@ class Storage {
   }
 
   async getChat(id: number): Promise<Chat | null> {
-    await this.ensureInit()
+    const store = await this.chatStore('readonly')
     return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction(['chats'], 'readonly')
-      const store = transaction.objectStore('chats')
       const request = store.get(id)
 
       request.onerror = () => reject(request.error)
@@ -123,10 +155,8 @@ class Storage {
   }
 
   async getAllChats(): Promise<Chat[]> {
-    await this.ensureInit()
+    const store = await this.chatStore('readonly')
     return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction(['chats'], 'readonly')
-      const store = transaction.objectStore('chats')
       const index = store.index('createdAt')
       const request = index.openCursor(null, 'prev') // Most recent first
 
@@ -148,10 +178,8 @@ class Storage {
   }
 
   async deleteChat(id: number): Promise<void> {
-    await this.ensureInit()
+    const store = await this.chatStore('readwrite')
     return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction(['chats'], 'readwrite')
-      const store = transaction.objectStore('chats')
       const request = store.delete(id)
 
       request.onerror = () => reject(request.error)
