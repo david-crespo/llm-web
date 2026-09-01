@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { setKeysThroughSettings } from './helpers/settings'
+import { models } from '../../src/lib/models'
 import { mockOpenAI, mockAnthropic, mockGoogle } from './helpers/mocks'
 import {
   send,
@@ -20,7 +21,7 @@ test('Anthropic happy path with reasoning', async ({ page }) => {
   const google = await mockGoogle(page)
 
   await setKeysThroughSettings(page, { openai: 'a', anthropic: 'b', google: 'c' })
-  await selectModel(page, 'Claude Opus')
+  await selectModel(page, models.find((m) => m.provider === 'anthropic')!.id)
   await send(page, 'Hi')
   await expect(loadingPlaceholder(page)).toBeVisible()
 
