@@ -13,7 +13,8 @@
     "lint": "oxfmt --check . && oxlint .",
     "deploy": "npm run build && echo 'Static files ready in build/ directory'",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "ci": "bun run check && bun run lint && bun run test && bun run test:e2e"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.0",
