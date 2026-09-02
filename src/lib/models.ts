@@ -36,8 +36,8 @@ export const models: Model[] = [
   },
   {
     provider: 'google',
-    key: 'gemini-3.7-flash',
-    id: 'Gemini 3.7 Flash',
+    key: 'gemini-3.8-flash',
+    id: 'Gemini 3.8 Flash',
     input: 0.75,
     input_cached: 0.075,
     output: 3.75,
