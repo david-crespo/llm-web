@@ -1,6 +1,7 @@
 <script lang="ts">
   import { getAvailableModels } from '$lib/models.svelte'
   import { chatState } from '$lib/chat.svelte'
+  import { PASTE_COLLAPSE_CHARS, joinComposer, pasteLabel, splitComposer } from '$lib/paste'
   import ChevronDownIcon from './icons/ChevronDownIcon.svelte'
   import CloseIcon from './icons/CloseIcon.svelte'
   import MenuIcon from './icons/MenuIcon.svelte'
@@ -41,6 +42,25 @@
   let textarea: HTMLTextAreaElement | undefined = $state()
   let height = $state(0)
 
+  // `message` is the full string that will be sent. Large pastes live in it as
+  // <pasted> blocks; the textarea shows only the typed part and each block is a
+  // chip. Deriving both from `message` means edit/fork repopulate correctly.
+  const composer = $derived(splitComposer(message))
+
+  function handlePaste(e: ClipboardEvent) {
+    const text = e.clipboardData?.getData('text/plain') ?? ''
+    if (text.length < PASTE_COLLAPSE_CHARS) return
+    e.preventDefault()
+    message = joinComposer(composer.text, [...composer.pastes, text])
+  }
+
+  function removePaste(index: number) {
+    message = joinComposer(
+      composer.text,
+      composer.pastes.filter((_, i) => i !== index),
+    )
+  }
+
   $effect(() => {
     onHeightChange?.(height)
   })
@@ -58,7 +78,7 @@
   // Resize on any `message` change, including programmatic ones (edit/fork),
   // not just keystrokes — so the textarea expands to fit content put in by code.
   $effect(() => {
-    resize(message)
+    resize(composer.text)
   })
 </script>
 
@@ -67,16 +87,39 @@
   class="fixed inset-x-0 bottom-0 z-10 w-full border-t border-edge bg-surface-alt p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:static"
 >
   <div class="mx-auto md:max-w-2xl">
+    <!-- Collapsed pastes -->
+    {#if composer.pastes.length > 0}
+      <div class="mb-2 flex flex-wrap gap-1.5">
+        {#each composer.pastes as paste, i (i)}
+          <span
+            class="inline-flex items-center gap-1 rounded border border-edge bg-surface py-1 pr-1 pl-2 text-xs text-fg-muted"
+            data-pasted-chip
+          >
+            {pasteLabel(paste)}
+            <button
+              onclick={() => removePaste(i)}
+              class="flex size-5 items-center justify-center rounded-full hover:bg-surface-hover hover:text-fg"
+              aria-label="Remove pasted content"
+            >
+              <CloseIcon width={12} height={12} />
+            </button>
+          </span>
+        {/each}
+      </div>
+    {/if}
+
     <!-- Text input at top -->
     <div class="mb-2">
       <textarea
         bind:this={textarea}
-        bind:value={message}
+        value={composer.text}
         oninput={(e) => {
           const target = e.currentTarget
+          message = joinComposer(target.value, composer.pastes)
           target.style.height = 'auto'
           target.style.height = `${Math.min(target.scrollHeight, 200)}px`
         }}
+        onpaste={handlePaste}
         onkeydown={(e) => e.key === 'Enter' && (e.metaKey || e.ctrlKey) && onSend()}
         placeholder={chatState.isCurrentLoading
           ? 'Waiting for response…'

@@ -3,6 +3,7 @@
   import type { ChatMessage } from './types'
   import { formatTime, formatMoney, formatTokens, shortModel } from '$lib/format'
   import { clickOutside } from '$lib/actions/clickOutside'
+  import { pasteLabel, splitSegments } from '$lib/paste'
 
   interface Props {
     message: ChatMessage
@@ -119,7 +120,20 @@
           </div>
         {/if}
 
-        <Markdown content={message.content} />
+        {#each splitSegments(message.content) as segment, i (i)}
+          {#if segment.kind === 'pasted'}
+            <details class="my-1" data-pasted>
+              <summary class="cursor-pointer text-sm text-fg-muted hover:text-fg">
+                {pasteLabel(segment.text)}
+              </summary>
+              <pre
+                class="mt-2 max-h-64 overflow-auto rounded border border-edge bg-code-block-bg p-2 text-xs whitespace-pre-wrap"
+              >{segment.text}</pre>
+            </details>
+          {:else}
+            <Markdown content={segment.text} />
+          {/if}
+        {/each}
       </div>
     </div>
   {:else}
