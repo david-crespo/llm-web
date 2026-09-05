@@ -26,6 +26,15 @@ export const models: Model[] = [
     search_cost: 0.01,
   },
   {
+    provider: 'openai',
+    key: 'gpt-6-astra',
+    id: 'GPT-6',
+    input: 10,
+    input_cached: 1.0,
+    output: 50,
+    search_cost: 0.01,
+  },
+  {
     provider: 'anthropic',
     key: 'claude-fable-5-1',
     id: 'Claude Fable 5.1',
