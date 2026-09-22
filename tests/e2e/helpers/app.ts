@@ -47,12 +47,15 @@ export async function selectModel(page: Page, text: string): Promise<void> {
 }
 
 /** Select any model other than the one currently selected, and return its
- * label. Used where the point is that the model changed, not which one. */
+ * label. Used where the point is that the model changed, not which one.
+ * Skips labels that contain (or are contained in) the current label, since
+ * callers assert on placeholder text with substring matching and e.g. 'GPT-6'
+ * is contained in 'GPT-6 Sol'. */
 export async function selectOtherModel(page: Page): Promise<string> {
   const select = modelSelect(page)
   const current = await selectedModel(page)
   const labels = await select.locator('option').allInnerTexts()
-  const label = labels.find((l) => l !== current)
+  const label = labels.find((l) => l !== current && !l.includes(current) && !current.includes(l))
   if (!label) throw new Error(`only one model available: ${current}`)
   await select.selectOption({ label })
   return label
