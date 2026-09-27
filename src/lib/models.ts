@@ -28,7 +28,7 @@ export const models: Model[] = [
   {
     provider: 'openai',
     key: 'gpt-6-astra',
-    id: 'GPT-6',
+    id: 'GPT-6 Astra',
     input: 10,
     input_cached: 1.0,
     output: 50,
@@ -41,6 +41,15 @@ export const models: Model[] = [
     input: 10,
     input_cached: 0.25,
     output: 50,
+    search_cost: 0.01,
+  },
+  {
+    provider: 'anthropic',
+    key: 'claude-opus-5-5',
+    id: 'Claude Opus 5.5',
+    input: 4,
+    input_cached: 0.2,
+    output: 20,
     search_cost: 0.01,
   },
   {
