@@ -3,6 +3,7 @@ import type { Response } from 'openai/resources/responses/responses'
 import type { Adapter, ChatInput, ModelResponse, PollResult } from './index'
 import type { JobHandle } from '$lib/types'
 import { settings } from '$lib/settings.svelte'
+import { withEffortChanges } from './openai-effort'
 
 // OpenAI API adapter using the Responses API in background mode: submit with
 // background+store, then poll responses.retrieve by id. Because the id is
@@ -26,27 +27,32 @@ export class OpenAIAdapter implements Adapter {
     // means 'auto', which gpt-5.6 resolves to 'all_turns'.
     // https://developers.openai.com/api/docs/guides/conversation-state
     const lastAssistant = chat.messages.filter((m) => m.role === 'assistant').at(-1)
-    const previous_response_id =
-      lastAssistant?.provider?.type === 'openai' ? lastAssistant.provider.responseId : undefined
-    const inputMessages = previous_response_id ? chat.messages.slice(-1) : chat.messages
+    const previous = lastAssistant?.provider?.type === 'openai' ? lastAssistant.provider : undefined
+    let initialEffort = previous?.initialEffort
+    if (previous && initialEffort === undefined) {
+      // Older chats have no saved baseline. Read the actual request setting so
+      // we can keep chaining their reasoning/history without rewriting the prefix.
+      const response = await client.responses.retrieve(previous.responseId, undefined, { signal })
+      initialEffort = readEffort(response) ?? (think ? 'high' : 'low')
+    }
+    const { effort, input } = withEffortChanges(chat.messages, think, initialEffort)
 
     const response = await client.responses.create(
       {
         model: model.key,
-        input: inputMessages.map((m) => ({ role: m.role, content: m.content })),
-        previous_response_id,
+        input,
+        previous_response_id: previous?.responseId,
         // Submit as a background job and store it so we can poll by id (and
         // resume after a reload). The create call returns immediately, queued.
         background: true,
         store: true,
-        // Stable per-chat key so multi-turn requests route to the same backend
-        // and hit the prompt cache reliably.
+        // Separate cache accounting by chat; GPT-6 handles cache routing automatically.
         prompt_cache_key: String(chat.id),
         tools: search ? [{ type: 'web_search_preview' as const }] : undefined,
         // Low/high bracket Sol's medium default and both work on Astra, which
         // rejects none. Avoid xhigh/max to limit latency and cost on mobile.
         // https://developers.openai.com/api/docs/guides/reasoning
-        reasoning: { effort: think ? 'high' : 'low' },
+        reasoning: { effort },
         instructions: chat.systemPrompt,
       },
       { signal },
@@ -89,6 +95,11 @@ export class OpenAIAdapter implements Adapter {
   }
 }
 
+function readEffort(response: Response): 'low' | 'high' | undefined {
+  const effort = response.reasoning?.effort
+  return effort === 'low' || effort === 'high' ? effort : undefined
+}
+
 function parseResponse(response: Response): ModelResponse {
   const searches = response.output.filter((item) => item.type === 'web_search_call').length
 
@@ -104,6 +115,7 @@ function parseResponse(response: Response): ModelResponse {
     tokens,
     stop_reason: response.status || 'completed',
     searches: searches || undefined,
-    provider: { type: 'openai', responseId: response.id },
+    // The API reports request-level effort even after a configuration update.
+    provider: { type: 'openai', responseId: response.id, initialEffort: readEffort(response) },
   }
 }

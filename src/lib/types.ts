@@ -8,7 +8,7 @@ export type UserMessage = {
   role: 'user'
   content: string
   cache?: boolean
-  /** Think toggle state when this message was last sent. Anthropic replays it
+  /** Think toggle state when this message was last sent. Adapters replay it
    * as per-message effort so the prompt cache survives toggling mid-chat. */
   think?: boolean
 }
@@ -22,6 +22,9 @@ export type ProviderData =
       /** Responses API response.id, used as previous_response_id on the next turn
        * so reasoning items carry over and prompt caching hits. */
       responseId: string
+      /** Fixed request-level effort for this response chain. Later Think
+       * changes are configuration_update items. Absent on older saved chats. */
+      initialEffort?: 'low' | 'high'
     }
   | {
       type: 'google'

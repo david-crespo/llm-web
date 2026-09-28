@@ -1,7 +1,14 @@
 import { test, expect } from '@playwright/test'
 import { setKeysThroughSettings } from './helpers/settings'
 import { mockAnthropic, mockOpenAI } from './helpers/mocks'
-import { send, newChat, assistantMessages, loadingPlaceholder, selectModel } from './helpers/app'
+import {
+  send,
+  newChat,
+  assistantMessages,
+  loadingPlaceholder,
+  selectChat,
+  selectModel,
+} from './helpers/app'
 import { models } from '../../src/lib/models'
 
 test('Search and Think toggles affect the next request', async ({ page }) => {
@@ -79,6 +86,54 @@ test('Anthropic: toggling Think mid-chat keeps top-level effort fixed', async ({
   expect(betaHeaders).toHaveLength(3)
   for (const header of betaHeaders)
     expect(header).toContain('mid-conversation-output-config-2026-07-01')
+})
+
+test('OpenAI: Think changes preserve the response chain across reloads', async ({ page }) => {
+  const openai = await mockOpenAI(page, { auto: true })
+  await setKeysThroughSettings(page, { openai: 'sk-test' })
+  const think = page.getByRole('button', { name: 'Think' })
+
+  await send(page, 'one')
+  await expect(assistantMessages(page)).toHaveCount(1)
+  await think.click()
+  await send(page, 'two')
+  await expect(assistantMessages(page)).toHaveCount(2)
+  await send(page, 'three')
+  await expect(assistantMessages(page)).toHaveCount(3)
+
+  // Reload resets Think to off; the response's original effort and the last
+  // user turn's applied effort must both survive in stored history.
+  // Creating a new chat waits for the current chat's save before switching.
+  await newChat(page)
+  await expect(assistantMessages(page)).toHaveCount(0)
+  await page.reload()
+  await selectChat(page, 'one')
+  await expect(think).toHaveAttribute('aria-pressed', 'false')
+  await send(page, 'four')
+  await expect(assistantMessages(page)).toHaveCount(4)
+
+  const bodies = openai.bodies()
+  expect(bodies.map((body) => body.reasoning)).toEqual(
+    Array.from({ length: 4 }, () => ({ effort: 'low' })),
+  )
+  expect(bodies.map((body) => body.previous_response_id)).toEqual([
+    undefined,
+    'resp_test_openai_1',
+    'resp_test_openai_2',
+    'resp_test_openai_3',
+  ])
+  expect(bodies.map((body) => body.input)).toEqual([
+    [{ role: 'user', content: 'one' }],
+    [
+      { type: 'configuration_update', reasoning: { effort: 'high' } },
+      { role: 'user', content: 'two' },
+    ],
+    [{ role: 'user', content: 'three' }],
+    [
+      { type: 'configuration_update', reasoning: { effort: 'low' } },
+      { role: 'user', content: 'four' },
+    ],
+  ])
 })
 
 test('Stop cancels an in-flight response and gates the input', async ({ page }) => {

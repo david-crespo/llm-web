@@ -135,11 +135,17 @@ function lastInteractionInputText(items: unknown[]): string {
 
 // --- OpenAI Responses API ---
 
-function openaiResponse(text: string, status = 'completed', id = 'resp_test_openai') {
+function openaiResponse(
+  text: string,
+  status = 'completed',
+  id = 'resp_test_openai',
+  reasoning?: unknown,
+) {
   return {
     id,
     object: 'response',
     status,
+    reasoning,
     output:
       status === 'completed'
         ? [
@@ -170,6 +176,7 @@ export async function mockOpenAI(page: Page, opts: MockOpts = {}): Promise<Backg
   // clobber each other (the create body has the user message; the GET poll
   // doesn't, so it looks the text up by id).
   const textById = new Map<string, string>()
+  const reasoningById = new Map<string, unknown>()
   const idByUserText = new Map<string, string>()
   const completedIds = new Set<string>()
   let idCounter = 0
@@ -202,23 +209,24 @@ export async function mockOpenAI(page: Page, opts: MockOpts = {}): Promise<Backg
       const userText = lastText(body.input as unknown[], (m) => m.content ?? '')
       const text = opts.reply ? opts.reply(userText) : fallback
       textById.set(id, text)
+      reasoningById.set(id, body.reasoning)
       idByUserText.set(userText, id)
       if (body.background) {
         // Background submit returns immediately, queued. Must be a full Response
         // shape (with output: []) — the SDK materializes output_text from it.
-        return fulfillJSON(route, 200, openaiResponse('', 'queued', id))
+        return fulfillJSON(route, 200, openaiResponse('', 'queued', id, body.reasoning))
       }
       await gate.ready
       return failStatus
         ? fulfillJSON(route, failStatus, errorBody('Invalid API key'))
-        : fulfillJSON(route, 200, openaiResponse(text, 'completed', id))
+        : fulfillJSON(route, 200, openaiResponse(text, 'completed', id, body.reasoning))
     }
 
     // cancel (background stop): .../v1/responses/{id}/cancel
     if (pathname.endsWith('/cancel') && req.method() === 'POST') {
       cancels++
       const id = pathname.split('/').slice(-2)[0]
-      return fulfillJSON(route, 200, openaiResponse('', 'cancelled', id))
+      return fulfillJSON(route, 200, openaiResponse('', 'cancelled', id, reasoningById.get(id)))
     }
 
     // poll (async mode only)
@@ -238,6 +246,7 @@ export async function mockOpenAI(page: Page, opts: MockOpts = {}): Promise<Backg
           text,
           gate.settled() || completedIds.has(id) ? 'completed' : 'in_progress',
           id,
+          reasoningById.get(id),
         ),
       )
     }
