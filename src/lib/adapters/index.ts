@@ -17,6 +17,7 @@ export type ChatInput = {
   chat: Chat
   model: Model
   search: boolean
+  /** Think toggle: off selects low effort for speed; on selects high for harder reasoning. */
   think: boolean
   signal?: AbortSignal
 }

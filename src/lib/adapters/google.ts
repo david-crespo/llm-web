@@ -43,6 +43,9 @@ export class GoogleAdapter implements Adapter {
         previous_interaction_id,
         tools: [{ type: 'url_context' }, ...(search ? [{ type: 'google_search' as const }] : [])],
         generation_config: {
+          // Low/high bracket Gemini 3.8 Flash's medium default. Low is its
+          // lowest supported level; minimal is rejected.
+          // https://ai.google.dev/gemini-api/docs/thinking
           thinking_level: think ? 'high' : 'low',
           // Ask for thought summaries so reasoning text comes back (analogous to
           // Anthropic's display: 'summarized').

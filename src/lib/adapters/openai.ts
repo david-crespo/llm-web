@@ -43,6 +43,9 @@ export class OpenAIAdapter implements Adapter {
         // and hit the prompt cache reliably.
         prompt_cache_key: String(chat.id),
         tools: search ? [{ type: 'web_search_preview' as const }] : undefined,
+        // Low/high bracket Sol's medium default and both work on Astra, which
+        // rejects none. Avoid xhigh/max to limit latency and cost on mobile.
+        // https://developers.openai.com/api/docs/guides/reasoning
         reasoning: { effort: think ? 'high' : 'low' },
         instructions: chat.systemPrompt,
       },

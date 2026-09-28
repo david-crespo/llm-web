@@ -1,7 +1,8 @@
 import { test, expect } from '@playwright/test'
 import { setKeysThroughSettings } from './helpers/settings'
-import { mockOpenAI } from './helpers/mocks'
-import { send, newChat, assistantMessages, loadingPlaceholder } from './helpers/app'
+import { mockAnthropic, mockOpenAI } from './helpers/mocks'
+import { send, newChat, assistantMessages, loadingPlaceholder, selectModel } from './helpers/app'
+import { models } from '../../src/lib/models'
 
 test('Search and Think toggles affect the next request', async ({ page }) => {
   const openai = await mockOpenAI(page, { auto: true })
@@ -32,6 +33,52 @@ test('Search and Think toggles affect the next request', async ({ page }) => {
   expect(defaults.reasoning).toEqual({ effort: 'low' })
   expect(changed.tools).toBeUndefined()
   expect(changed.reasoning).toEqual({ effort: 'high' })
+})
+
+test('Anthropic: toggling Think mid-chat keeps top-level effort fixed', async ({ page }) => {
+  const anthropic = await mockAnthropic(page, { auto: true })
+  const betaHeaders: (string | null)[] = []
+  page.on('request', (req) => {
+    if (req.url().startsWith('https://api.anthropic.com/v1/messages') && req.method() === 'POST')
+      betaHeaders.push(req.headers()['anthropic-beta'] ?? null)
+  })
+  await setKeysThroughSettings(page, { anthropic: 'sk-ant-test' })
+  await selectModel(page, models.find((m) => m.provider === 'anthropic')!.id)
+  const think = page.getByRole('button', { name: 'Think' })
+
+  await send(page, 'one')
+  await expect(assistantMessages(page)).toHaveCount(1)
+  await think.click()
+  await send(page, 'two')
+  await expect(assistantMessages(page)).toHaveCount(2)
+  await think.click()
+  await send(page, 'three')
+  await expect(assistantMessages(page)).toHaveCount(3)
+
+  const bodies = anthropic.bodies()
+  expect(bodies.map((b) => b.output_config)).toEqual([
+    { effort: 'low' },
+    { effort: 'low' },
+    { effort: 'low' },
+  ])
+  const effortChange = (effort: string) => ({
+    role: 'system',
+    content: [],
+    output_config: { effort },
+  })
+  // Each request replays the previous one's messages unchanged, then extends.
+  expect(bodies[2]?.messages).toEqual([
+    { role: 'user', content: 'one' },
+    { role: 'assistant', content: 'Hello from Claude.' },
+    effortChange('high'),
+    { role: 'user', content: 'two' },
+    { role: 'assistant', content: 'Hello from Claude.' },
+    effortChange('low'),
+    { role: 'user', content: 'three' },
+  ])
+  expect(betaHeaders).toHaveLength(3)
+  for (const header of betaHeaders)
+    expect(header).toContain('mid-conversation-output-config-2026-07-01')
 })
 
 test('Stop cancels an in-flight response and gates the input', async ({ page }) => {

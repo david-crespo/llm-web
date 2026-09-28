@@ -7,6 +7,7 @@ import type {
 import type { ChatInput, ModelResponse } from './index'
 import { settings } from '$lib/settings.svelte'
 import { NonDurableAdapter } from './non-durable'
+import { withEffortChanges } from './anthropic-effort'
 
 // Anthropic has no server-side background mode, so it uses NonDurableAdapter to
 // fit the shared submit-then-poll driver while preserving the old reload
@@ -25,6 +26,7 @@ export class AnthropicAdapter extends NonDurableAdapter {
 
   protected create({ chat, model, search, think, signal }: ChatInput): Promise<ModelResponse> {
     const client = getClient()
+    const { effort, messages } = withEffortChanges(chat.messages, think)
 
     return client.beta.messages
       .create(
@@ -32,14 +34,18 @@ export class AnthropicAdapter extends NonDurableAdapter {
           model: model.key,
           cache_control: { type: 'ephemeral' },
           system: chat.systemPrompt,
-          messages: chat.messages.map((m) => ({ role: m.role, content: m.content })),
+          messages,
           // SDK's non-streaming guard throws when max_tokens > ~21_333 (it assumes
           // 128k tokens/hour and refuses requests estimated to take >10 min).
           max_tokens: 20_000,
           // Force display: "summarized" so reasoning is returned; Opus 4.7
           // otherwise defaults to "omitted" and blanks the thinking text.
           thinking: { type: 'adaptive', display: 'summarized' },
-          output_config: { effort: think ? 'high' : 'low' },
+          // Low/high bracket Opus 5.5's medium default; on Fable 5.1, high is
+          // already the default. Avoid xhigh/max so thinking leaves room for
+          // the answer within the shared 20k max_tokens cap.
+          // https://platform.claude.com/docs/en/build-with-claude/effort
+          output_config: { effort },
           tools: search
             ? [
                 { type: 'web_search_20260318', name: 'web_search', max_uses: 5 },
@@ -47,7 +53,10 @@ export class AnthropicAdapter extends NonDurableAdapter {
                 { type: 'code_execution_20260120', name: 'code_execution' },
               ]
             : undefined,
-          betas: ['code-execution-web-tools-2026-02-09'],
+          betas: [
+            'code-execution-web-tools-2026-02-09',
+            'mid-conversation-output-config-2026-07-01',
+          ],
         },
         { signal },
       )

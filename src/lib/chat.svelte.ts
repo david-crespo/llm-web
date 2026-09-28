@@ -327,7 +327,15 @@ export class ChatManager {
     const chatId = chat.id
     const model = this.selectedModel
     const search = this.webSearch
+    const think = this.reasoning
     const adapter = getAdapter(model.provider)
+
+    // Record the level for replay. Forks share earlier message objects, so
+    // replace this turn rather than changing another chat's effort history.
+    const lastMessage = chat.messages.at(-1)
+    if (lastMessage?.role === 'user') {
+      chat.messages[chat.messages.length - 1] = { ...lastMessage, think }
+    }
 
     // Supersede any prior in-flight job for this chat: drop its poll loop and
     // cancel the server-side job so we don't pay for an answer we'll discard.
@@ -348,7 +356,7 @@ export class ChatManager {
         chat,
         model,
         search,
-        think: this.reasoning,
+        think,
         signal: controller.signal,
       })
     } catch (error) {

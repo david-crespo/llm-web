@@ -8,6 +8,9 @@ export type UserMessage = {
   role: 'user'
   content: string
   cache?: boolean
+  /** Think toggle state when this message was last sent. Anthropic replays it
+   * as per-message effort so the prompt cache survives toggling mid-chat. */
+  think?: boolean
 }
 
 /** Provider-specific assistant-message data. Discriminated on `type` so we
