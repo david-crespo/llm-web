@@ -171,7 +171,7 @@ function openaiResponse(
 export async function mockOpenAI(page: Page, opts: MockOpts = {}): Promise<BackgroundProviderMock> {
   const gate = makeGate()
   if (opts.auto) gate.open()
-  const fallback = opts.text ?? 'Hello from GPT-6 Sol.'
+  const fallback = opts.text ?? 'Hello from GPT-6.1 Sol.'
   // Per-request reply text, keyed by response id so concurrent requests don't
   // clobber each other (the create body has the user message; the GET poll
   // doesn't, so it looks the text up by id).
