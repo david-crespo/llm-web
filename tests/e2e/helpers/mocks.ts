@@ -95,7 +95,7 @@ export type MockOpts = {
   auto?: boolean
   /** Derive the reply from the last user message (for attribution tests). */
   reply?: (userText: string) => string
-  /** Reasoning text to include (Anthropic/Google). */
+  /** Reasoning text/summary to include. */
   reasoning?: string
   /** Number of queued statuses returned before normal Google polling. */
   queuedPolls?: number
@@ -140,6 +140,7 @@ function openaiResponse(
   status = 'completed',
   id = 'resp_test_openai',
   reasoning?: unknown,
+  summary?: string,
 ) {
   return {
     id,
@@ -149,6 +150,15 @@ function openaiResponse(
     output:
       status === 'completed'
         ? [
+            ...(summary
+              ? [
+                  {
+                    type: 'reasoning',
+                    id: 'rs_test',
+                    summary: [{ type: 'summary_text', text: summary }],
+                  },
+                ]
+              : []),
             {
               type: 'message',
               id: 'msg_test',
@@ -219,7 +229,11 @@ export async function mockOpenAI(page: Page, opts: MockOpts = {}): Promise<Backg
       await gate.ready
       return failStatus
         ? fulfillJSON(route, failStatus, errorBody('Invalid API key'))
-        : fulfillJSON(route, 200, openaiResponse(text, 'completed', id, body.reasoning))
+        : fulfillJSON(
+            route,
+            200,
+            openaiResponse(text, 'completed', id, body.reasoning, opts.reasoning),
+          )
     }
 
     // cancel (background stop): .../v1/responses/{id}/cancel
@@ -247,6 +261,7 @@ export async function mockOpenAI(page: Page, opts: MockOpts = {}): Promise<Backg
           gate.settled() || completedIds.has(id) ? 'completed' : 'in_progress',
           id,
           reasoningById.get(id),
+          opts.reasoning,
         ),
       )
     }

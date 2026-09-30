@@ -37,9 +37,9 @@ test('Search and Think toggles affect the next request', async ({ page }) => {
   const [defaults, changed] = openai.bodies()
   expect(defaults.model).toBe('gpt-6.1-sol')
   expect(defaults.tools).toEqual([{ type: 'web_search_preview' }])
-  expect(defaults.reasoning).toEqual({ effort: 'low' })
+  expect(defaults.reasoning).toEqual({ effort: 'low', context: 'all_turns', summary: 'auto' })
   expect(changed.tools).toBeUndefined()
-  expect(changed.reasoning).toEqual({ effort: 'high' })
+  expect(changed.reasoning).toEqual({ effort: 'high', context: 'all_turns', summary: 'auto' })
 })
 
 test('Anthropic: toggling Think mid-chat keeps top-level effort fixed', async ({ page }) => {
@@ -114,7 +114,7 @@ test('OpenAI: Think changes preserve the response chain across reloads', async (
 
   const bodies = openai.bodies()
   expect(bodies.map((body) => body.reasoning)).toEqual(
-    Array.from({ length: 4 }, () => ({ effort: 'low' })),
+    Array.from({ length: 4 }, () => ({ effort: 'low', context: 'all_turns', summary: 'auto' })),
   )
   expect(bodies.map((body) => body.previous_response_id)).toEqual([
     undefined,

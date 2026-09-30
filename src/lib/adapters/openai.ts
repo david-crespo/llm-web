@@ -22,10 +22,9 @@ export class OpenAIAdapter implements Adapter {
 
     // If the most recent assistant turn was an OpenAI Responses call we have its
     // response.id — chain via previous_response_id so the reasoning from that
-    // turn carries over and we only need to send the new user message. Whether
-    // it carries over is set by reasoning.context, which we leave unset: that
-    // means 'auto', which gpt-5.6 resolves to 'all_turns'.
-    // https://developers.openai.com/api/docs/guides/conversation-state
+    // turn is available server-side and we only need to send the new user
+    // message. Request all_turns explicitly to reuse compatible reasoning.
+    // https://developers.openai.com/api/docs/guides/reasoning#preserve-reasoning-across-calls
     const lastAssistant = chat.messages.filter((m) => m.role === 'assistant').at(-1)
     const previous = lastAssistant?.provider?.type === 'openai' ? lastAssistant.provider : undefined
     let initialEffort = previous?.initialEffort
@@ -52,7 +51,7 @@ export class OpenAIAdapter implements Adapter {
         // Low/high bracket Sol's medium default and both work on Astra, which
         // rejects none. Avoid xhigh/max to limit latency and cost on mobile.
         // https://developers.openai.com/api/docs/guides/reasoning
-        reasoning: { effort },
+        reasoning: { effort, context: 'all_turns', summary: 'auto' },
         instructions: chat.systemPrompt,
       },
       { signal },
@@ -111,7 +110,11 @@ function parseResponse(response: Response): ModelResponse {
 
   return {
     content: response.output_text,
-    reasoning: '', // Responses API integrates reasoning into output_text
+    // Summaries are separate output items; output_text contains the answer.
+    reasoning: response.output
+      .flatMap((item) => (item.type === 'reasoning' ? item.summary.map((part) => part.text) : []))
+      .filter(Boolean)
+      .join('\n\n'),
     tokens,
     stop_reason: response.status || 'completed',
     searches: searches || undefined,

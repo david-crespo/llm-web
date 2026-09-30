@@ -2,11 +2,12 @@ import { expect, test, vi } from 'vitest'
 import { OpenAIAdapter } from './openai'
 import { withEffortChanges } from './openai-effort'
 import { models } from '$lib/models'
+import type { Response } from 'openai/resources/responses/responses'
 import type { AssistantMessage, ChatMessage } from '$lib/types'
 
 const responses = vi.hoisted(() => ({
   create: vi.fn<(...args: unknown[]) => Promise<{ id: string }>>(),
-  retrieve: vi.fn<(...args: unknown[]) => Promise<{ reasoning: { effort: string } }>>(),
+  retrieve: vi.fn<(...args: unknown[]) => Promise<Partial<Response>>>(),
 }))
 vi.mock('openai', () => ({
   default: class {
@@ -82,9 +83,48 @@ test('looks up the actual effort when continuing an older saved response', async
   expect(responses.create).toHaveBeenCalledWith(
     expect.objectContaining({
       previous_response_id: 'legacy',
-      reasoning: { effort: 'high' },
+      reasoning: { effort: 'high', context: 'all_turns', summary: 'auto' },
       input: [update('low'), { role: 'user', content: 'b' }],
     }),
     { signal: undefined },
   )
+})
+
+test('preserves reasoning summaries from a response', async () => {
+  responses.retrieve.mockResolvedValue({
+    id: 'saved-response',
+    status: 'completed',
+    output_text: 'final answer',
+    reasoning: { effort: 'high' },
+    output: [
+      {
+        id: 'r1',
+        type: 'reasoning',
+        summary: [
+          { type: 'summary_text', text: 'First thought.' },
+          { type: 'summary_text', text: 'Second thought.' },
+        ],
+      },
+      { id: 'r2', type: 'reasoning', summary: [] },
+      {
+        id: 'r3',
+        type: 'reasoning',
+        summary: [{ type: 'summary_text', text: 'After searching.' }],
+      },
+    ],
+  })
+
+  const result = await new OpenAIAdapter().poll({
+    provider: 'openai',
+    id: 'saved-response',
+    durable: true,
+  })
+  expect(result).toMatchObject({
+    kind: 'final',
+    response: {
+      content: 'final answer',
+      reasoning: 'First thought.\n\nSecond thought.\n\nAfter searching.',
+      provider: { type: 'openai', responseId: 'saved-response', initialEffort: 'high' },
+    },
+  })
 })
