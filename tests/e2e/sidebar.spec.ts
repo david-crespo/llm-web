@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test'
 import { setKeysThroughSettings } from './helpers/settings'
 import { mockOpenAI } from './helpers/mocks'
+import { seedChats } from './helpers/history'
 import {
   send,
   newChat,
@@ -97,4 +98,35 @@ test('large histories are virtualized to bound the rendered sidebar', async ({ p
   await history.evaluate((element) => (element.scrollTop = element.scrollHeight))
   await expect(chatRow(page, 'seeded chat 104')).toBeVisible()
   expect(await sidebarRows(page).count()).toBeLessThan(30)
+})
+
+test('sidebar previews stay on one line', async ({ page }) => {
+  const previews = [
+    '<pasted>\n' + 'Line\u2028Paragraph\u2029'.repeat(5) + '\n</pasted>',
+    '<pasted>\n' + 'x'.repeat(10000) + '\n</pasted>\n\nExplain this',
+  ]
+  await seedChats(
+    page,
+    previews.map((preview) => ({
+      createdAt: new Date(),
+      systemPrompt: 'test',
+      messages: [{ role: 'user' as const, content: preview }],
+    })),
+  )
+  await page.goto('/')
+  await openSidebar(page)
+  const history = page.getByRole('region', { name: 'Chat history' })
+  for (const preview of previews) {
+    const row = chatRow(page, preview)
+    await expect(row).toBeVisible()
+    const sizes = await row.evaluate((row) => ({
+      width: row.clientWidth,
+      scrollWidth: row.scrollWidth,
+      height: row.clientHeight,
+      scrollHeight: row.scrollHeight,
+    }))
+    expect(sizes.scrollWidth).toBeLessThanOrEqual(sizes.width)
+    expect(sizes.scrollHeight).toBeLessThanOrEqual(sizes.height)
+  }
+  expect(await history.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true)
 })

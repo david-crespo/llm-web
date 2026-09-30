@@ -46,7 +46,10 @@
   function getChatPreview(chat: Chat): string {
     const firstUserMessage = chat.messages.find((m) => m.role === 'user')
     if (!firstUserMessage) return 'New Chat'
-    return firstUserMessage.content
+    // WebKit treats Unicode line/paragraph separators as forced line breaks
+    // even with white-space: nowrap. Keep previews to one line. Slice first so
+    // huge pastes don't cost a full-message regex (or aria-label) per row.
+    return firstUserMessage.content.slice(0, 300).replace(/\s+/g, ' ').trim()
   }
 
   function formatChatAsMarkdown(chat: Chat): string {
@@ -138,7 +141,7 @@
           role="button"
           tabindex="0"
           aria-label={`Select chat: ${preview}`}
-          class="chat-row absolute right-0 left-0 flex border-b border-edge-muted py-3 pr-3 pl-3.5 focus:ring-2 focus:ring-gray-500 focus:outline-none focus:ring-inset {isActive
+          class="chat-row absolute right-0 left-0 flex overflow-hidden border-b border-edge-muted py-3 pr-3 pl-3.5 focus:ring-2 focus:ring-gray-500 focus:outline-none focus:ring-inset {isActive
             ? 'bg-surface-active'
             : ''}"
           style:height={`${HISTORY_ROW_HEIGHT}px`}

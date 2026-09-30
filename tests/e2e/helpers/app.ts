@@ -115,7 +115,9 @@ export async function newChat(page: Page): Promise<void> {
 }
 
 export function chatRow(page: Page, preview: string): Locator {
-  return page.getByRole('button', { name: `Select chat: ${preview}` })
+  // Match Sidebar's getChatPreview normalization.
+  const name = preview.slice(0, 300).replace(/\s+/g, ' ').trim()
+  return page.getByRole('button', { name: `Select chat: ${name}` })
 }
 
 export function responseLoadingIndicator(row: Locator): Locator {
