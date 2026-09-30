@@ -7,14 +7,17 @@
   import MenuIcon from './icons/MenuIcon.svelte'
   import SearchIcon from './icons/SearchIcon.svelte'
   import ThinkingIcon from './icons/ThinkingIcon.svelte'
+  import ArrowDownIcon from './icons/ArrowDownIcon.svelte'
+  import { scrollToBottom } from '$lib/actions/autoScroll'
 
   interface Props {
     message: string
     onHeightChange?: (height: number) => void
+    showJumpToBottom?: boolean
     onSend: () => void
   }
 
-  let { message = $bindable(), onHeightChange, onSend }: Props = $props()
+  let { message = $bindable(), onHeightChange, showJumpToBottom = false, onSend }: Props = $props()
 
   const availableModels = $derived(getAvailableModels())
   const hasAnyKeys = $derived(availableModels.length > 0)
@@ -84,8 +87,17 @@
 
 <div
   bind:clientHeight={height}
-  class="fixed inset-x-0 bottom-0 z-10 w-full border-t border-edge bg-surface-alt p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:static"
+  class="fixed inset-x-0 bottom-0 z-10 w-full border-t border-edge bg-surface-alt p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:relative"
 >
+  <button
+    onclick={scrollToBottom}
+    aria-label="Jump to bottom"
+    title="Jump to bottom"
+    inert={!showJumpToBottom}
+    class="absolute bottom-full left-1/2 mb-3 flex size-8 -translate-x-1/2 cursor-pointer items-center justify-center rounded-full border border-edge bg-surface-elevated text-fg-muted shadow-sm transition-[opacity,visibility] duration-100 hover:bg-surface-hover hover:text-fg motion-reduce:transition-none {showJumpToBottom ? 'visible opacity-100' : 'invisible opacity-0'}"
+  >
+    <ArrowDownIcon />
+  </button>
   <div class="mx-auto md:max-w-2xl">
     <!-- Collapsed pastes -->
     {#if composer.pastes.length > 0}

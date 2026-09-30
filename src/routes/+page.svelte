@@ -16,6 +16,7 @@
   // The mobile composer is fixed, so the document-scrolled message list needs matching
   // bottom padding to keep the last message reachable as the textarea grows.
   let inputBarHeight = $state(0)
+  let atBottom = $state(true)
 
   /**
    * Send message handler - clears input and delegates to ChatManager
@@ -99,6 +100,7 @@
     <div class="flex min-w-0 flex-1 flex-col">
       <MessageList
         composerHeight={inputBarHeight}
+        onAtBottomChange={(value) => (atBottom = value)}
         onFork={handleFork}
         onEdit={handleEdit}
         onOpenAbout={() => (showAboutModal = true)}
@@ -107,6 +109,7 @@
       <InputBar
         bind:this={inputBar}
         bind:message
+        showJumpToBottom={!atBottom && chatState.current.messages.length > 0}
         onHeightChange={(height) => (inputBarHeight = height)}
         onSend={handleSend}
       />

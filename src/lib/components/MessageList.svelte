@@ -2,19 +2,24 @@
   import ChatMessage from '$lib/ChatMessage.svelte'
   import { chatState } from '$lib/chat.svelte'
   import { getAvailableModels } from '$lib/models.svelte'
+  import { trackScrollPosition } from '$lib/actions/autoScroll'
 
   interface Props {
     composerHeight?: number
+    onAtBottomChange: (atBottom: boolean) => void
     onFork: (index: number) => void
     onEdit: (index: number) => void
     onOpenAbout: () => void
   }
 
-  let { composerHeight = 0, onFork, onEdit, onOpenAbout }: Props = $props()
+  let { composerHeight = 0, onAtBottomChange, onFork, onEdit, onOpenAbout }: Props = $props()
   const hasApiKeys = getAvailableModels().length > 0
 </script>
 
 <div
+  role="region"
+  aria-label="Chat messages"
+  use:trackScrollPosition={{onAtBottomChange, composerHeight}}
   class="flex min-h-0 flex-1 flex-col overflow-x-hidden p-4 pb-[calc(var(--composer-height)+1rem)] md:overflow-y-auto md:pb-4"
   style={`--composer-height: ${composerHeight}px`}
 >

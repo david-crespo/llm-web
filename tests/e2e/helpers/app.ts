@@ -111,7 +111,7 @@ export async function openSidebar(page: Page): Promise<void> {
 
 export async function newChat(page: Page): Promise<void> {
   await openSidebar(page)
-  await page.getByLabel('New Chat').click()
+  await page.getByRole('button', { name: 'New Chat', exact: true }).click()
 }
 
 export function chatRow(page: Page, preview: string): Locator {
