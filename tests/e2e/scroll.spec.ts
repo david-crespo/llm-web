@@ -1,23 +1,7 @@
 import { test, expect } from '@playwright/test'
 import { models } from '../../src/lib/models'
-import type { AssistantMessage, NewChat } from '../../src/lib/types'
-import { seedChats } from './helpers/history'
+import { answer, savedChat, seedChats } from './helpers/history'
 import { newChat, selectChat, messageInput } from './helpers/app'
-
-const answer = (model: string, content = 'Answer'): AssistantMessage => ({
-  role: 'assistant',
-  model,
-  content,
-  tokens: { input: 1, output: 1 },
-  stop_reason: 'completed',
-  timeMs: 0,
-  cost: 0,
-})
-const savedChat = (preview: string, messages: NewChat['messages']): NewChat => ({
-  createdAt: new Date(),
-  systemPrompt: 'test',
-  messages: [{ role: 'user', content: preview }, ...messages],
-})
 
 test('jump to bottom follows scrolling and content resizing', async ({ page }) => {
   await seedChats(page, [

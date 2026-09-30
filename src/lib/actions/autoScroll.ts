@@ -23,6 +23,8 @@ function scrollBehavior(): ScrollBehavior {
  * from opening disclosures, resizing the composer, and switching chats. */
 type ScrollPositionOptions = {
   onAtBottomChange: (atBottom: boolean) => void
+  /** Not read. Passing it makes Svelte call the action's update() when the
+   * composer resizes, since the list itself isn't observed (see below). */
   composerHeight: number
 }
 

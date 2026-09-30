@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import { setKeysThroughSettings } from './helpers/settings'
 import { mockOpenAI } from './helpers/mocks'
-import { seedChats } from './helpers/history'
+import { savedChat, seedChats } from './helpers/history'
 import {
   send,
   newChat,
@@ -53,36 +53,12 @@ test('deleting a resumed pending chat cancels its provider job', async ({ page }
 })
 
 test('large histories are virtualized to bound the rendered sidebar', async ({ page }) => {
-  await page.goto('/settings')
-  await page.evaluate(
-    () =>
-      new Promise<void>((resolve, reject) => {
-        const request = indexedDB.open('llm-web', 1)
-        request.onerror = () => reject(request.error)
-        request.onupgradeneeded = () => {
-          const db = request.result
-          const chats = db.createObjectStore('chats', { keyPath: 'id', autoIncrement: true })
-          chats.createIndex('createdAt', 'createdAt', { unique: false })
-          db.createObjectStore('apiKeys', { keyPath: 'id' })
-        }
-        request.onsuccess = () => {
-          const db = request.result
-          const transaction = db.transaction('chats', 'readwrite')
-          transaction.onerror = () => reject(transaction.error)
-          transaction.oncomplete = () => {
-            db.close()
-            resolve()
-          }
-          const store = transaction.objectStore('chats')
-          for (let i = 0; i < 105; i++) {
-            store.add({
-              createdAt: new Date(Date.now() - i * 1000).toISOString(),
-              systemPrompt: 'test',
-              messages: [{ role: 'user', content: `seeded chat ${i}` }],
-            })
-          }
-        }
-      }),
+  await seedChats(
+    page,
+    Array.from({ length: 105 }, (_, i) => ({
+      ...savedChat(`seeded chat ${i}`),
+      createdAt: new Date(Date.now() - i * 1000),
+    })),
   )
 
   await page.goto('/')
@@ -107,11 +83,7 @@ test('sidebar previews stay on one line', async ({ page }) => {
   ]
   await seedChats(
     page,
-    previews.map((preview) => ({
-      createdAt: new Date(),
-      systemPrompt: 'test',
-      messages: [{ role: 'user' as const, content: preview }],
-    })),
+    previews.map((preview) => savedChat(preview)),
   )
   await page.goto('/')
   await openSidebar(page)
