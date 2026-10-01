@@ -63,6 +63,7 @@ test('large histories are virtualized to bound the rendered sidebar', async ({ p
 
   await page.goto('/')
   await openSidebar(page)
+  await expect(chatRow(page, 'seeded chat 0')).toBeVisible()
 
   // Only the visible rows plus a small overscan are mounted, while every chat
   // remains reachable through one continuous scroll area.
