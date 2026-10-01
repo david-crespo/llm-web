@@ -148,5 +148,6 @@ test('a render crash is caught by the boundary instead of blanking the page', as
   await expect(messageInput(page)).toBeHidden()
   // The stack is what makes this useful with no console attached.
   await report(page).getByText('Details').click()
-  await expect(report(page).locator('pre')).toContainText('ChatMessage')
+  // Production stacks point to minified bundles rather than component names.
+  await expect(report(page).locator('pre')).toContainText(/\/_app\/immutable\/.+\.js:\d+:\d+/)
 })

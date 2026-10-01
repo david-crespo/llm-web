@@ -1,9 +1,9 @@
 import { defineConfig, devices } from '@playwright/test'
 
-// Tests run against their own dev server on a dedicated port (not the 5173 one a
-// developer may already have running) so the suite is self-contained. Served
-// over https (self-signed) because the app's CSP upgrades insecure requests and
-// WebKit enforces that on localhost; ignoreHTTPSErrors accepts the cert.
+// Tests build the production bundle and run their own preview server on a
+// dedicated port, separate from the developer's dev server. Served over https
+// (self-signed) because the app's CSP upgrades insecure requests and WebKit
+// enforces that on localhost; ignoreHTTPSErrors accepts the cert.
 const PORT = 4173
 const baseURL = `https://localhost:${PORT}`
 
@@ -22,9 +22,10 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
   webServer: {
-    command: `PW_HTTPS=1 bunx vite dev --port ${PORT} --strictPort`,
+    command: `bun run build && PW_HTTPS=1 bun run preview --port ${PORT} --strictPort`,
     url: baseURL,
-    reuseExistingServer: true,
+    // Reusing a server could silently test a stale build or a dev server.
+    reuseExistingServer: false,
     ignoreHTTPSErrors: true,
     timeout: 120_000,
   },

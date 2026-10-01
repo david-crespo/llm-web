@@ -7,7 +7,7 @@ import { configDefaults, defineConfig } from 'vitest/config'
 // The app's CSP sets `upgrade-insecure-requests`, which WebKit (unlike Chromium)
 // honors even on localhost — so over plain http the dev server's module scripts
 // get upgraded to https and fail with a TLS error. The deployed site is https,
-// so the e2e tests serve over https too (self-signed) when PW_HTTPS is set.
+// so the e2e preview server uses https too (self-signed) when PW_HTTPS is set.
 const plugins: PluginOption[] = [tailwindcss(), sveltekit()]
 if (process.env.PW_HTTPS === '1') plugins.push(basicSsl())
 
