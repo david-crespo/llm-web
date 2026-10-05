@@ -6,17 +6,49 @@ export function scrollToBottom() {
     const messages = document.querySelectorAll('[data-message]')
     const last = messages[messages.length - 1] as HTMLElement | undefined
     if (!last) return
-    const parent = getScrollParent(last)
-    if (parent) {
-      parent.scrollTo({ top: parent.scrollHeight, behavior: scrollBehavior() })
+    const scroller = getScrollParent(last) ?? document.scrollingElement ?? document.documentElement
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      scroller.scrollTop = scroller.scrollHeight
     } else {
-      window.scrollTo({ top: document.documentElement.scrollHeight, behavior: scrollBehavior() })
+      animateToBottom(scroller)
     }
   })
 }
 
-function scrollBehavior(): ScrollBehavior {
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth'
+const SCROLL_DURATION_MS = 250
+
+let cancelScroll: (() => void) | undefined
+
+// Native smooth scrolling has a browser-chosen duration (slow in Safari), so
+// tween scrollTop ourselves. Any user input stops the animation.
+function animateToBottom(scroller: Element) {
+  cancelScroll?.()
+  const start = scroller.scrollTop
+  const startTime = performance.now()
+  let frame = 0
+
+  const stop = () => {
+    cancelAnimationFrame(frame)
+    window.removeEventListener('wheel', stop)
+    window.removeEventListener('touchstart', stop)
+    window.removeEventListener('keydown', stop)
+    cancelScroll = undefined
+  }
+  cancelScroll = stop
+  window.addEventListener('wheel', stop, { passive: true })
+  window.addEventListener('touchstart', stop, { passive: true })
+  window.addEventListener('keydown', stop)
+
+  const step = (now: number) => {
+    const t = Math.min(1, (now - startTime) / SCROLL_DURATION_MS)
+    const eased = 1 - (1 - t) ** 3 // ease-out cubic
+    // Recompute the target each frame in case content height changes mid-scroll
+    const target = scroller.scrollHeight - scroller.clientHeight
+    scroller.scrollTop = start + (target - start) * eased
+    if (t < 1) frame = requestAnimationFrame(step)
+    else stop()
+  }
+  frame = requestAnimationFrame(step)
 }
 
 /** Track both the desktop scroller and the mobile document, including changes
