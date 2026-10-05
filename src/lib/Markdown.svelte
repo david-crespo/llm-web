@@ -297,9 +297,13 @@
     margin: 1rem 0;
   }
 
-  /* Scroll wide display math rather than overflowing the container */
+  /* Scroll wide display math rather than overflowing the container. overflow-x
+   * forces overflow-y to auto too, and tall glyphs (integrals, superscripts)
+   * poke out a few pixels, so hide vertical overflow and pad to avoid clipping. */
   .prose :global(p:has(> math.tml-display)) {
     overflow-x: auto;
+    overflow-y: hidden;
+    padding-block: 0.25rem;
   }
 
   /* Math parse errors */
