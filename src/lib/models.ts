@@ -36,6 +36,18 @@ export const models: Model[] = [
   },
   {
     provider: 'google',
+    key: 'gemini-4-argon',
+    id: 'Gemini 4 Argon',
+    input: 2,
+    input_cached: 0.1,
+    output: 10,
+    // Introductory pricing through November 30, 2026; doubles to 4/20/0.20
+    // starting December 1, 2026.
+    // 5,000 search queries per month free, then $14/1000
+    search_cost: 0,
+  },
+  {
+    provider: 'google',
     key: 'gemini-3.8-flash',
     id: 'Gemini 3.8 Flash',
     input: 0.75,
