@@ -104,6 +104,6 @@ The app builds to a static site that can be deployed anywhere:
 ### Hosting Options
 
 - **GitHub Pages**: Upload `build/` contents
-- **Netlify**: Connect repo and set build command to `npm run build`
+- **Netlify**: Connect repo (`netlify.toml` sets the build command and Node version)
 - **Vercel**: Connect repo and set build command to `npm run build`
 - **Any static host**: AWS S3, Cloudflare Pages, etc.
