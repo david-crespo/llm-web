@@ -62,7 +62,7 @@ Storing API keys in localStorage and rendering LLM output as HTML creates
 use this app if you understand what that means and buy the argument here that
 the risk is low. The mitigations in place are:
 
-- **Content Security Policy**: Hash-based CSP in `svelte.config.js` prevents
+- **Content Security Policy**: Hash-based CSP in `vite.config.ts` prevents
   inline script execution and restricts `connect-src` to the three LLM
   API endpoints. See security headers in `static/_headers` include
   frame-ancestors restrictions, HSTS, and cross-origin policies.
@@ -89,24 +89,21 @@ anyway.
 
 ## Setup
 
-- Dev: `bun install` and `bun run dev`
-- Build: `bun run build`
-- Preview: `bun run preview`
-- Deploy: `bun run deploy` (builds static files to `build/` directory)
-
-There's nothing Bun-specific here, so these work equally well with `npm`.
+- Dev: `npm install` and `npm run dev`
+- Build: `npm run build`
+- Preview: `npm run preview`
 
 ## Deployment
 
 The app builds to a static site that can be deployed anywhere:
 
-1. `bun run build` - Creates static files in `build/` directory
+1. `npm run build` - Creates static files in `build/` directory
 2. Upload the contents of `build/` to any static hosting service
 3. No server required - everything runs client-side
 
 ### Hosting Options
 
 - **GitHub Pages**: Upload `build/` contents
-- **Netlify**: Connect repo and set build command to `bun run build`
-- **Vercel**: Connect repo and set build command to `bun run build`
+- **Netlify**: Connect repo (`netlify.toml` sets the build command and Node version)
+- **Vercel**: Connect repo and set build command to `npm run build`
 - **Any static host**: AWS S3, Cloudflare Pages, etc.

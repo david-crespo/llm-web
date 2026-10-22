@@ -1,9 +1,9 @@
 <script lang="ts">
   import Markdown from './Markdown.svelte'
   import type { ChatMessage } from './types'
-  import { formatTime, formatMoney, formatTokens, shortModel } from '$lib/format'
-  import { clickOutside } from '$lib/actions/clickOutside'
-  import { pasteLabel, splitSegments } from '$lib/paste'
+  import { formatTime, formatMoney, formatTokens, shortModel } from '#lib/format.ts'
+  import { clickOutside } from '#lib/actions/clickOutside.ts'
+  import { pasteLabel, splitSegments } from '#lib/paste.ts'
 
   interface Props {
     message: ChatMessage

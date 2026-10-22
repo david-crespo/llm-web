@@ -1,6 +1,6 @@
 <script lang="ts">
   import { marked, type Tokens } from 'marked'
-  import DOMPurify from '$lib/purify'
+  import DOMPurify from '#lib/purify.ts'
   // Use highlight.js core and explicitly register only needed languages
   import hljs from 'highlight.js/lib/core'
   import javascript from 'highlight.js/lib/languages/javascript'

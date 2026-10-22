@@ -1,4 +1,4 @@
-import type { Chat } from '$lib/types'
+import type { Chat } from '#lib/types.ts'
 
 /** Merge the asynchronous IndexedDB snapshot into the in-memory history without
  * overwriting chats that changed in memory while it was loading: when both

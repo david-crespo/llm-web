@@ -5,16 +5,16 @@ import { withEffortChanges } from './adapters/anthropic-effort'
 import { models } from './models'
 import type { Chat } from './types'
 
-vi.mock('$lib/storage', () => ({
+vi.mock('#lib/storage.ts', () => ({
   storage: {
     init: async () => {},
     createChat: async () => 2,
     updateChat: async () => {},
   },
 }))
-vi.mock('$lib/settings.svelte', () => ({ settings: { getKey: () => 'test-key' } }))
-vi.mock('$lib/adapters', () => ({ getAdapter: vi.fn<typeof getAdapter>() }))
-vi.mock('$lib/actions/autoScroll', () => ({
+vi.mock('#lib/settings.svelte.ts', () => ({ settings: { getKey: () => 'test-key' } }))
+vi.mock('#lib/adapters/index.ts', () => ({ getAdapter: vi.fn<typeof getAdapter>() }))
+vi.mock('#lib/actions/autoScroll.ts', () => ({
   scrollToBottom: () => {},
   scrollToAnswer: () => {},
 }))

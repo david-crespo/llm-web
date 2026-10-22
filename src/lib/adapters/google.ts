@@ -1,7 +1,7 @@
 import { GoogleGenAI, type Interactions } from '@google/genai'
 import type { Adapter, ChatInput, ModelResponse, PollResult } from './index'
-import type { JobHandle } from '$lib/types'
-import { settings } from '$lib/settings.svelte'
+import type { JobHandle } from '#lib/types.ts'
+import { settings } from '#lib/settings.svelte.ts'
 
 // Google adapter using the Interactions API in background mode: create with
 // background+store, then poll interactions.get by id. The interaction id is

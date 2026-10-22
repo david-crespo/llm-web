@@ -1,0 +1,8 @@
+# Overrides the build settings in the Netlify UI.
+[build]
+command = "npm run build"
+publish = "build"
+
+[build.environment]
+# SvelteKit 3 needs Node 22.17+
+NODE_VERSION = "24"

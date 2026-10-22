@@ -1,14 +1,14 @@
 <script lang="ts">
-  import { getAvailableModels } from '$lib/models.svelte'
-  import { chatState } from '$lib/chat.svelte'
-  import { PASTE_COLLAPSE_CHARS, joinComposer, pasteLabel, splitComposer } from '$lib/paste'
+  import { getAvailableModels } from '#lib/models.svelte.ts'
+  import { chatState } from '#lib/chat.svelte.ts'
+  import { PASTE_COLLAPSE_CHARS, joinComposer, pasteLabel, splitComposer } from '#lib/paste.ts'
   import ChevronDownIcon from './icons/ChevronDownIcon.svelte'
   import CloseIcon from './icons/CloseIcon.svelte'
   import MenuIcon from './icons/MenuIcon.svelte'
   import SearchIcon from './icons/SearchIcon.svelte'
   import ThinkingIcon from './icons/ThinkingIcon.svelte'
   import ArrowDownIcon from './icons/ArrowDownIcon.svelte'
-  import { scrollToBottom } from '$lib/actions/autoScroll'
+  import { scrollToBottom } from '#lib/actions/autoScroll.ts'
 
   interface Props {
     message: string

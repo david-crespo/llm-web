@@ -1,5 +1,5 @@
 import type { ResponseInput } from 'openai/resources/responses/responses'
-import type { ChatMessage } from '$lib/types'
+import type { ChatMessage } from '#lib/types.ts'
 
 type Effort = 'low' | 'high'
 const toEffort = (think: boolean): Effort => (think ? 'high' : 'low')

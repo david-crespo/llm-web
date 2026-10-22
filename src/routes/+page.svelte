@@ -1,11 +1,11 @@
 <script lang="ts">
-  import Sidebar from '$lib/components/Sidebar.svelte'
-  import MessageList from '$lib/components/MessageList.svelte'
-  import InputBar from '$lib/components/InputBar.svelte'
-  import AboutModal from '$lib/components/AboutModal.svelte'
-  import ConfirmDialog from '$lib/components/ConfirmDialog.svelte'
-  import { initTheme } from '$lib/theme.svelte'
-  import { bootComplete, bootState, chatState, loadStoredHistory } from '$lib/chat.svelte'
+  import Sidebar from '#lib/components/Sidebar.svelte'
+  import MessageList from '#lib/components/MessageList.svelte'
+  import InputBar from '#lib/components/InputBar.svelte'
+  import AboutModal from '#lib/components/AboutModal.svelte'
+  import ConfirmDialog from '#lib/components/ConfirmDialog.svelte'
+  import { initTheme } from '#lib/theme.svelte.ts'
+  import { bootComplete, bootState, chatState, loadStoredHistory } from '#lib/chat.svelte.ts'
   import { onMount, tick } from 'svelte'
 
   // Local UI state (not managed by ChatManager)
@@ -60,7 +60,7 @@
       // Dev only: /?seed replaces sample chats in history. The import is
       // dropped from production builds along with this branch.
       if (import.meta.env.DEV && new URLSearchParams(location.search).has('seed')) {
-        const { seedSampleChats } = await import('$lib/dev/seed')
+        const { seedSampleChats } = await import('#lib/dev/seed.ts')
         await seedSampleChats()
       }
       await loadStoredHistory()

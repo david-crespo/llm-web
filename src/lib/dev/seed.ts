@@ -1,9 +1,9 @@
 // Dev-only sample history, loaded by visiting /?seed. Lets you look at the
 // sidebar and message rendering without API keys or provider calls.
 
-import { storage } from '$lib/storage'
-import { models, systemBase } from '$lib/models.svelte'
-import type { AssistantMessage, ChatMessage, NewChat } from '$lib/types'
+import { storage } from '#lib/storage.ts'
+import { models, systemBase } from '#lib/models.svelte.ts'
+import type { AssistantMessage, ChatMessage, NewChat } from '#lib/types.ts'
 
 /** Marks seeded chats so reseeding replaces them and leaves real chats alone. */
 const SEED_PROMPT = `[dev seed]\n\n${systemBase}`

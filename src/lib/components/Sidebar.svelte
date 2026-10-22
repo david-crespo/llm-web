@@ -1,7 +1,7 @@
 <script lang="ts">
-  import type { Chat, ChatMessage } from '$lib/types'
-  import { chatState } from '$lib/chat.svelte'
-  import { formatTime, formatMoney, formatTokens } from '$lib/format'
+  import type { Chat, ChatMessage } from '#lib/types.ts'
+  import { chatState } from '#lib/chat.svelte.ts'
+  import { formatTime, formatMoney, formatTokens } from '#lib/format.ts'
   import { DropdownMenu } from 'bits-ui'
   import CloseIcon from './icons/CloseIcon.svelte'
   import SunIcon from './icons/SunIcon.svelte'
@@ -74,7 +74,7 @@
     await navigator.clipboard.writeText(markdown)
   }
 
-  import { getThemeMode, cycleThemeMode } from '$lib/theme.svelte'
+  import { getThemeMode, cycleThemeMode } from '#lib/theme.svelte.ts'
 
   // Conditionally render desktop vs mobile sidebar to avoid creating
   // duplicate DOM (especially DropdownMenu portals) for the hidden variant

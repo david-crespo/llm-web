@@ -1,10 +1,10 @@
 import { SvelteDate, SvelteMap } from 'svelte/reactivity'
-import { storage } from '$lib/storage'
-import { mergeHistory } from '$lib/history'
-import { models, getCost, systemBase, getAvailableModels, type Model } from '$lib/models.svelte'
-import { getAdapter, type ModelResponse } from '$lib/adapters'
-import { scrollToBottom, scrollToAnswer } from '$lib/actions/autoScroll'
-import type { Chat, NewChat, ChatMessage, JobHandle, PendingJob } from '$lib/types'
+import { storage } from '#lib/storage.ts'
+import { mergeHistory } from '#lib/history.ts'
+import { models, getCost, systemBase, getAvailableModels, type Model } from '#lib/models.svelte.ts'
+import { getAdapter, type ModelResponse } from '#lib/adapters/index.ts'
+import { scrollToBottom, scrollToAnswer } from '#lib/actions/autoScroll.ts'
+import type { Chat, NewChat, ChatMessage, JobHandle, PendingJob } from '#lib/types.ts'
 
 // Poll frequently while the answer is likely to finish soon. Provider polling
 // is cheap relative to generation, and a long backoff makes a chat UI feel

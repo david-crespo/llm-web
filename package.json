@@ -11,27 +11,26 @@
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "fmt": "oxfmt .",
     "lint": "oxfmt --check . && oxlint .",
-    "deploy": "npm run build && echo 'Static files ready in build/ directory'",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "ci": "bun run check && bun run lint && bun run test && bun run test:e2e"
+    "ci": "npm run check && npm run lint && npm run test && npm run test:e2e"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.0",
-    "@sveltejs/adapter-static": "^3.0.10",
-    "@sveltejs/kit": "^2.70.2",
-    "@sveltejs/vite-plugin-svelte": "^7.0.0",
+    "@sveltejs/adapter-static": "^4.0.0",
+    "@sveltejs/kit": "^3.1.0",
+    "@sveltejs/vite-plugin-svelte": "^7.3.1",
     "@tailwindcss/forms": "^0.5.11",
     "@tailwindcss/vite": "^4.2.2",
     "@vitejs/plugin-basic-ssl": "^2.3.0",
     "oxfmt": "^0.60.0",
     "oxlint": "^1.75.0",
     "oxlint-tsgolint": "^7.0.2001",
-    "svelte": "^5.56.8",
-    "svelte-check": "^4.7.3",
+    "svelte": "^5.57.2",
+    "svelte-check": "^4.7.7",
     "tailwindcss": "^4.2.2",
     "typescript": "^6.0.3",
-    "vite": "^8.2.1",
+    "vite": "^8.3.5",
     "vitest": "^4.1.10"
   },
   "dependencies": {
@@ -45,7 +44,7 @@
     "openai": "^7.23.0",
     "temml": "^0.13.3"
   },
-  "patchedDependencies": {
-    "temml@0.13.3": "patches/temml@0.13.3.patch"
+  "imports": {
+    "#lib/*": "./src/lib/*"
   }
 }

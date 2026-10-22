@@ -1,8 +1,8 @@
 <script lang="ts">
-  import ChatMessage from '$lib/ChatMessage.svelte'
-  import { chatState } from '$lib/chat.svelte'
-  import { getAvailableModels } from '$lib/models.svelte'
-  import { trackScrollPosition } from '$lib/actions/autoScroll'
+  import ChatMessage from '#lib/ChatMessage.svelte'
+  import { chatState } from '#lib/chat.svelte.ts'
+  import { getAvailableModels } from '#lib/models.svelte.ts'
+  import { trackScrollPosition } from '#lib/actions/autoScroll.ts'
 
   interface Props {
     composerHeight?: number
