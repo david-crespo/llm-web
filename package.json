@@ -44,9 +44,6 @@
     "openai": "^7.23.0",
     "temml": "^0.13.3"
   },
-  "patchedDependencies": {
-    "temml@0.13.3": "patches/temml@0.13.3.patch"
-  },
   "imports": {
     "#lib/*": "./src/lib/*"
   }
