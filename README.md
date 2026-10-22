@@ -89,23 +89,21 @@ anyway.
 
 ## Setup
 
-- Dev: `bun install` and `bun run dev`
-- Build: `bun run build`
-- Preview: `bun run preview`
-
-There's nothing Bun-specific here, so these work equally well with `npm`.
+- Dev: `npm install` and `npm run dev`
+- Build: `npm run build`
+- Preview: `npm run preview`
 
 ## Deployment
 
 The app builds to a static site that can be deployed anywhere:
 
-1. `bun run build` - Creates static files in `build/` directory
+1. `npm run build` - Creates static files in `build/` directory
 2. Upload the contents of `build/` to any static hosting service
 3. No server required - everything runs client-side
 
 ### Hosting Options
 
 - **GitHub Pages**: Upload `build/` contents
-- **Netlify**: Connect repo and set build command to `bun run build`
-- **Vercel**: Connect repo and set build command to `bun run build`
+- **Netlify**: Connect repo and set build command to `npm run build`
+- **Vercel**: Connect repo and set build command to `npm run build`
 - **Any static host**: AWS S3, Cloudflare Pages, etc.

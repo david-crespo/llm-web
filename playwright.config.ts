@@ -22,7 +22,7 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
   webServer: {
-    command: `bun run build && PW_HTTPS=1 bun run preview --port ${PORT} --strictPort`,
+    command: `npm run build && PW_HTTPS=1 npm run preview -- --port ${PORT} --strictPort`,
     url: baseURL,
     // Reusing a server could silently test a stale build or a dev server.
     reuseExistingServer: false,
