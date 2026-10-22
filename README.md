@@ -92,7 +92,6 @@ anyway.
 - Dev: `bun install` and `bun run dev`
 - Build: `bun run build`
 - Preview: `bun run preview`
-- Deploy: `bun run deploy` (builds static files to `build/` directory)
 
 There's nothing Bun-specific here, so these work equally well with `npm`.
 
