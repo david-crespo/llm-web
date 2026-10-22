@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import Link from '$lib/components/Link.svelte'
-  import { settings } from '$lib/settings.svelte'
+  import Link from '#lib/components/Link.svelte'
+  import { settings } from '#lib/settings.svelte.ts'
 
   const inputClass = 'w-full rounded border border-edge bg-surface-elevated px-3 py-2 text-fg'
 
@@ -10,7 +10,7 @@
   onMount(() => {
     // Not every browser has the Storage API — notably the Linux WebKit build
     // Playwright runs in CI — and throwing here would take the whole app down
-    // through the boundary in +layout.svelte. Without it, usage is just hidden.
+    // through the error page. Without it, usage is just hidden.
     void navigator.storage?.estimate().then((estimate) => {
       const used = estimate.usage ?? 0
       const quota = estimate.quota ?? 0

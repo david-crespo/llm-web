@@ -1,16 +1,13 @@
 <script lang="ts">
-  import type { ReportedError } from '$lib/errors'
+  import type { ReportedError } from '#lib/errors.ts'
 
   interface Props {
     error: ReportedError
-    /** Recreate the boundary contents. Absent for window-level errors, where
-     * the UI is still standing and there is nothing to re-render. */
-    onReset?: () => void
     /** Dismiss the report. Absent when the error took the whole page down. */
     onDismiss?: () => void
   }
 
-  let { error, onReset, onDismiss }: Props = $props()
+  let { error, onDismiss }: Props = $props()
 
   let copyState = $state<'idle' | 'copied' | 'failed'>('idle')
   let detailsOpen = $state(false)
@@ -57,9 +54,6 @@
   {/if}
   <div class="flex flex-wrap gap-2">
     <button class={buttonClass} onclick={copyReport}>{copyLabels[copyState]}</button>
-    {#if onReset}
-      <button class={buttonClass} onclick={onReset}>Try again</button>
-    {/if}
     <button class={buttonClass} onclick={() => location.reload()}>Reload</button>
     {#if onDismiss}
       <button class={buttonClass} onclick={onDismiss}>Dismiss</button>

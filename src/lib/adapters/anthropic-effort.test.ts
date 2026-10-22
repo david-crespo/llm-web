@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import { withEffortChanges } from './anthropic-effort'
-import type { ChatMessage } from '$lib/types'
+import type { ChatMessage } from '#lib/types.ts'
 
 const user = (content: string, think?: boolean): ChatMessage => ({ role: 'user', content, think })
 const assistant = (content: string): ChatMessage => ({

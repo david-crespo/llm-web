@@ -5,7 +5,7 @@ import type {
   CitationsWebSearchResultLocation,
 } from '@anthropic-ai/sdk/resources/messages'
 import type { ChatInput, ModelResponse } from './index'
-import { settings } from '$lib/settings.svelte'
+import { settings } from '#lib/settings.svelte.ts'
 import { NonDurableAdapter } from './non-durable'
 import { withEffortChanges } from './anthropic-effort'
 

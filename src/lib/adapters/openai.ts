@@ -1,8 +1,8 @@
 import OpenAI from 'openai'
 import type { Response } from 'openai/resources/responses/responses'
 import type { Adapter, ChatInput, ModelResponse, PollResult } from './index'
-import type { JobHandle } from '$lib/types'
-import { settings } from '$lib/settings.svelte'
+import type { JobHandle } from '#lib/types.ts'
+import { settings } from '#lib/settings.svelte.ts'
 import { withEffortChanges } from './openai-effort'
 
 // OpenAI API adapter using the Responses API in background mode: submit with

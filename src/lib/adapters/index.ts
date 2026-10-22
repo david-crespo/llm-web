@@ -1,5 +1,5 @@
-import type { Chat, JobHandle, ProviderData, TokenCounts } from '$lib/types'
-import type { Model } from '$lib/models.svelte'
+import type { Chat, JobHandle, ProviderData, TokenCounts } from '#lib/types.ts'
+import type { Model } from '#lib/models.svelte.ts'
 import { OpenAIAdapter } from './openai'
 import { AnthropicAdapter } from './anthropic'
 import { GoogleAdapter } from './google'

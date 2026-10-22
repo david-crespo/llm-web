@@ -62,7 +62,7 @@ Storing API keys in localStorage and rendering LLM output as HTML creates
 use this app if you understand what that means and buy the argument here that
 the risk is low. The mitigations in place are:
 
-- **Content Security Policy**: Hash-based CSP in `svelte.config.js` prevents
+- **Content Security Policy**: Hash-based CSP in `vite.config.ts` prevents
   inline script execution and restricts `connect-src` to the three LLM
   API endpoints. See security headers in `static/_headers` include
   frame-ancestors restrictions, HSTS, and cross-origin policies.

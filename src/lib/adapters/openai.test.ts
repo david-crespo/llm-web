@@ -1,9 +1,9 @@
 import { expect, test, vi } from 'vitest'
 import { OpenAIAdapter } from './openai'
 import { withEffortChanges } from './openai-effort'
-import { models } from '$lib/models'
+import { models } from '#lib/models.ts'
 import type { Response } from 'openai/resources/responses/responses'
-import type { AssistantMessage, ChatMessage } from '$lib/types'
+import type { AssistantMessage, ChatMessage } from '#lib/types.ts'
 
 const responses = vi.hoisted(() => ({
   create: vi.fn<(...args: unknown[]) => Promise<{ id: string }>>(),
@@ -14,7 +14,7 @@ vi.mock('openai', () => ({
     responses = responses
   },
 }))
-vi.mock('$lib/settings.svelte', () => ({ settings: { getKey: () => 'test-key' } }))
+vi.mock('#lib/settings.svelte.ts', () => ({ settings: { getKey: () => 'test-key' } }))
 
 const user = (content: string, think?: boolean): ChatMessage => ({ role: 'user', content, think })
 const answer: AssistantMessage = {

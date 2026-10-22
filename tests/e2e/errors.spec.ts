@@ -1,11 +1,10 @@
 import { test, expect } from '@playwright/test'
 import { messageInput, selectChat } from './helpers/app'
 
-// The app runs on a phone, where there is no console. These cover the three
-// channels that make an error readable there: `<svelte:boundary>` for render
-// crashes, window listeners for everything else — event handlers and async work,
-// which the boundary does not see — and +error.svelte for navigation, which
-// SvelteKit catches before either of the others can.
+// The app runs on a phone, where there is no console. These cover the two
+// channels that make an error readable there: +error.svelte for anything
+// SvelteKit catches (render crashes and navigation), and window listeners for
+// everything else — event handlers and async work, which never reach a boundary.
 
 const report = (page: import('@playwright/test').Page) => page.getByRole('alert')
 
@@ -42,7 +41,7 @@ test('a bad route renders the error page rather than a bare SvelteKit 404', asyn
   await page.goto('/no-such-route')
 
   await expect(report(page)).toContainText('Something broke')
-  await expect(report(page)).toContainText('Not found: /no-such-route')
+  await expect(report(page)).toContainText('Not Found: /no-such-route')
 })
 
 test('a denied clipboard write says so and opens the stack for hand-copying', async ({ page }) => {
@@ -142,9 +141,9 @@ test('a render crash is caught by the boundary instead of blanking the page', as
   await selectChat(page, 'crash me')
 
   await expect(report(page)).toContainText('boom during render')
-  // Only the boundary's report offers a reset, so this pins down which channel
-  // caught the error — the app is gone and the report replaced it.
-  await expect(report(page).getByRole('button', { name: 'Try again' })).toBeVisible()
+  // Only the overlay offers Dismiss, so this pins down which channel caught the
+  // error — the app is gone and the error page replaced it.
+  await expect(report(page).getByRole('button', { name: 'Dismiss' })).toHaveCount(0)
   await expect(messageInput(page)).toBeHidden()
   // The stack is what makes this useful with no console attached.
   await report(page).getByText('Details').click()

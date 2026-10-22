@@ -1,8 +1,8 @@
 <script lang="ts">
   import '../app.css'
-  import favicon from '$lib/assets/favicon.svg'
-  import ErrorReport from '$lib/components/ErrorReport.svelte'
-  import { toReportedError, type ReportedError } from '$lib/errors'
+  import favicon from '#lib/assets/favicon.svg'
+  import ErrorReport from '#lib/components/ErrorReport.svelte'
+  import { toReportedError, type ReportedError } from '#lib/errors.ts'
 
   let { children } = $props()
   let lastError = $state<ReportedError | null>(null)
@@ -29,33 +29,17 @@
   <title>llm-web</title>
 </svelte:head>
 
-<svelte:boundary onerror={(error) => console.error('Error (render):', error)}>
-  {@render children?.()}
+{@render children?.()}
 
-  <!-- Errors from event handlers and async work never reach the boundary, so
-       they surface as an overlay on top of a page that is still standing. It
-       lives inside the boundary so that a later render crash takes it down
-       along with the rest of the boundary's content, leaving just `failed`. -->
-  {#if lastError}
-    {@const error = lastError}
-    <div class="fixed inset-x-0 top-0 z-60 p-3">
-      <div class="mx-auto max-w-2xl shadow-lg">
-        <ErrorReport {error} onDismiss={() => (lastError = null)} />
-      </div>
+<!-- Render crashes go through handleError (hooks.client.ts) to the boundary
+     SvelteKit puts around each page, which renders +error.svelte. Errors from
+     event handlers and async work never reach a boundary, so they surface as an
+     overlay on top of a page that is still standing. -->
+{#if lastError}
+  {@const error = lastError}
+  <div class="fixed inset-x-0 top-0 z-60 p-3">
+    <div class="mx-auto max-w-2xl shadow-lg">
+      <ErrorReport {error} onDismiss={() => (lastError = null)} />
     </div>
-  {/if}
-
-  {#snippet failed(error, reset)}
-    <div class="flex min-h-dvh items-center justify-center p-4">
-      <div class="w-full max-w-md">
-        <ErrorReport
-          error={toReportedError(error, 'render')}
-          onReset={() => {
-            lastError = null
-            reset()
-          }}
-        />
-      </div>
-    </div>
-  {/snippet}
-</svelte:boundary>
+  </div>
+{/if}

@@ -1,4 +1,4 @@
-export type ErrorSource = 'render' | 'window' | 'unhandledrejection' | 'navigation'
+export type ErrorSource = 'sveltekit' | 'window' | 'unhandledrejection'
 
 export type ReportedError = {
   message: string

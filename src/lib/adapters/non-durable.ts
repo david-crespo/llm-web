@@ -1,4 +1,4 @@
-import type { JobHandle } from '$lib/types'
+import type { JobHandle } from '#lib/types.ts'
 import type { Adapter, ChatInput, ModelResponse, PollResult } from './index'
 
 type TrackedResult = { ok: true; response: ModelResponse } | { ok: false; error: unknown }
