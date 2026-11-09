@@ -35,6 +35,15 @@ export const models: Model[] = [
     search_cost: 0.01,
   },
   {
+    provider: 'anthropic',
+    key: 'claude-fable-5-2',
+    id: 'Claude Fable 5.2',
+    input: 8,
+    input_cached: 0.2,
+    output: 40,
+    search_cost: 0.01,
+  },
+  {
     provider: 'google',
     key: 'gemini-4-argon',
     id: 'Gemini 4 Argon',

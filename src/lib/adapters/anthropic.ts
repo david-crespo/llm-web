@@ -41,7 +41,7 @@ export class AnthropicAdapter extends NonDurableAdapter {
           // Force display: "summarized" so reasoning is returned; Opus 4.7
           // otherwise defaults to "omitted" and blanks the thinking text.
           thinking: { type: 'adaptive', display: 'summarized' },
-          // Low/high bracket Opus 5.5's medium default; on Fable 5.1, high is
+          // Low/high bracket Opus 5.5's medium default; on Fable 5.2, high is
           // already the default. Avoid xhigh/max so thinking leaves room for
           // the answer within the shared 20k max_tokens cap.
           // https://platform.claude.com/docs/en/build-with-claude/effort
