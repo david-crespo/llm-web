@@ -45,8 +45,8 @@ export const models: Model[] = [
   },
   {
     provider: 'google',
-    key: 'gemini-4-argon',
-    id: 'Gemini 4 Argon',
+    key: 'gemini-4-carbon',
+    id: 'Gemini 4 Carbon',
     input: 2,
     input_cached: 0.1,
     output: 10,
