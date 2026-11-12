@@ -35,7 +35,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.128.0",
-    "@google/genai": "^2.16.0",
+    "@google/genai": "^3.2.0",
     "bits-ui": "^2.18.1",
     "dompurify": "^3.4.13",
     "highlight.js": "^11.11.1",
