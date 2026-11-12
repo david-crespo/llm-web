@@ -1,4 +1,11 @@
-import type { Chat, JobHandle, ProviderData, TokenCounts } from '#lib/types.ts'
+import type {
+  Chat,
+  InlineCitation,
+  JobHandle,
+  ProviderData,
+  Source,
+  TokenCounts,
+} from '#lib/types.ts'
 import type { Model } from '#lib/models.svelte.ts'
 import { OpenAIAdapter } from './openai'
 import { AnthropicAdapter } from './anthropic'
@@ -10,6 +17,9 @@ export type ModelResponse = {
   stop_reason: string
   reasoning?: string
   searches?: number
+  sources?: Source[]
+  citations?: InlineCitation[]
+  searchQueries?: string[]
   provider?: ProviderData
 }
 

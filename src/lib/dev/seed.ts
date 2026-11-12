@@ -78,6 +78,52 @@ function sampleChats(): NewChat[] {
       }),
     ],
     [user('Short question'), answer(anthropic, 'Short answer.')],
+    [
+      user('Who won the 2026 Nobel Prizes in Physics and Chemistry?'),
+      answer(
+        anthropic,
+        [
+          '**Physics:** Francis Halzen won the 2026 Nobel Prize in Physics "for decisive contributions to the IceCube Neutrino Observatory and the discovery of high-energy neutrinos of astrophysical origin."',
+          '**Chemistry:** Henri B. Kagan and Kenso Soai shared the prize for discovering nonlinear effects and autocatalysis in asymmetric organic synthesis.',
+        ].join('\n\n'),
+        {
+          search: true,
+          searchQueries: ['2026 Nobel Prize Physics Chemistry winners'],
+          sources: [
+            {
+              url: 'https://www.nobelprize.org/all-nobel-prizes-2026/',
+              domain: 'nobelprize.org',
+              title: 'All Nobel Prizes 2026 - NobelPrize.org',
+              age: '30 days ago',
+              cited: true,
+            },
+            {
+              url: 'https://www.aps.org/about/news/2026/10/aps-winner-2026-nobel-physics',
+              domain: 'aps.org',
+              title:
+                'American Physical Society congratulates the winner of the 2026 Nobel Prize in Physics',
+              cited: true,
+            },
+            {
+              url: 'https://www.britannica.com/topic/2026-Nobel-Prize-winners',
+              domain: 'britannica.com',
+              title: '2026 Nobel Prize winners',
+              age: '30 days ago',
+              cited: true,
+            },
+            {
+              url: 'https://en.wikipedia.org/wiki/Nobel_Prize_in_Physics',
+              domain: 'wikipedia.org',
+              title: 'Nobel Prize in Physics',
+            },
+          ],
+          citations: [
+            { offset: 196, sourceIndices: [0, 1] },
+            { offset: 344, sourceIndices: [2] },
+          ],
+        },
+      ),
+    ],
   ]
   const now = Date.now()
   return chats.map((messages, i) => ({

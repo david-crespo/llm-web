@@ -1,6 +1,14 @@
 <script lang="ts">
   import { marked, type Tokens } from 'marked'
+  import { Popover } from 'bits-ui'
   import DOMPurify from '#lib/purify.ts'
+  import {
+    expandCitationTokens,
+    prepareMarkdownCitations,
+    sourceMeta,
+    sourceTitle,
+  } from '#lib/citations.ts'
+  import type { InlineCitation, Source } from '#lib/types.ts'
   // Use highlight.js core and explicitly register only needed languages
   import hljs from 'highlight.js/lib/core'
   import javascript from 'highlight.js/lib/languages/javascript'
@@ -19,11 +27,26 @@
 
   interface Props {
     content: string
+    citations?: InlineCitation[]
+    sources?: Source[]
     class?: string
   }
 
-  let { content, class: className }: Props = $props()
+  let { content, citations, sources, class: className }: Props = $props()
   let html = $state('')
+  let activeCitations = $state<InlineCitation[]>([])
+  let proseEl = $state<HTMLDivElement>()
+  let popoverOpen = $state(false)
+  let activeCiteIndex = $state<number | null>(null)
+  let anchorEl = $state<HTMLElement | null>(null)
+  let openedViaKeyboard = $state(false)
+
+  const activeCiteSources = $derived.by((): Source[] => {
+    if (activeCiteIndex === null || !sources?.length) return []
+    const cite = activeCitations[activeCiteIndex]
+    if (!cite) return []
+    return cite.sourceIndices.map((i) => sources[i]).filter((s): s is Source => Boolean(s))
+  })
 
   // Simple highlight.js integration via custom code renderer
 
@@ -78,27 +101,141 @@
       return `<pre><code class="${cls}">${highlighted}\n</code></pre>`
     }
     void (async () => {
+      const prepared = prepareMarkdownCitations(content, citations, sources)
       // Render math before markdown so $...$ isn't misinterpreted
-      const withMath = renderMath(content)
+      const withMath = renderMath(prepared.content)
       const rendered = await marked.parse(withMath, { renderer })
 
       // A newer render started while we were awaiting — discard this result
       if (seq !== renderSeq) return
 
-      html = DOMPurify.sanitize(rendered, {
+      const withBadges = expandCitationTokens(rendered, prepared.citations, sources)
+      activeCitations = prepared.citations
+      popoverOpen = false
+
+      html = DOMPurify.sanitize(withBadges, {
         // Allow common safe URL schemes and root-relative paths
         ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel):|\/)/i,
         FORBID_TAGS: ['style', 'iframe', 'object', 'embed', 'form', 'input', 'button'],
         ADD_TAGS: MATHML_TAGS,
-        ADD_ATTR: ['xmlns', 'display', 'displaystyle', 'scriptlevel'],
+        ADD_ATTR: ['xmlns', 'display', 'displaystyle', 'scriptlevel', 'aria-haspopup'],
       })
     })()
   })
+
+  $effect(() => {
+    const el = proseEl
+    if (!el) return
+
+    const onClick = (event: MouseEvent) => {
+      const badge = (event.target as Element | null)?.closest?.(
+        'a[data-cite]',
+      ) as HTMLAnchorElement | null
+      if (!badge || !el.contains(badge)) return
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) {
+        return
+      }
+      event.preventDefault()
+      const idx = Number(badge.dataset.cite)
+      if (!Number.isInteger(idx) || !activeCitations[idx]) return
+
+      if (popoverOpen && activeCiteIndex === idx && anchorEl === badge) {
+        popoverOpen = false
+        return
+      }
+      openedViaKeyboard = event.detail === 0
+      anchorEl = badge
+      activeCiteIndex = idx
+      popoverOpen = true
+    }
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== ' ') return
+      const badge = (event.target as Element | null)?.closest?.(
+        'a[data-cite]',
+      ) as HTMLAnchorElement | null
+      if (!badge || !el.contains(badge)) return
+      event.preventDefault()
+      badge.click()
+    }
+
+    el.addEventListener('click', onClick)
+    el.addEventListener('keydown', onKeyDown)
+    return () => {
+      el.removeEventListener('click', onClick)
+      el.removeEventListener('keydown', onKeyDown)
+    }
+  })
+
+  $effect(() => {
+    const badge = anchorEl
+    if (!badge || !popoverOpen) return
+    badge.setAttribute('data-active', '')
+    badge.setAttribute('aria-expanded', 'true')
+    return () => {
+      badge.removeAttribute('data-active')
+      badge.removeAttribute('aria-expanded')
+    }
+  })
 </script>
 
-<div class="prose max-w-none {className}">
+<div bind:this={proseEl} class="prose max-w-none {className}">
   {@html html}
 </div>
+
+{#if activeCitations.length > 0}
+  <Popover.Root bind:open={popoverOpen}>
+    <Popover.Portal>
+      <Popover.Content
+        customAnchor={anchorEl}
+        align="start"
+        sideOffset={6}
+        collisionPadding={{ top: 12, right: 12, bottom: 132, left: 12 }}
+        trapFocus={false}
+        onOpenAutoFocus={(e) => {
+          if (!openedViaKeyboard) e.preventDefault()
+        }}
+        onCloseAutoFocus={(e) => e.preventDefault()}
+        onEscapeKeydown={() => anchorEl?.focus({ preventScroll: true })}
+        onInteractOutside={(e) => {
+          if ((e.target as Element | null)?.closest?.('a[data-cite]')) {
+            e.preventDefault()
+          }
+        }}
+        aria-label="Citation details"
+        data-citation-popover
+        class="z-50 w-80 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-lg border border-edge bg-surface-elevated shadow-lg"
+      >
+        <div class="max-h-64 divide-y divide-edge-muted overflow-y-auto">
+          {#each activeCiteSources as source (source.url)}
+            <a
+              href={source.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              onclick={() => (popoverOpen = false)}
+              class="group block px-3.5 py-2.5 transition-colors hover:bg-surface-hover focus:bg-surface-hover focus:outline-none"
+            >
+              <div class="flex items-start justify-between gap-2">
+                <span
+                  class="line-clamp-2 text-sm leading-snug font-medium text-fg group-hover:text-link"
+                >
+                  {sourceTitle(source)}
+                </span>
+                <span
+                  class="shrink-0 text-xs text-fg-faint group-hover:text-link"
+                  aria-hidden="true">↗</span
+                >
+              </div>
+              <div class="mt-0.5 truncate text-xs text-fg-muted">
+                {sourceMeta(source)}
+              </div>
+            </a>
+          {/each}
+        </div>
+      </Popover.Content>
+    </Popover.Portal>
+  </Popover.Root>
+{/if}
 
 <!-- lang="postcss" suppresses svelte-check warnings for Tailwind's @reference/@apply directives -->
 <style lang="postcss">
@@ -310,5 +447,41 @@
   .prose :global(.math-error) {
     color: var(--color-error, #dc2626);
     background-color: var(--color-error-bg, #fef2f2);
+  }
+
+  /* Inline citation pills */
+  .prose :global(a.cite-badge) {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    padding: 0.08rem 0.44rem;
+    border-radius: 9999px;
+    border: 1px solid var(--color-badge-edge);
+    background-color: var(--color-badge-bg);
+    color: var(--color-fg-muted);
+    font-size: 0.72rem;
+    font-weight: 500;
+    line-height: 1.25;
+    text-decoration: none;
+    vertical-align: 0.06em;
+    white-space: nowrap;
+    transition:
+      background-color 120ms ease,
+      color 120ms ease,
+      border-color 120ms ease;
+  }
+
+  /* Expand tap target on touch screens without altering paragraph line-height */
+  .prose :global(a.cite-badge::before) {
+    content: '';
+    position: absolute;
+    inset: -5px -2px;
+  }
+
+  .prose :global(a.cite-badge:hover),
+  .prose :global(a.cite-badge[data-active]) {
+    background-color: var(--color-badge-hover);
+    border-color: var(--color-toggle-active-border);
+    color: var(--color-fg);
   }
 </style>

@@ -99,6 +99,10 @@ export type MockOpts = {
   reasoning?: string
   /** Number of queued statuses returned before normal Google polling. */
   queuedPolls?: number
+  /** Full wire response payload (or per-call factory) for realistic fixture tests. */
+  response?:
+    | Record<string, unknown>
+    | ((userText: string, callIndex: number) => Record<string, unknown> | undefined)
 }
 
 type Body = Record<string, unknown>
@@ -178,6 +182,15 @@ function openaiResponse(
   }
 }
 
+function resolveFixture(
+  spec: MockOpts['response'],
+  userText: string,
+  callIndex: number,
+): Record<string, unknown> | undefined {
+  if (!spec) return undefined
+  return typeof spec === 'function' ? spec(userText, callIndex) : spec
+}
+
 export async function mockOpenAI(page: Page, opts: MockOpts = {}): Promise<BackgroundProviderMock> {
   const gate = makeGate()
   if (opts.auto) gate.open()
@@ -186,6 +199,7 @@ export async function mockOpenAI(page: Page, opts: MockOpts = {}): Promise<Backg
   // clobber each other (the create body has the user message; the GET poll
   // doesn't, so it looks the text up by id).
   const textById = new Map<string, string>()
+  const fixtureById = new Map<string, Record<string, unknown>>()
   const reasoningById = new Map<string, unknown>()
   const idByUserText = new Map<string, string>()
   const completedIds = new Set<string>()
@@ -218,7 +232,9 @@ export async function mockOpenAI(page: Page, opts: MockOpts = {}): Promise<Backg
       const id = `resp_test_openai_${++idCounter}`
       const userText = lastText(body.input as unknown[], (m) => m.content ?? '')
       const text = opts.reply ? opts.reply(userText) : fallback
+      const fixture = resolveFixture(opts.response, userText, calls - 1)
       textById.set(id, text)
+      if (fixture) fixtureById.set(id, fixture)
       reasoningById.set(id, body.reasoning)
       idByUserText.set(userText, id)
       if (body.background) {
@@ -232,7 +248,9 @@ export async function mockOpenAI(page: Page, opts: MockOpts = {}): Promise<Backg
         : fulfillJSON(
             route,
             200,
-            openaiResponse(text, 'completed', id, body.reasoning, opts.reasoning),
+            fixture
+              ? { ...fixture, id, status: 'completed', reasoning: body.reasoning }
+              : openaiResponse(text, 'completed', id, body.reasoning, opts.reasoning),
           )
     }
 
@@ -253,16 +271,25 @@ export async function mockOpenAI(page: Page, opts: MockOpts = {}): Promise<Backg
       if (failStatus) return fulfillJSON(route, failStatus, errorBody('Invalid API key'))
       const id = pathname.split('/').pop()!
       const text = textById.get(id) ?? fallback
+      const isCompleted = gate.settled() || completedIds.has(id)
+      const fixture = fixtureById.get(id)
       return fulfillJSON(
         route,
         200,
-        openaiResponse(
-          text,
-          gate.settled() || completedIds.has(id) ? 'completed' : 'in_progress',
-          id,
-          reasoningById.get(id),
-          opts.reasoning,
-        ),
+        isCompleted && fixture
+          ? {
+              ...fixture,
+              id,
+              status: 'completed',
+              reasoning: reasoningById.get(id) ?? fixture.reasoning,
+            }
+          : openaiResponse(
+              text,
+              isCompleted ? 'completed' : 'in_progress',
+              id,
+              reasoningById.get(id),
+              opts.reasoning,
+            ),
       )
     }
 
@@ -328,13 +355,13 @@ export async function mockAnthropic(page: Page, opts: MockOpts = {}): Promise<Pr
       calls++
       const body = (req.postDataJSON() ?? {}) as Body
       bodies.push(body)
-      const text = opts.reply
-        ? opts.reply(lastText(body.messages as unknown[], (m) => m.content ?? ''))
-        : fallback
+      const userText = lastText(body.messages as unknown[], (m) => m.content ?? '')
+      const text = opts.reply ? opts.reply(userText) : fallback
+      const fixture = resolveFixture(opts.response, userText, calls - 1)
       await gate.ready
       return failStatus
         ? fulfillJSON(route, failStatus, errorBody('Invalid API key'))
-        : fulfillJSON(route, 200, anthropicResponse(text, opts.reasoning))
+        : fulfillJSON(route, 200, fixture ?? anthropicResponse(text, opts.reasoning))
     }
     return fulfillUnexpectedRequest(route, 'Anthropic')
   })
@@ -372,6 +399,7 @@ export async function mockGoogle(page: Page, opts: MockOpts = {}): Promise<Backg
   if (opts.auto) gate.open()
   const fallback = opts.text ?? 'Hello from Gemini.'
   const textById = new Map<string, string>()
+  const fixtureById = new Map<string, Record<string, unknown>>()
   const idByUserText = new Map<string, string>()
   const completedIds = new Set<string>()
   let idCounter = 0
@@ -414,6 +442,8 @@ export async function mockGoogle(page: Page, opts: MockOpts = {}): Promise<Backg
       }
       const userText = Array.isArray(input) ? lastInteractionInputText(input) : String(input ?? '')
       textById.set(id, opts.reply ? opts.reply(userText) : fallback)
+      const fixture = resolveFixture(opts.response, userText, calls - 1)
+      if (fixture) fixtureById.set(id, fixture)
       idByUserText.set(userText, id)
       return fulfillJSON(route, 200, geminiInteraction('', 'in_progress', id))
     }
@@ -444,7 +474,14 @@ export async function mockGoogle(page: Page, opts: MockOpts = {}): Promise<Backg
         return fulfillJSON(route, 200, geminiInteraction('', 'queued', id))
       }
       const status = gate.settled() || completedIds.has(id) ? 'completed' : 'in_progress'
-      return fulfillJSON(route, 200, geminiInteraction(text, status, id, opts.reasoning))
+      const fixture = fixtureById.get(id)
+      return fulfillJSON(
+        route,
+        200,
+        status === 'completed' && fixture
+          ? { ...fixture, id, status: 'completed' }
+          : geminiInteraction(text, status, id, opts.reasoning),
+      )
     }
 
     return fulfillUnexpectedRequest(route, 'Google')

@@ -31,8 +31,18 @@ test('Anthropic happy path with reasoning', async ({ page }) => {
   await expectReasoning(page, 'Thinking about the greeting.')
   expect(anthropic.calls()).toBe(1)
   expect(anthropic.bodies()[0]?.tools).toEqual([
-    { type: 'web_search_20260318', name: 'web_search', max_uses: 5 },
-    { type: 'web_fetch_20260318', name: 'web_fetch' },
+    {
+      type: 'web_search_20260318',
+      name: 'web_search',
+      max_uses: 5,
+      allowed_callers: ['direct', 'code_execution_20260120'],
+    },
+    {
+      type: 'web_fetch_20260318',
+      name: 'web_fetch',
+      citations: { enabled: true },
+      allowed_callers: ['direct', 'code_execution_20260120'],
+    },
     { type: 'code_execution_20260120', name: 'code_execution' },
   ])
   expect(openai.calls()).toBe(0)

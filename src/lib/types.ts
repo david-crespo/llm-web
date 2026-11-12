@@ -56,6 +56,26 @@ export type PendingJob = {
   search: boolean
 }
 
+export type Source = {
+  url: string
+  domain: string
+  /** Page title when distinct from domain. */
+  title?: string
+  /** Relative or absolute age reported by the provider (e.g. "30 days ago"). */
+  age?: string
+  /** Cited passage or claim excerpt, used when neither title nor URL path is descriptive. */
+  snippet?: string
+  /** True when referenced by at least one inline citation in the answer. */
+  cited?: boolean
+}
+
+export type InlineCitation = {
+  /** UTF-16 code-unit offset in AssistantMessage.content where the badge appears. */
+  offset: number
+  /** Indices into AssistantMessage.sources (deduped, in citation order). */
+  sourceIndices: number[]
+}
+
 export type AssistantMessage = {
   role: 'assistant'
   model: string
@@ -65,6 +85,12 @@ export type AssistantMessage = {
   reasoning?: string
   /** Whether search was on when this was generated */
   search?: boolean
+  /** Grounding / search sources (cited first, then additional search results). */
+  sources?: Source[]
+  /** Inline citation markers into `content` referencing `sources`. */
+  citations?: InlineCitation[]
+  /** Web search queries executed during this turn. */
+  searchQueries?: string[]
   tokens: TokenCounts
   stop_reason: string
   cost: number

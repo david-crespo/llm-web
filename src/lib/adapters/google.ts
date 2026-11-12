@@ -1,6 +1,7 @@
 import { GoogleGenAI, type Interactions } from '@google/genai'
 import type { Adapter, ChatInput, ModelResponse, PollResult } from './index'
 import type { JobHandle } from '#lib/types.ts'
+import { SourceCollector, utf8ByteOffsetMapper } from '#lib/citations.ts'
 import { settings } from '#lib/settings.svelte.ts'
 
 // Google adapter using the Interactions API in background mode: create with
@@ -109,30 +110,60 @@ function parseInteraction(interaction: Interactions.Interaction): ModelResponse 
     .map((c) => c.text)
     .join('\n\n')
 
+  const querySet = new Set<string>()
+  for (const step of steps) {
+    if (step.type === 'google_search_call') {
+      for (const q of step.arguments?.queries ?? []) {
+        if (q.trim()) querySet.add(q.trim())
+      }
+    }
+  }
+
   const textBlocks = steps
     .filter((s): s is Interactions.ModelOutputStep => s.type === 'model_output')
     .flatMap((s) => s.content ?? [])
     .filter((c): c is Interactions.TextContent => c.type === 'text')
 
-  let content = textBlocks.map((c) => c.text).join('')
+  const collector = new SourceCollector()
+  let content = ''
 
-  // Cited sources come back as url_citation annotations on the text blocks.
-  // Dedupe by URL and append a Sources list, mirroring the old grounding output.
-  const citations = new Map<string, string>()
+  // url_citation annotations carry UTF-8 byte start/end offsets into each text block.
   for (const block of textBlocks) {
-    for (const ann of block.annotations ?? []) {
-      if (ann.type === 'url_citation' && ann.url) {
-        citations.set(ann.url, ann.title || ann.url)
+    const baseOffset = content.length
+    const toUtf16 = utf8ByteOffsetMapper(block.text)
+    content += block.text
+
+    const urlAnns = (block.annotations ?? [])
+      .filter(
+        (ann): ann is Interactions.Annotation & { type: 'url_citation' } =>
+          ann.type === 'url_citation',
+      )
+      .sort((a, b) => (a.end_index ?? 0) - (b.end_index ?? 0))
+
+    for (const ann of urlAnns) {
+      if (!ann.url) continue
+      const u16Start = ann.start_index != null ? toUtf16(ann.start_index) : 0
+      const u16End = ann.end_index != null ? toUtf16(ann.end_index) : block.text.length
+      const snippet = u16End > u16Start ? block.text.slice(u16Start, u16End) : undefined
+      collector.cite(baseOffset + u16End, {
+        url: ann.url,
+        title: ann.title,
+        snippet,
+      })
+    }
+  }
+
+  for (const step of steps) {
+    if (step.type === 'url_context_result') {
+      for (const res of step.result ?? []) {
+        if (res.url && res.status === 'success') collector.add({ url: res.url })
       }
     }
   }
-  if (citations.size > 0) {
-    content +=
-      '\n\n### Sources\n\n' +
-      [...citations].map(([url, title]) => `- [${title}](${url})`).join('\n')
-  }
 
-  const searches = steps.filter((s) => s.type === 'google_search_result').length
+  const { sources, citations } = collector.build()
+  const searchQueries = querySet.size > 0 ? [...querySet] : undefined
+  const searches = querySet.size || steps.filter((s) => s.type === 'google_search_result').length
 
   const usage = interaction.usage
   const tokens = {
@@ -147,6 +178,9 @@ function parseInteraction(interaction: Interactions.Interaction): ModelResponse 
     tokens,
     stop_reason: interaction.status || 'completed',
     searches: searches || undefined,
+    sources,
+    citations,
+    searchQueries,
     provider: { type: 'google', interactionId: interaction.id },
   }
 }

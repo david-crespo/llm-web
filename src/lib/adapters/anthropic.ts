@@ -1,10 +1,10 @@
 import Anthropic from '@anthropic-ai/sdk'
-import type { BetaMessage } from '@anthropic-ai/sdk/resources/beta/messages/messages'
 import type {
-  ThinkingBlock,
-  CitationsWebSearchResultLocation,
-} from '@anthropic-ai/sdk/resources/messages'
+  BetaMessage,
+  BetaThinkingBlock,
+} from '@anthropic-ai/sdk/resources/beta/messages/messages'
 import type { ChatInput, ModelResponse } from './index'
+import { SourceCollector, normalizeUrl, type RawSourceInput } from '#lib/citations.ts'
 import { settings } from '#lib/settings.svelte.ts'
 import { NonDurableAdapter } from './non-durable'
 import { withEffortChanges } from './anthropic-effort'
@@ -48,15 +48,24 @@ export class AnthropicAdapter extends NonDurableAdapter {
           output_config: { effort },
           tools: search
             ? [
-                { type: 'web_search_20260318', name: 'web_search', max_uses: 5 },
-                { type: 'web_fetch_20260318', name: 'web_fetch' },
+                {
+                  type: 'web_search_20260318',
+                  name: 'web_search',
+                  max_uses: 5,
+                  // Allow direct calls alongside code execution: web_search_20260209+
+                  // defaults to code_execution only, which strips inline citations.
+                  allowed_callers: ['direct', 'code_execution_20260120'],
+                },
+                {
+                  type: 'web_fetch_20260318',
+                  name: 'web_fetch',
+                  citations: { enabled: true },
+                  allowed_callers: ['direct', 'code_execution_20260120'],
+                },
                 { type: 'code_execution_20260120', name: 'code_execution' },
               ]
             : undefined,
-          betas: [
-            'code-execution-web-tools-2026-02-09',
-            'mid-conversation-output-config-2026-07-01',
-          ],
+          betas: ['mid-conversation-output-config-2026-07-01'],
         },
         { signal },
       )
@@ -65,53 +74,85 @@ export class AnthropicAdapter extends NonDurableAdapter {
 }
 
 function parseResponse(response: BetaMessage): ModelResponse {
-  const content = response.content
-    .map((block): string | null => {
-      if (block.type === 'text') {
-        let text = block.text
+  const querySet = new Set<string>()
+  const metaByUrl = new Map<string, { title?: string | null; age?: string | null }>()
+  const discoveredResults: RawSourceInput[] = []
+  const fetchedDocs: { url: string; title?: string | null }[] = []
 
-        // Add citations as inline links if they exist
-        if (block.citations && block.citations.length > 0) {
-          const links = block.citations
-            .filter(
-              (citation): citation is CitationsWebSearchResultLocation =>
-                citation.type === 'web_search_result_location',
-            )
-            .map((citation) => {
-              try {
-                const domain = new URL(citation.url).hostname.replace(/^www\./, '')
-                return `[${domain}](${citation.url})`
-              } catch {
-                return null
-              }
-            })
-            .filter((link): link is string => link !== null)
-            .join(', ')
-
-          if (links) {
-            text += ` (${links})`
-          }
-        }
-
-        return text
+  for (const block of response.content) {
+    if (
+      (block.type === 'tool_use' || block.type === 'server_tool_use') &&
+      block.name === 'web_search'
+    ) {
+      const query = (block.input as { query?: string } | null)?.query?.trim()
+      if (query) querySet.add(query)
+    } else if (block.type === 'web_search_tool_result' && Array.isArray(block.content)) {
+      for (const item of block.content) {
+        if (item.type !== 'web_search_result') continue
+        const key = normalizeUrl(item.url)
+        if (key) metaByUrl.set(key, { title: item.title, age: item.page_age })
+        discoveredResults.push({ url: item.url, title: item.title, age: item.page_age })
       }
+    } else if (
+      block.type === 'web_fetch_tool_result' &&
+      block.content.type === 'web_fetch_result'
+    ) {
+      const fetched = block.content
+      const title = fetched.content?.title
+      const key = normalizeUrl(fetched.url)
+      if (key && !metaByUrl.has(key)) metaByUrl.set(key, { title })
+      fetchedDocs.push({ url: fetched.url, title })
+      discoveredResults.push({ url: fetched.url, title })
+    }
+  }
 
-      // Handle web search tool uses
-      if (block.type === 'tool_use' || block.type === 'server_tool_use') {
-        if (block.name === 'web_search') {
-          return `🔍 **Search:** ${(block.input as { query: string }).query}\n\n`
-        }
-        if (block.name === 'web_fetch') {
-          return `🌐 **Fetch:** ${(block.input as { url: string }).url}\n\n`
-        }
+  const collector = new SourceCollector()
+  let content = ''
+  let sawToolSinceText = false
+
+  for (const block of response.content) {
+    if (block.type === 'thinking' || block.type === 'redacted_thinking') continue
+    if (block.type !== 'text') {
+      if (content) sawToolSinceText = true
+      continue
+    }
+
+    if (sawToolSinceText && content && !/\s$/.test(content) && !/^\s/.test(block.text)) {
+      content += '\n\n'
+    }
+    sawToolSinceText = false
+    content += block.text
+
+    for (const citation of block.citations ?? []) {
+      if (citation.type === 'web_search_result_location') {
+        const meta = metaByUrl.get(normalizeUrl(citation.url) ?? '')
+        collector.cite(content.length, {
+          url: citation.url,
+          title: citation.title ?? meta?.title,
+          age: meta?.age,
+          snippet: citation.cited_text,
+        })
+      } else if (
+        citation.type === 'char_location' &&
+        typeof citation.document_index === 'number' &&
+        fetchedDocs[citation.document_index]
+      ) {
+        const doc = fetchedDocs[citation.document_index]
+        collector.cite(content.length, {
+          url: doc.url,
+          title: citation.document_title ?? doc.title,
+          snippet: citation.cited_text,
+        })
       }
+    }
+  }
 
-      return ''
-    })
-    .join('')
+  for (const item of discoveredResults) collector.add(item)
+  const { sources, citations } = collector.build()
+  const searchQueries = querySet.size > 0 ? [...querySet] : undefined
 
   const reasoning = response.content
-    .filter((block): block is ThinkingBlock => block.type === 'thinking')
+    .filter((block): block is BetaThinkingBlock => block.type === 'thinking')
     .map((block) => block.thinking)
     .join('\n\n')
 
@@ -134,5 +175,8 @@ function parseResponse(response: BetaMessage): ModelResponse {
     tokens,
     stop_reason: response.stop_reason || 'unknown',
     searches: searches || undefined,
+    sources,
+    citations,
+    searchQueries,
   }
 }

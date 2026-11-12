@@ -36,9 +36,11 @@ test('Search and Think toggles affect the next request', async ({ page }) => {
 
   const [defaults, changed] = openai.bodies()
   expect(defaults.model).toBe('gpt-6.1-sol')
-  expect(defaults.tools).toEqual([{ type: 'web_search_preview' }])
+  expect(defaults.tools).toEqual([{ type: 'web_search' }])
+  expect(defaults.include).toEqual(['web_search_call.action.sources'])
   expect(defaults.reasoning).toEqual({ effort: 'low', context: 'all_turns', summary: 'auto' })
   expect(changed.tools).toBeUndefined()
+  expect(changed.include).toBeUndefined()
   expect(changed.reasoning).toEqual({ effort: 'high', context: 'all_turns', summary: 'auto' })
 })
 

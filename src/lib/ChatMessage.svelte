@@ -1,5 +1,6 @@
 <script lang="ts">
   import Markdown from './Markdown.svelte'
+  import SearchSources from './components/SearchSources.svelte'
   import type { ChatMessage } from './types'
   import { formatTime, formatMoney, formatTokens, shortModel } from '#lib/format.ts'
   import { clickOutside } from '#lib/actions/clickOutside.ts'
@@ -139,7 +140,12 @@
   {:else}
     <!-- Assistant message -->
     <div>
-      <Markdown content={message.content} />
+      <Markdown
+        content={message.content}
+        citations={message.citations}
+        sources={message.sources}
+      />
+      <SearchSources sources={message.sources} searchQueries={message.searchQueries} />
     </div>
   {/if}
 </div>

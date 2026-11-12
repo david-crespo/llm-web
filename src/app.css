@@ -33,6 +33,11 @@
   --color-code-bg: oklch(93% 0.01 260);
   --color-code-block-bg: oklch(98.5% 0.004 260);
 
+  /* Inline citation badge */
+  --color-badge-bg: oklch(93.5% 0.012 260);
+  --color-badge-hover: oklch(88.5% 0.035 255);
+  --color-badge-edge: oklch(84% 0.015 260);
+
   /* Toggle active state (blue tinted) */
   --color-toggle-active: oklch(88% 0.07 255);
   --color-toggle-active-hover: oklch(82% 0.1 255);
@@ -73,6 +78,10 @@
 
     --color-code-bg: oklch(26% 0.015 260);
     --color-code-block-bg: oklch(22% 0.012 260);
+
+    --color-badge-bg: oklch(25% 0.016 260);
+    --color-badge-hover: oklch(32% 0.035 255);
+    --color-badge-edge: oklch(36% 0.02 260);
 
     --color-toggle-active: oklch(30% 0.08 255);
     --color-toggle-active-hover: oklch(38% 0.12 255);
@@ -172,4 +181,9 @@ select:focus {
 select option {
   background-color: var(--color-surface-elevated);
   color: var(--color-fg);
+}
+
+/* Ensure bits-ui portaled popovers/menus stack above fixed/sticky chrome (z-10) */
+[data-bits-floating-content-wrapper] {
+  z-index: 50;
 }

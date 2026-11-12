@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Chat, ChatMessage } from '#lib/types.ts'
   import { chatState } from '#lib/chat.svelte.ts'
+  import { formatAssistantMarkdown } from '#lib/citations.ts'
   import { formatTime, formatMoney, formatTokens } from '#lib/format.ts'
   import { DropdownMenu } from 'bits-ui'
   import CloseIcon from './icons/CloseIcon.svelte'
@@ -63,7 +64,7 @@
         } else {
           const searches = msg.search ? ' | 🌐' : ''
           const meta = `\`${msg.model}\` | ${formatTime(msg.timeMs)} | ${formatMoney(msg.cost)} | ${formatTokens(msg.tokens)}${searches}`
-          return `${header}\n${meta}\n\n${msg.content}`
+          return `${header}\n${meta}\n\n${formatAssistantMarkdown(msg)}`
         }
       })
       .join('\n\n---\n\n')
