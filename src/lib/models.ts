@@ -57,11 +57,11 @@ export const models: Model[] = [
   },
   {
     provider: 'google',
-    key: 'gemini-3.8-flash',
-    id: 'Gemini 3.8 Flash',
-    input: 0.75,
+    key: 'gemini-4-hydrogen',
+    id: 'Gemini 4 Hydrogen',
+    input: 1.5,
     input_cached: 0.075,
-    output: 3.75,
+    output: 7.5,
     // 5,000 search queries per month free, then $14/1000
     search_cost: 0,
   },
