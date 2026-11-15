@@ -7,3 +7,9 @@
   Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
   Cross-Origin-Opener-Policy: same-origin
   Cross-Origin-Resource-Policy: same-origin
+
+# Hashed build output never changes under the same name. Without this, Netlify
+# serves it as must-revalidate, so every reload (such as iOS Safari reloading a
+# discarded tab) waits on a round trip per chunk before it can run any code.
+/_app/immutable/*
+  Cache-Control: public, max-age=31536000, immutable
