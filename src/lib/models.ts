@@ -17,33 +17,6 @@ export type Model = {
 
 export const models: Model[] = [
   {
-    provider: 'openai',
-    key: 'gpt-6.1-sol',
-    id: 'GPT-6.1 Sol',
-    input: 2,
-    input_cached: 0.1,
-    output: 10,
-    search_cost: 0.01,
-  },
-  {
-    provider: 'anthropic',
-    key: 'claude-opus-5-5',
-    id: 'Claude Opus 5.5',
-    input: 4,
-    input_cached: 0.2,
-    output: 20,
-    search_cost: 0.01,
-  },
-  {
-    provider: 'anthropic',
-    key: 'claude-fable-5-2',
-    id: 'Claude Fable 5.2',
-    input: 8,
-    input_cached: 0.2,
-    output: 40,
-    search_cost: 0.01,
-  },
-  {
     provider: 'google',
     key: 'gemini-4-carbon',
     id: 'Gemini 4 Carbon',
@@ -64,5 +37,32 @@ export const models: Model[] = [
     output: 7.5,
     // 5,000 search queries per month free, then $14/1000
     search_cost: 0,
+  },
+  {
+    provider: 'anthropic',
+    key: 'claude-opus-5-5',
+    id: 'Claude Opus 5.5',
+    input: 4,
+    input_cached: 0.2,
+    output: 20,
+    search_cost: 0.01,
+  },
+  {
+    provider: 'anthropic',
+    key: 'claude-fable-5-2',
+    id: 'Claude Fable 5.2',
+    input: 8,
+    input_cached: 0.2,
+    output: 40,
+    search_cost: 0.01,
+  },
+  {
+    provider: 'openai',
+    key: 'gpt-6.1-sol',
+    id: 'GPT-6.1 Sol',
+    input: 2,
+    input_cached: 0.1,
+    output: 10,
+    search_cost: 0.01,
   },
 ]
