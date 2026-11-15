@@ -149,15 +149,15 @@ async function openMessageMenu(page: Page, text: string): Promise<void> {
 
 export async function regenerate(page: Page, userText: string): Promise<void> {
   await openMessageMenu(page, userText)
-  await page.getByRole('button', { name: 'Regen' }).click()
+  await page.getByRole('menuitem', { name: 'Regen' }).click()
 }
 
 export async function forkMessage(page: Page, userText: string): Promise<void> {
   await openMessageMenu(page, userText)
-  await page.getByRole('button', { name: 'Fork' }).click()
+  await page.getByRole('menuitem', { name: 'Fork' }).click()
 }
 
 export async function editMessage(page: Page, userText: string): Promise<void> {
   await openMessageMenu(page, userText)
-  await page.getByRole('button', { name: 'Edit' }).click()
+  await page.getByRole('menuitem', { name: 'Edit' }).click()
 }

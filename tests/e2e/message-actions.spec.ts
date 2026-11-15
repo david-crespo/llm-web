@@ -9,7 +9,10 @@ import {
   userMessages,
   assistantMessages,
   messageInput,
+  selectChat,
 } from './helpers/app'
+import { answer, savedChat, seedChats } from './helpers/history'
+import { models } from '../../src/lib/models'
 
 test('regenerate replaces the last response in place', async ({ page }) => {
   let n = 0
@@ -49,4 +52,34 @@ test('fork branches a new chat and seeds the input', async ({ page }) => {
   // Forking from the first message yields an empty new chat with the text queued.
   await expect(messageInput(page)).toHaveValue('original')
   await expect(userMessages(page)).toHaveCount(0)
+})
+
+test('the message menu opens above the composer', async ({ page }) => {
+  await seedChats(page, [
+    savedChat('long chat', [
+      answer(models[0].id, 'A paragraph of the answer.\n\n'.repeat(100)),
+      { role: 'user', content: 'last question' },
+    ]),
+  ])
+  await page.goto('/')
+  await selectChat(page, 'long chat')
+  await page.getByRole('button', { name: 'Jump to bottom' }).click()
+  // The last bubble sits just above the composer, so a menu opening downward
+  // would run into it, or on desktop be clipped by the scrolling message list.
+  // Check the items are on screen before anything scrolls them into view.
+  await userMessages(page)
+    .filter({ hasText: 'last question' })
+    .getByLabel('Message options')
+    .click()
+  const items = page.getByRole('menuitem')
+  await expect(items.getByText('Regen')).toBeVisible()
+  const viewport = page.viewportSize()!
+  for (const item of await items.all()) {
+    const box = (await item.boundingBox())!
+    expect(box.y).toBeGreaterThanOrEqual(0)
+    expect(box.y + box.height).toBeLessThanOrEqual(viewport.height)
+  }
+  // Clicking an item fails if the composer is on top and takes the click.
+  await page.getByRole('menuitem', { name: 'Fork' }).click()
+  await expect(messageInput(page)).toHaveValue('last question')
 })
