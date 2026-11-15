@@ -75,8 +75,11 @@ test('switching chats restores each chat’s scroll position, across reloads', a
   await selectChat(page, 'second chat')
   await expect.poll(() => scrollTop(page)).toBe(2500)
 
-  // Reloading right after scrolling, without switching chats first.
+  // Reloading right after scrolling, without switching chats first, reopens
+  // the chat where it was.
   await page.reload()
+  await expect(userMessages(page)).toHaveCount(2)
+  await expect.poll(() => scrollTop(page)).toBe(2500)
   await selectChat(page, 'first chat')
   await expect.poll(() => scrollTop(page)).toBe(1000)
   await selectChat(page, 'second chat')
@@ -87,7 +90,7 @@ test('switching chats restores each chat’s scroll position, across reloads', a
   await page.getByRole('link', { name: 'Settings' }).click()
   await expect(page).toHaveURL(/\/settings$/)
   await page.getByRole('link', { name: /Back to Chat/ }).click()
-  await expect(page).toHaveURL(/\/$/)
+  await expect(page).toHaveURL(/\/\?chat=\d+$/)
   await expect.poll(() => scrollTop(page)).toBe(2500)
 })
 

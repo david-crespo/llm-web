@@ -136,3 +136,52 @@ test('multiple chats and their messages persist across reload', async ({ page })
   await expect(userMessages(page)).toContainText('one')
   await expect(assistantMessages(page)).toContainText('Re: one')
 })
+
+test('reload reopens the open chat, and a fresh visit starts a new one', async ({ page }) => {
+  await mockOpenAI(page, { reply: (u) => `Re: ${u}`, auto: true })
+  await setKeysThroughSettings(page, { openai: 'sk-test' })
+  await send(page, 'one')
+  await expect(assistantMessages(page)).toContainText('Re: one')
+  await newChat(page)
+  await send(page, 'two')
+  await expect(assistantMessages(page)).toContainText('Re: two')
+  const secondUrl = page.url()
+  await selectChat(page, 'one')
+  await expect(page).not.toHaveURL(secondUrl)
+
+  // What iOS Safari does when you return to a tab it discarded.
+  await page.reload()
+  await expect(userMessages(page)).toContainText(['one'])
+  await expect(assistantMessages(page)).toContainText('Re: one')
+
+  await page.goto('/')
+  await expect(page).toHaveURL(/\/\?chat=\d+$/)
+  await expect(messageInput(page)).toBeVisible()
+  await expect(userMessages(page)).toHaveCount(0)
+})
+
+test('back and forward move between opened chats', async ({ page }) => {
+  await mockOpenAI(page, { reply: (u) => `Re: ${u}`, auto: true })
+  await setKeysThroughSettings(page, { openai: 'sk-test' })
+  await send(page, 'one')
+  await expect(assistantMessages(page)).toContainText('Re: one')
+  await newChat(page)
+  await send(page, 'two')
+  await expect(assistantMessages(page)).toContainText('Re: two')
+  const secondUrl = page.url()
+  await selectChat(page, 'one')
+  await expect(page).not.toHaveURL(secondUrl)
+
+  await page.goBack()
+  await expect(userMessages(page)).toContainText(['two'])
+  await page.goBack()
+  await expect(userMessages(page)).toContainText(['one'])
+  await page.goForward()
+  await expect(userMessages(page)).toContainText(['two'])
+
+  // The first chat replaced the bare / it loaded on, so back from it leaves
+  // the chat page rather than bouncing off an entry with no chat.
+  await page.goBack()
+  await page.goBack()
+  await expect(page).toHaveURL(/\/settings$/)
+})

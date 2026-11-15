@@ -24,5 +24,6 @@ export async function setKeysThroughSettings(
   }
 
   await page.getByRole('link', { name: /Back to Chat/ }).click()
-  await expect(page).toHaveURL(/\/$/)
+  // The chat page puts the open chat in the URL.
+  await expect(page).toHaveURL(/\/\?chat=\d+$/)
 }

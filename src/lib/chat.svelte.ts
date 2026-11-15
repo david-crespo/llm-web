@@ -179,6 +179,7 @@ export class ChatManager {
     // Read from the reactive history proxy so current and history[0] share
     // the same proxy — same pattern as createNew().
     this.current = $state(this.history[history.indexOf(current)])
+    this.restoreToggles(this.current)
   }
 
   /**
@@ -186,20 +187,13 @@ export class ChatManager {
    */
   async createNew() {
     await this.saveCurrentIfDirty()
-
-    const newChat: NewChat = {
-      createdAt: new SvelteDate(),
-      systemPrompt: systemBase,
-      messages: [],
-    }
-
-    const id = await storage.createChat(newChat)
+    const chat = await createEmptyChat()
     // Insert into history first, then read back from the array. Svelte's $state
     // wraps array elements in reactive proxies on read, so this.history[0]
     // returns a proxy. If we instead set this.current to the raw object directly,
     // it and this.history[0] would be different proxies — pushing messages onto
     // one wouldn't notify subscribers (the sidebar) reading the other.
-    this.history.unshift({ ...newChat, id })
+    this.history.unshift(chat)
     this.current = this.history[0]
     this.sidebarOpen = false
   }
@@ -225,10 +219,13 @@ export class ChatManager {
     this.current = chat
     this.saveScrollPositions()
     this.restoreCurrentScroll()
+    this.restoreToggles(chat)
+  }
 
-    // Pick up the model and toggles from the chat's last turn: the one in
-    // flight if there is one, since its answer isn't in messages yet. Error
-    // messages record no search setting, so skip past them for that.
+  /** Pick up the model and toggles from the chat's last turn: the one in
+   * flight if there is one, since its answer isn't in messages yet. Error
+   * messages record no search setting, so skip past them for that. */
+  private restoreToggles(chat: Chat) {
     const modelId =
       chat.pending?.modelId ?? chat.messages.findLast((m) => m.role === 'assistant')?.model
     const found = models.find((m) => m.id === modelId)
@@ -703,8 +700,8 @@ export async function loadStoredHistory() {
     // server-side job, and the answer appears without the user resending.
     chatState.resumePending()
 
-    // Each page load intentionally starts a fresh chat. Remove superseded empty
-    // records after rendering so repeated reloads do not fill history with them.
+    // A page load without a chat in the URL starts a fresh one. Remove empty
+    // chats left by earlier loads so they don't fill history.
     void Promise.allSettled(obsoleteEmptyChats.map((chat) => storage.deleteChat(chat.id)))
   } catch (error) {
     // Silently showing an empty history would look like data loss, so treat a
@@ -718,16 +715,25 @@ export async function loadStoredHistory() {
   }
 }
 
+/** The id in a `?chat=<id>` query string, which the page keeps pointing at
+ * the open chat. */
+export function chatIdFromSearch(search: string): number | undefined {
+  return Number(new URLSearchParams(search).get('chat')) || undefined
+}
+
+async function createEmptyChat(): Promise<Chat> {
+  const chat: NewChat = { createdAt: new SvelteDate(), systemPrompt: systemBase, messages: [] }
+  return { ...chat, id: await storage.createChat(chat) }
+}
+
 async function boot() {
   try {
     await storage.init()
-    const newChat: NewChat = {
-      createdAt: new SvelteDate(),
-      systemPrompt: systemBase,
-      messages: [],
-    }
-    const id = await storage.createChat(newChat)
-    const current = { ...newChat, id }
+    // A reload reopens the chat in the URL, which matters on iOS, where Safari
+    // reloads a tab it discarded in the background. Otherwise each page load
+    // starts a fresh chat.
+    const urlId = typeof location === 'undefined' ? undefined : chatIdFromSearch(location.search)
+    const current = (urlId && (await storage.getChat(urlId))) || (await createEmptyChat())
 
     chatState = new ChatManager(current, [current])
     _boot = { status: 'ready' }

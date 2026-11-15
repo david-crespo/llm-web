@@ -5,8 +5,16 @@
   import AboutModal from '#lib/components/AboutModal.svelte'
   import ConfirmDialog from '#lib/components/ConfirmDialog.svelte'
   import { initTheme } from '#lib/theme.svelte.ts'
-  import { bootComplete, bootState, chatState, loadStoredHistory } from '#lib/chat.svelte.ts'
-  import { onMount, tick } from 'svelte'
+  import {
+    bootComplete,
+    bootState,
+    chatIdFromSearch,
+    chatState,
+    loadStoredHistory,
+  } from '#lib/chat.svelte.ts'
+  import { afterNavigate, goto } from '$app/navigation'
+  import { page } from '$app/state'
+  import { onMount, tick, untrack } from 'svelte'
 
   // Local UI state (not managed by ChatManager)
   let message = $state('')
@@ -53,14 +61,45 @@
   // Initialize theme on mount
   initTheme()
 
+  // Keep the open chat in the URL so a reload reopens it (see boot). Opening
+  // another chat pushes a history entry, so back returns to the previous one.
+  // Leaving an entry with no chat behind it, like the bare `/` of a fresh load
+  // or a chat just deleted, replaces that entry instead.
+  function showCurrentInUrl() {
+    const urlId = chatIdFromSearch(page.url.search)
+    const { id } = chatState.current
+    if (urlId === id) return
+    const replace = !chatState.history.some((chat) => chat.id === urlId)
+    void goto(`/?chat=${id}`, { replace, reset: false })
+  }
+
+  $effect(() => {
+    if (bootState.current.status !== 'ready') return
+    void chatState.current.id
+    // Untracked so the effect doesn't depend on page.url. Otherwise back and
+    // forward would rerun it while current is still the old chat, and it would
+    // navigate back to that chat before afterNavigate opens the new one.
+    untrack(showCurrentInUrl)
+  })
+
+  afterNavigate(({ type, to }) => {
+    if (type !== 'popstate' || bootState.current.status !== 'ready') return
+    const id = to && chatIdFromSearch(to.url.search)
+    if (id && chatState.history.some((chat) => chat.id === id)) void chatState.selectChat(id)
+    else showCurrentInUrl()
+  })
+
+  // Dev only: /?seed replaces sample chats in history. Production builds drop
+  // the `if (seed)` branch and its import. Read at init, before the URL sync
+  // replaces the query string with `?chat=<id>`.
+  const seed = import.meta.env.DEV && new URLSearchParams(location.search).has('seed')
+
   onMount(() => {
     void (async () => {
       await bootComplete
       await tick()
       chatState.restoreCurrentScroll()
-      // Dev only: /?seed replaces sample chats in history. The import is
-      // dropped from production builds along with this branch.
-      if (import.meta.env.DEV && new URLSearchParams(location.search).has('seed')) {
+      if (seed) {
         const { seedSampleChats } = await import('#lib/dev/seed.ts')
         await seedSampleChats()
       }
