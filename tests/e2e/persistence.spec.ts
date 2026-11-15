@@ -185,3 +185,32 @@ test('back and forward move between opened chats', async ({ page }) => {
   await page.goBack()
   await expect(page).toHaveURL(/\/settings$/)
 })
+
+test('an unsent message survives the tab being discarded while hidden', async ({ page }) => {
+  await mockOpenAI(page, { reply: (u) => `Re: ${u}`, auto: true })
+  await setKeysThroughSettings(page, { openai: 'sk-test' })
+  await send(page, 'one')
+  await expect(assistantMessages(page)).toContainText('Re: one')
+  await messageInput(page).fill('half-written')
+
+  const setVisibility = (state: 'hidden' | 'visible') =>
+    page.evaluate((state) => {
+      Object.defineProperty(document, 'visibilityState', { value: state, configurable: true })
+      document.dispatchEvent(new Event('visibilitychange'))
+    }, state)
+
+  // Discarded while hidden: the reload brings the message back.
+  await setVisibility('hidden')
+  await page.reload()
+  await expect(messageInput(page)).toHaveValue('half-written')
+
+  // Shown again without a discard: the saved copy is dropped, so it doesn't
+  // reappear after the message is sent.
+  await setVisibility('hidden')
+  await setVisibility('visible')
+  await page.getByRole('button', { name: 'Send' }).click()
+  await expect(assistantMessages(page)).toHaveCount(2)
+  await page.reload()
+  await expect(userMessages(page)).toHaveCount(2)
+  await expect(messageInput(page)).toHaveValue('')
+})

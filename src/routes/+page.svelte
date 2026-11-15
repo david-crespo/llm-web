@@ -89,6 +89,33 @@
     else showCurrentInUrl()
   })
 
+  // Safari can discard a backgrounded tab without warning, so save the unsent
+  // message when the page is hidden, and restore it on mount if the same chat
+  // reopens. Clear it when the page is visible again, so a remount, like
+  // returning from settings, doesn't restore a stale message.
+  const DRAFT_KEY = 'unsent_message'
+
+  function saveDraft() {
+    if (bootState.current.status !== 'ready') return
+    try {
+      if (document.visibilityState === 'hidden' && message) {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify({ chatId: chatState.current.id, message }))
+      } else localStorage.removeItem(DRAFT_KEY)
+    } catch {
+      // Storage full or unavailable; the draft is a convenience.
+    }
+  }
+
+  function restoreDraft() {
+    try {
+      const draft = JSON.parse(localStorage.getItem(DRAFT_KEY) ?? 'null')
+      localStorage.removeItem(DRAFT_KEY)
+      if (draft?.chatId === chatState.current.id) message = draft.message
+    } catch {
+      // Unreadable draft; start with an empty input.
+    }
+  }
+
   // Dev only: /?seed replaces sample chats in history. Production builds drop
   // the `if (seed)` branch and its import. Read at init, before the URL sync
   // replaces the query string with `?chat=<id>`.
@@ -97,6 +124,7 @@
   onMount(() => {
     void (async () => {
       await bootComplete
+      restoreDraft()
       await tick()
       chatState.restoreCurrentScroll()
       if (seed) {
@@ -107,6 +135,8 @@
     })()
   })
 </script>
+
+<svelte:document onvisibilitychange={saveDraft} />
 
 {#if bootState.current.status === 'error'}
   <div class="flex h-dvh items-center justify-center p-4">
