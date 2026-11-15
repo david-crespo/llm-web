@@ -2,7 +2,14 @@
   import Markdown from './Markdown.svelte'
   import SearchSources from './components/SearchSources.svelte'
   import type { ChatMessage } from './types'
-  import { formatTime, formatMoney, formatTokens, shortModel } from '#lib/format.ts'
+  import {
+    formatTime,
+    formatMoney,
+    formatTokens,
+    formatTokensExact,
+    fullModel,
+    shortModel,
+  } from '#lib/format.ts'
   import { DropdownMenu } from 'bits-ui'
   import { pasteLabel, splitSegments } from '#lib/paste.ts'
 
@@ -23,6 +30,56 @@
     ...(canEdit ? [{ label: 'Edit', onSelect: () => onEdit(messageIndex) }] : []),
     { label: 'Regen', onSelect: () => onRegen(messageIndex) },
   ])
+  let metaEl = $state<HTMLDivElement>()
+
+  function wraps(el: HTMLElement): boolean {
+    const first = el.firstElementChild as HTMLElement | null
+    const last = el.lastElementChild as HTMLElement | null
+    if (!first || !last || first === last) return false
+    return last.offsetTop - first.offsetTop > 8
+  }
+
+  // Keep the full model name whenever 1 line fits; drop the brand prefix only
+  // when that avoids a wrap; restore the full name if wrapping onto 2 lines is
+  // unavoidable anyway.
+  $effect(() => {
+    const el = metaEl
+    if (!el || message.role !== 'assistant') return
+    const full = fullModel(message.model)
+    const short = shortModel(message.model)
+    // Re-fit whenever any sibling metadata field changes on a reused row.
+    void [
+      formatTime(message.timeMs),
+      formatMoney(message.cost),
+      formatTokens(message.tokens),
+      message.stop_reason,
+      message.search,
+    ]
+
+    const fit = () => {
+      const modelEl = el.firstElementChild as HTMLElement | null
+      if (!modelEl) return
+      modelEl.textContent = full
+      if (full === short || el.clientWidth === 0) return
+      if (wraps(el)) {
+        modelEl.textContent = short
+        if (wraps(el)) modelEl.textContent = full
+      }
+    }
+
+    let lastWidth = el.clientWidth
+    fit()
+    if (full === short) return
+
+    const observer = new ResizeObserver(() => {
+      const width = el.clientWidth
+      if (width === lastWidth) return
+      lastWidth = width
+      fit()
+    })
+    observer.observe(el)
+    return () => observer.disconnect()
+  })
 </script>
 
 <div
@@ -32,23 +89,35 @@
   aria-label={`${message.role} message`}
 >
   {#if message.role === 'assistant'}
+    {@const abnormalStop =
+      message.stop_reason &&
+      !['stop', 'end_turn', 'completed'].includes(message.stop_reason.toLowerCase())}
+    {#snippet searchBadge()}
+      {#if message.search}<span class="meta-dot" aria-hidden="true">·</span><span
+          title="Web search">🌐</span
+        >{/if}
+    {/snippet}
     <!-- Assistant message header -->
-    <div class="mb-2 flex items-center gap-1.5 text-xs text-fg-muted">
-      <span class="font-medium">{shortModel(message.model)}</span>
-      <span>•</span>
-      <span>{formatTime(message.timeMs)}</span>
-      <span>•</span>
-      <span>{formatMoney(message.cost)}</span>
-      <span>•</span>
-      <span title="Input → Output">{formatTokens(message.tokens)}</span>
-      {#if message.stop_reason && !['stop', 'end_turn', 'completed'].includes(message.stop_reason.toLowerCase())}
-        <span>•</span>
-        <span class="text-danger">Stop: {message.stop_reason}</span>
-      {/if}
-      {#if message.search}
-        <span>•</span>
-        <span title="Web search">🌐</span>
-      {/if}
+    <div class="meta-clip mb-2">
+      <div bind:this={metaEl} class="meta-flow text-xs text-fg-muted tabular-nums">
+        <span class="font-medium"></span>
+        <span>{formatTime(message.timeMs)}</span>
+        <span>{formatMoney(message.cost)}</span>
+        {#if abnormalStop}
+          <span title={`Input → Output: ${formatTokensExact(message.tokens)}`}
+            >{formatTokens(message.tokens)}</span
+          >
+          <span
+            ><span class="text-danger">Stop: {message.stop_reason}</span>{@render searchBadge()}</span
+          >
+        {:else}
+          <span
+            ><span title={`Input → Output: ${formatTokensExact(message.tokens)}`}
+              >{formatTokens(message.tokens)}</span
+            >{@render searchBadge()}</span
+          >
+        {/if}
+      </div>
     </div>
 
     <!-- Reasoning (if present) -->
@@ -122,3 +191,29 @@
     </div>
   {/if}
 </div>
+
+<style>
+  /* Each item gets a leading dot. The row is shifted left by one dot width and
+     clipped, so the dot that starts each line is hidden, including after a
+     wrap. */
+  .meta-clip {
+    overflow: hidden;
+  }
+  .meta-flow {
+    display: flex;
+    flex-wrap: wrap;
+    margin-left: -1em;
+  }
+  .meta-flow > * {
+    white-space: nowrap;
+  }
+  .meta-flow > ::before,
+  .meta-dot {
+    display: inline-block;
+    width: 1em;
+    text-align: center;
+  }
+  .meta-flow > ::before {
+    content: '·';
+  }
+</style>

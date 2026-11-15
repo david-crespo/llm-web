@@ -21,9 +21,13 @@ export function formatMoney(amount: number): string {
   return moneyFmt.format(amount)
 }
 
-/** Strip the redundant brand/family word from a model name to keep the
- * message metadata line short on narrow screens. */
+/** Strip the redundant brand/family word from a model name when the metadata
+ * line is too narrow to fit the full name on one line. */
 const brandPrefixes = ['Claude ', 'Gemini ']
+
+export function fullModel(name: string | undefined): string {
+  return name || unknown
+}
 
 export function shortModel(name: string | undefined): string {
   if (!name) return unknown
@@ -39,9 +43,26 @@ const tokenFmt = new Intl.NumberFormat()
  * rendering and taking the page down with it. */
 const unknown = '?'
 
-const count = (n: number | undefined) => (typeof n === 'number' ? tokenFmt.format(n) : unknown)
+const exactCount = (n: number | undefined) => (typeof n === 'number' ? tokenFmt.format(n) : unknown)
 
-export function formatTokens(tokens: TokenCounts | undefined): string {
-  const cacheHit = tokens?.input_cache_hit ? ` (${count(tokens.input_cache_hit)})` : ''
-  return `${count(tokens?.input)}${cacheHit} → ${count(tokens?.output)}`
+function compactCount(n: number | undefined): string {
+  if (typeof n !== 'number') return unknown
+  if (n < 1000) return String(n)
+  const tenthK = Math.round(n / 100) / 10
+  if (tenthK < 10) return `${Number.isInteger(tenthK) ? tenthK : tenthK.toFixed(1)}k`
+  return `${tokenFmt.format(Math.round(n / 1000))}k`
 }
+
+function formatPair(
+  tokens: TokenCounts | undefined,
+  fmt: (n: number | undefined) => string,
+): string {
+  const cacheHit = tokens?.input_cache_hit ? ` (${fmt(tokens.input_cache_hit)})` : ''
+  return `${fmt(tokens?.input)}${cacheHit} → ${fmt(tokens?.output)}`
+}
+
+export const formatTokens = (tokens: TokenCounts | undefined): string =>
+  formatPair(tokens, compactCount)
+
+export const formatTokensExact = (tokens: TokenCounts | undefined): string =>
+  formatPair(tokens, exactCount)
