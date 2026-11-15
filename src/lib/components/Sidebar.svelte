@@ -219,8 +219,11 @@
       >
         <InfoIcon />
       </button>
+      <!-- Close the drawer on the way out so the chat isn't scroll-locked when
+           the user comes back. -->
       <a
         href="/settings"
+        onclick={() => (chatState.sidebarOpen = false)}
         class="flex size-10 items-center justify-center rounded border border-edge bg-surface-alt text-fg hover:bg-surface-hover"
         title="Settings"
         aria-label="Settings"

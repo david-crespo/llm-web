@@ -3,7 +3,12 @@ import { storage } from '#lib/storage.ts'
 import { mergeHistory } from '#lib/history.ts'
 import { models, getCost, systemBase, getAvailableModels, type Model } from '#lib/models.svelte.ts'
 import { getAdapter, type ModelResponse } from '#lib/adapters/index.ts'
-import { scrollToBottom, scrollToAnswer } from '#lib/actions/autoScroll.ts'
+import {
+  scrollToBottom,
+  scrollToAnswer,
+  restoreScroll,
+  isRestoringScroll,
+} from '#lib/actions/autoScroll.ts'
 import type { Chat, NewChat, ChatMessage, JobHandle, PendingJob } from '#lib/types.ts'
 
 // Poll frequently while the answer is likely to finish soon. Provider polling
@@ -79,6 +84,19 @@ function isRetryablePollError(error: unknown): boolean {
   )
 }
 
+const SCROLL_POSITIONS_KEY = 'scroll_positions'
+
+function loadScrollPositions(): Record<number, number> {
+  try {
+    const parsed: unknown = JSON.parse(localStorage.getItem(SCROLL_POSITIONS_KEY) ?? '{}')
+    return typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)
+      ? (parsed as Record<number, number>)
+      : {}
+  } catch {
+    return {}
+  }
+}
+
 // --- App init state (checked by the page component to gate rendering) ---
 
 type BootState =
@@ -113,6 +131,11 @@ export class ChatManager {
   // mis-attribute replies. Holds the AbortController for cancel/stop; the
   // durable source of truth for "is loading" is the persisted chat.pending.
   private pendingRequests = new SvelteMap<number, AbortController>()
+
+  // Last scroll offset per chat, so returning to a chat lands where the user
+  // left off. Lives in localStorage rather than on the chat so recording it
+  // doesn't rewrite the whole chat in IndexedDB.
+  private scrollPositions = loadScrollPositions()
 
   // A chat is loading if a job is persisted (survives reload) or a live request
   // is mid-submit before its pending field is written. The map keeps the
@@ -195,20 +218,53 @@ export class ChatManager {
    */
   async selectChat(id: number) {
     const chat = this.history.find((c) => c.id === id)
-    if (!chat) return
+    this.sidebarOpen = false
+    // Reselecting the open chat leaves its scroll and toggles alone.
+    if (!chat || chat.id === this.current.id) return
 
     this.current = chat
-    this.sidebarOpen = false
+    this.saveScrollPositions()
+    this.restoreCurrentScroll()
 
-    // Auto-select model from last assistant message
-    const lastAssistant = chat.messages
-      .slice()
-      .reverse()
-      .find((m) => m.role === 'assistant')
+    // Pick up the model and toggles from the chat's last turn: the one in
+    // flight if there is one, since its answer isn't in messages yet. Error
+    // messages record no search setting, so skip past them for that.
+    const modelId =
+      chat.pending?.modelId ?? chat.messages.findLast((m) => m.role === 'assistant')?.model
+    const found = models.find((m) => m.id === modelId)
+    if (found) this.selectedModel = found
+    const search =
+      chat.pending?.search ??
+      chat.messages
+        .map((m) => (m.role === 'assistant' ? m.search : undefined))
+        .findLast((s) => s !== undefined)
+    if (search !== undefined) this.webSearch = search
+    const think = chat.messages
+      .map((m) => (m.role === 'user' ? m.think : undefined))
+      .findLast((t) => t !== undefined)
+    if (think !== undefined) this.reasoning = think
+  }
 
-    if (lastAssistant) {
-      const found = models.find((m) => m.id === lastAssistant.model)
-      if (found) this.selectedModel = found
+  /** Record the current chat's scroll offset. Ignored while the mobile sidebar
+   * is open, because its scroll lock zeroes the document's offset, while a
+   * chat switch is restoring its offset, and for empty chats, which have
+   * nothing to restore. */
+  rememberScroll(top: number) {
+    if (this.sidebarOpen || isRestoringScroll() || this.current.messages.length === 0) return
+    this.scrollPositions[this.current.id] = top
+  }
+
+  /** Scroll to where the user left the current chat. Called on switching chats
+   * and when the message list remounts, as on returning from settings. */
+  restoreCurrentScroll() {
+    restoreScroll(this.scrollPositions[this.current.id])
+  }
+
+  saveScrollPositions() {
+    try {
+      localStorage.setItem(SCROLL_POSITIONS_KEY, JSON.stringify(this.scrollPositions))
+    } catch {
+      // Storage full or unavailable; losing scroll positions is harmless.
     }
   }
 
@@ -225,14 +281,13 @@ export class ChatManager {
 
     await storage.deleteChat(id)
     this.history = this.history.filter((c) => c.id !== id)
+    delete this.scrollPositions[id]
+    this.saveScrollPositions()
 
     // If we deleted the current chat, switch to another or create new
     if (this.current.id === id) {
-      if (this.history.length > 0) {
-        this.current = this.history[0]
-      } else {
-        await this.createNew()
-      }
+      if (this.history.length > 0) await this.selectChat(this.history[0].id)
+      else await this.createNew()
     }
   }
 
@@ -680,6 +735,7 @@ async function boot() {
     if (typeof document !== 'undefined') {
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') chatState.resumePending(true)
+        else chatState.saveScrollPositions()
       })
     }
     if (typeof window !== 'undefined') {

@@ -10,6 +10,7 @@ import {
   selectModel,
 } from './helpers/app'
 import { models } from '../../src/lib/models'
+import { answer, savedChat, seedChats } from './helpers/history'
 
 test('Search and Think toggles affect the next request', async ({ page }) => {
   const openai = await mockOpenAI(page, { auto: true })
@@ -103,14 +104,17 @@ test('OpenAI: Think changes preserve the response chain across reloads', async (
   await send(page, 'three')
   await expect(assistantMessages(page)).toHaveCount(3)
 
-  // Reload resets Think to off; the response's original effort and the last
-  // user turn's applied effort must both survive in stored history.
-  // Creating a new chat waits for the current chat's save before switching.
+  // Selecting the chat after a reload restores Think from its last turn.
+  // Turning it off must then send an update, so the response's original
+  // effort and the last user turn's applied effort must both survive in
+  // stored history. Creating a new chat waits for the current chat's save
+  // before switching.
   await newChat(page)
   await expect(assistantMessages(page)).toHaveCount(0)
   await page.reload()
   await selectChat(page, 'one')
-  await expect(think).toHaveAttribute('aria-pressed', 'false')
+  await expect(think).toHaveAttribute('aria-pressed', 'true')
+  await think.click()
   await send(page, 'four')
   await expect(assistantMessages(page)).toHaveCount(4)
 
@@ -153,4 +157,37 @@ test('Stop cancels an in-flight response and gates the input', async ({ page }) 
   await expect(page.getByPlaceholder('Regen or fork to continue after error')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Send' })).toBeDisabled()
   await expect.poll(openai.cancels).toBe(1)
+})
+
+test('selecting a chat restores Search and Think from its last turn', async ({ page }) => {
+  const id = models[0].id
+  await seedChats(page, [
+    savedChat('quiet chat', [
+      { ...answer(id), search: false },
+      { role: 'user', content: 'retry', think: true },
+      // Error messages record no search setting, so the one before counts.
+      { ...answer(id), stop_reason: 'error' },
+    ]),
+    savedChat('loud chat', [
+      { ...answer(id), search: false },
+      { role: 'user', content: 'again', think: false },
+      { ...answer(id), search: true },
+    ]),
+  ])
+  await page.goto('/')
+  const search = page.getByRole('button', { name: 'Search' })
+  const think = page.getByRole('button', { name: 'Think' })
+
+  await selectChat(page, 'quiet chat')
+  await expect(search).toHaveAttribute('aria-pressed', 'false')
+  await expect(think).toHaveAttribute('aria-pressed', 'true')
+
+  await selectChat(page, 'loud chat')
+  await expect(search).toHaveAttribute('aria-pressed', 'true')
+  await expect(think).toHaveAttribute('aria-pressed', 'false')
+
+  // Reselecting the open chat keeps toggles the user just changed.
+  await think.click()
+  await selectChat(page, 'loud chat')
+  await expect(think).toHaveAttribute('aria-pressed', 'true')
 })

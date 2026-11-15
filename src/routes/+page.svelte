@@ -57,6 +57,7 @@
     void (async () => {
       await bootComplete
       await tick()
+      chatState.restoreCurrentScroll()
       // Dev only: /?seed replaces sample chats in history. The import is
       // dropped from production builds along with this branch.
       if (import.meta.env.DEV && new URLSearchParams(location.search).has('seed')) {

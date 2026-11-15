@@ -3,10 +3,8 @@
 // above the composer rather than mid-screen.
 export function scrollToBottom() {
   requestAnimationFrame(() => {
-    const messages = document.querySelectorAll('[data-message]')
-    const last = messages[messages.length - 1] as HTMLElement | undefined
-    if (!last) return
-    const scroller = getScrollParent(last) ?? document.scrollingElement ?? document.documentElement
+    if (!document.querySelector('[data-message]')) return
+    const scroller = messageScroller()
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       scroller.scrollTop = scroller.scrollHeight
     } else {
@@ -121,6 +119,33 @@ export function scrollToAnswer() {
     const last = messages[messages.length - 1] as HTMLElement | undefined
     last?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   })
+}
+
+let restoreFrame = 0
+
+/** Restore a chat's saved scroll offset, or start at the top if it has none.
+ * Waits a frame so the newly selected chat's messages have rendered. */
+export function restoreScroll(top = 0) {
+  cancelAnimationFrame(restoreFrame)
+  restoreFrame = requestAnimationFrame(() => {
+    restoreFrame = 0
+    cancelScroll?.()
+    messageScroller().scrollTop = top
+  })
+}
+
+/** Scroll events before the restore runs come from the switch itself: the old
+ * chat's offset clamped to the new chat's height, or the mobile sidebar's
+ * scroll lock releasing. They aren't the new chat's position. */
+export const isRestoringScroll = () => restoreFrame !== 0
+
+/** The element that scrolls the message list: the list itself on desktop, the
+ * document on mobile. */
+export function messageScroller(): Element {
+  const message = document.querySelector<HTMLElement>('[data-message]')
+  return (
+    (message && getScrollParent(message)) ?? document.scrollingElement ?? document.documentElement
+  )
 }
 
 // Nearest ancestor that actually scrolls vertically. On desktop this is the

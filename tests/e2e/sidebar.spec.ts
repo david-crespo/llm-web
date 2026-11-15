@@ -1,7 +1,8 @@
 import { test, expect } from '@playwright/test'
 import { setKeysThroughSettings } from './helpers/settings'
 import { mockOpenAI } from './helpers/mocks'
-import { savedChat, seedChats } from './helpers/history'
+import { answer, savedChat, seedChats } from './helpers/history'
+import { models } from '../../src/lib/models'
 import {
   send,
   newChat,
@@ -10,6 +11,8 @@ import {
   assistantMessages,
   expectPendingJobPersisted,
   sidebarRows,
+  selectChat,
+  userMessages,
 } from './helpers/app'
 
 test('create, then delete a chat via the confirm dialog', async ({ page }) => {
@@ -102,4 +105,41 @@ test('sidebar previews stay on one line', async ({ page }) => {
     expect(sizes.scrollHeight).toBeLessThanOrEqual(sizes.height)
   }
   expect(await history.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true)
+})
+
+test('deleting the open chat restores the fallback chat’s toggles and scroll', async ({ page }) => {
+  const id = models[0].id
+  const long = answer(id, 'A paragraph of the answer.\n\n'.repeat(100))
+  await seedChats(page, [
+    // Newer than the chat each page load starts, so it's the fallback.
+    {
+      ...savedChat('fallback chat', [{ ...long, search: false }]),
+      createdAt: new Date(Date.now() + 60_000),
+    },
+    savedChat('doomed chat', [{ ...long, search: true }]),
+  ])
+  await page.goto('/')
+  const search = page.getByRole('button', { name: 'Search' })
+  await selectChat(page, 'doomed chat')
+  await expect(search).toHaveAttribute('aria-pressed', 'true')
+  await page.evaluate(() => {
+    const messages = document.querySelector('[aria-label="Chat messages"]')!
+    messages.scrollTop = messages.scrollHeight
+    window.scrollTo(0, document.documentElement.scrollHeight)
+  })
+
+  await openSidebar(page)
+  await chatRow(page, 'doomed chat').getByLabel('Chat menu').click()
+  await page.getByRole('menuitem', { name: 'Delete' }).click()
+  await page.getByRole('button', { name: 'Delete', exact: true }).click()
+
+  await expect(userMessages(page)).toContainText('fallback chat')
+  await expect(search).toHaveAttribute('aria-pressed', 'false')
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => document.querySelector('[aria-label="Chat messages"]')!.scrollTop + window.scrollY,
+      ),
+    )
+    .toBe(0)
 })

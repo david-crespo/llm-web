@@ -2,7 +2,7 @@
   import ChatMessage from '#lib/ChatMessage.svelte'
   import { chatState } from '#lib/chat.svelte.ts'
   import { getAvailableModels } from '#lib/models.svelte.ts'
-  import { trackScrollPosition } from '#lib/actions/autoScroll.ts'
+  import { messageScroller, trackScrollPosition } from '#lib/actions/autoScroll.ts'
 
   interface Props {
     composerHeight?: number
@@ -14,12 +14,17 @@
 
   let { composerHeight = 0, onAtBottomChange, onFork, onEdit, onOpenAbout }: Props = $props()
   const hasApiKeys = getAvailableModels().length > 0
+  // Mobile scrolls the document, desktop scrolls the list
+  const rememberScroll = () => chatState.rememberScroll(messageScroller().scrollTop)
 </script>
+
+<svelte:window onscroll={rememberScroll} />
 
 <div
   role="region"
   aria-label="Chat messages"
   use:trackScrollPosition={{onAtBottomChange, composerHeight}}
+  onscroll={rememberScroll}
   class="flex min-h-0 flex-1 flex-col overflow-x-hidden p-4 pb-[calc(var(--composer-height)+1rem)] md:overflow-y-auto md:pb-4"
   style={`--composer-height: ${composerHeight}px`}
 >
