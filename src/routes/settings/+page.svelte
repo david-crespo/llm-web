@@ -37,6 +37,40 @@
     setTimeout(() => URL.revokeObjectURL(url), 1000)
   }
 
+  let deleteCount = $state<number | null>(null)
+  let waitingCount = $state(0)
+  let deleteConfirmText = $state('')
+  let deleteError = $state<string | null>(null)
+
+  async function startDeleteAll() {
+    const chats = await storage.getAllChats()
+    const count = chats.filter((chat) => chat.messages.length > 0 || chat.pending).length
+    if (count === 0) {
+      backupStatus = { text: 'There are no chats to delete.', error: false }
+      return
+    }
+    backupStatus = null
+    deleteCount = count
+    // An answer still on its way isn't in an export, and deleting the chat
+    // loses it. Its commit could also re-save the chat after the delete.
+    waitingCount = chats.filter((chat) => chat.pending).length
+    deleteConfirmText = ''
+    deleteError = null
+  }
+
+  async function deleteAll() {
+    try {
+      await storage.deleteAllChats()
+    } catch (error) {
+      deleteError = `Couldn't delete chats: ${error instanceof Error ? error.message : error}`
+      return
+    }
+    // A full load rather than goto: the chat page keeps history in memory and
+    // would otherwise show (and re-save) the deleted chats. Replace, so Back
+    // can't return to a page holding them either.
+    location.replace('/')
+  }
+
   async function importChats(input: HTMLInputElement) {
     const file = input.files?.[0]
     input.value = '' // so picking the same file again still fires change
@@ -145,6 +179,51 @@
     Export saves every chat to a JSON file, without API keys. Import adds the chats from an
     export that aren't already here, and updates ones that have newer messages in the file. Use
     it to move your history to the home-screen app, which has its own storage on iOS.
+  </div>
+
+  <div class="mt-4">
+    {#if deleteCount === null}
+      <button class={[buttonClass, 'text-danger']} onclick={startDeleteAll}>
+        Delete all chats…
+      </button>
+    {:else}
+      <div class="space-y-3 rounded border border-danger bg-surface-danger p-3 text-sm">
+        <p>
+          This permanently deletes all {deleteCount}
+          {deleteCount === 1 ? 'chat' : 'chats'} in this browser. It can't be undone. Export first
+          if you want to keep them.
+        </p>
+        {#if waitingCount > 0}
+          <p class="font-medium">
+            {waitingCount === 1 ? '1 chat has' : `${waitingCount} chats have`} an answer in progress.
+            Wait for {waitingCount === 1 ? 'it' : 'them'} to finish, then export again before deleting.
+          </p>
+        {/if}
+        <label class="block">
+          <span class="mb-1 block">Type <strong>delete</strong> to confirm</span>
+          <input
+            bind:value={deleteConfirmText}
+            class={inputClass}
+            autocomplete="off"
+            autocapitalize="off"
+            spellcheck="false"
+          />
+        </label>
+        {#if deleteError}
+          <p class="text-danger">{deleteError}</p>
+        {/if}
+        <div class="flex justify-end gap-2">
+          <button class={buttonClass} onclick={() => (deleteCount = null)}>Cancel</button>
+          <button
+            class="rounded bg-danger px-3 py-2 text-sm text-white disabled:opacity-40"
+            disabled={waitingCount > 0 || deleteConfirmText.trim().toLowerCase() !== 'delete'}
+            onclick={deleteAll}
+          >
+            Delete all chats
+          </button>
+        </div>
+      </div>
+    {/if}
   </div>
 
   <h2 class="mt-8 mb-2 text-xl font-medium">Storage</h2>

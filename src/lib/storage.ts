@@ -170,6 +170,17 @@ export class Storage {
     return ids
   }
 
+  async deleteAllChats(): Promise<void> {
+    const store = await this.chatStore('readwrite')
+    return new Promise((resolve, reject) => {
+      store.clear()
+      // Resolve on commit, not request success: the caller reloads the page
+      // right after, which would abort a transaction that hasn't committed.
+      store.transaction.oncomplete = () => resolve()
+      store.transaction.onabort = () => reject(store.transaction.error)
+    })
+  }
+
   async getChat(id: number): Promise<Chat | null> {
     const store = await this.chatStore('readonly')
     return new Promise((resolve, reject) => {

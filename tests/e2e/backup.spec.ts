@@ -145,3 +145,42 @@ test('import reports a file that is not an export', async ({ page }) => {
   })
   await expect(page.getByText('This file is not an llm-web chat export.')).toBeVisible()
 })
+
+test('deleting all chats requires typed confirmation and keeps API keys', async ({ page }) => {
+  await mockOpenAI(page, { reply: (u) => `Re: ${u}`, auto: true })
+  await setKeysThroughSettings(page, { openai: 'sk-test' })
+  await send(page, 'doomed chat')
+  await expect(assistantMessages(page)).toContainText('Re: doomed chat')
+
+  await page.goto('/settings')
+  await page.getByRole('button', { name: 'Delete all chats…' }).click()
+  await expect(page.getByText('permanently deletes all 1 chat in this browser')).toBeVisible()
+  const confirm = page.getByRole('button', { name: 'Delete all chats', exact: true })
+  await expect(confirm).toBeDisabled()
+  await page.getByLabel('Type delete to confirm').fill('delete')
+  await confirm.click()
+
+  await expect(messageInput(page)).toBeVisible()
+  await openSidebar(page)
+  await expect(chatRow(page, 'doomed chat')).toHaveCount(0)
+  await page.goto('/settings')
+  await expect(page.getByLabel('OpenAI')).toHaveValue('sk-test')
+})
+
+test('delete all says so when there are no chats', async ({ page }) => {
+  await page.goto('/settings')
+  await page.getByRole('button', { name: 'Delete all chats…' }).click()
+  await expect(page.getByText('There are no chats to delete.')).toBeVisible()
+  await expect(page.getByLabel('Type delete to confirm')).toHaveCount(0)
+})
+
+test('delete all is disabled while an answer is in progress', async ({ page }) => {
+  await mockOpenAI(page)
+  await setKeysThroughSettings(page, { openai: 'sk-test' })
+  await send(page, 'still thinking')
+  await openSettings(page)
+  await page.getByRole('button', { name: 'Delete all chats…' }).click()
+  await expect(page.getByText('1 chat has an answer in progress')).toBeVisible()
+  await page.getByLabel('Type delete to confirm').fill('delete')
+  await expect(page.getByRole('button', { name: 'Delete all chats', exact: true })).toBeDisabled()
+})
