@@ -21,6 +21,7 @@ function isConnectionClosed(error: unknown): boolean {
 export class Storage {
   private db: IDBDatabase | null = null
   private opening: Promise<IDBDatabase> | null = null
+  private replacedIds = new Set<number>()
 
   async init(): Promise<void> {
     await this.open()
@@ -135,6 +136,38 @@ export class Storage {
       request.onerror = () => reject(request.error)
       request.onsuccess = () => resolve()
     })
+  }
+
+  /** Write imported chats in one transaction, so a failed import changes
+   * nothing. `updated` chats keep their ids and replace the stored ones. */
+  async saveImport(added: NewChat[], updated: Chat[]): Promise<void> {
+    const store = await this.chatStore('readwrite')
+    return new Promise((resolve, reject) => {
+      const { transaction } = store
+      transaction.oncomplete = () => {
+        for (const chat of updated) this.replacedIds.add(chat.id)
+        resolve()
+      }
+      // A failed request aborts the transaction, so this also covers errors.
+      transaction.onabort = () => reject(transaction.error)
+      // Parsed from JSON, so messages aren't reactive proxies and need no cloning.
+      const record = (chat: NewChat) => ({
+        createdAt: chat.createdAt.toISOString(),
+        systemPrompt: chat.systemPrompt,
+        messages: chat.messages,
+      })
+      for (const chat of added) store.add(record(chat))
+      for (const chat of updated) store.put({ id: chat.id, ...record(chat) })
+    })
+  }
+
+  /** Ids of chats replaced by imports since the last call, so in-memory
+   * history (which normally wins over storage) knows to take the stored
+   * messages. */
+  takeReplacedIds(): Set<number> {
+    const ids = this.replacedIds
+    this.replacedIds = new Set()
+    return ids
   }
 
   async getChat(id: number): Promise<Chat | null> {

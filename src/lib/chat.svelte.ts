@@ -200,7 +200,14 @@ export class ChatManager {
 
   /** Merge the asynchronous IndexedDB snapshot without overwriting chats that
    * changed in memory while it was loading. */
-  loadHistory(stored: Chat[]) {
+  loadHistory(stored: Chat[], replacedIds = new Set<number>()) {
+    // An import replaced these in storage, so here the stored copy is newer.
+    // Update the in-memory object rather than swapping it, to keep its identity.
+    for (const chat of this.history) {
+      if (!replacedIds.has(chat.id)) continue
+      const replacement = stored.find((s) => s.id === chat.id)
+      if (replacement) chat.messages = replacement.messages
+    }
     const currentId = this.current.id
     this.history = mergeHistory(this.history, stored)
     const currentIndex = this.history.findIndex((chat) => chat.id === currentId)
@@ -693,7 +700,7 @@ export async function loadStoredHistory() {
     const history = stored.filter(
       (chat) => localIds.has(chat.id) || chat.messages.length > 0 || chat.pending,
     )
-    chatState.loadHistory(history)
+    chatState.loadHistory(history, storage.takeReplacedIds())
 
     // Resume jobs that were in flight when the page last closed, and re-check on
     // every wake — a phone that slept mid-request lands here, re-polls the
