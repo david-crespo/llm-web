@@ -141,6 +141,13 @@ export async function selectChat(page: Page, preview: string): Promise<void> {
   await chatRow(page, preview).click()
 }
 
+export async function deleteChat(page: Page, preview: string): Promise<void> {
+  await openSidebar(page)
+  await chatRow(page, preview).getByLabel('Chat menu').click()
+  await page.getByRole('menuitem', { name: 'Delete' }).click()
+  await page.getByRole('button', { name: 'Delete', exact: true }).click()
+}
+
 // Open the kebab on a user message bubble (Copy / Fork / Edit / Regen).
 async function openMessageMenu(page: Page, text: string): Promise<void> {
   const bubble = userMessages(page).filter({ hasText: text })

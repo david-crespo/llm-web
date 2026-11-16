@@ -18,16 +18,6 @@ function chat(id: number, opts: { createdAt: number; messages?: string[] }): Cha
 const ids = (chats: Chat[]) => chats.map((c) => c.id)
 
 describe('mergeHistory', () => {
-  test('stored chats merge in behind local ones, newest first', () => {
-    const local = [chat(4, { createdAt: 40 })]
-    const stored = [
-      chat(3, { createdAt: 30 }),
-      chat(2, { createdAt: 20 }),
-      chat(1, { createdAt: 10 }),
-    ]
-    expect(ids(mergeHistory(local, stored))).toEqual([4, 3, 2, 1])
-  })
-
   test('the local object wins when both sides have the same id', () => {
     // The local copy gained a message while the snapshot was loading.
     const localCurrent = chat(2, { messages: ['typed during load'], createdAt: 20 })

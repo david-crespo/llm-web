@@ -59,18 +59,11 @@ afterEach(() => {
 })
 
 describe('storage reconnects', () => {
-  test('reuses one connection while it is alive', async () => {
-    const connections = fakeIndexedDB()
-    const storage = new Storage()
-    await storage.updateChat(1, chat)
-    await storage.updateChat(1, chat)
-    expect(connections.length).toBe(1)
-  })
-
-  test('concurrent first calls share one open', async () => {
+  test('concurrent and later calls share one connection while it is alive', async () => {
     const connections = fakeIndexedDB()
     const storage = new Storage()
     await Promise.all([storage.updateChat(1, chat), storage.getChat(1)])
+    await storage.updateChat(1, chat)
     expect(connections.length).toBe(1)
   })
 

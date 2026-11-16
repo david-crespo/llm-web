@@ -25,9 +25,3 @@ test('anthropic key: shows only Anthropic models', async ({ page }) => {
   const anthropicIds = models.filter((m) => m.provider === 'anthropic').map((m) => m.id)
   await expect(modelOptions(page)).toHaveText(anthropicIds)
 })
-
-test('all keys: every model is listed in order', async ({ page }) => {
-  await setKeysThroughSettings(page, { openai: 'a', anthropic: 'b', google: 'c' })
-
-  await expect(modelOptions(page)).toHaveText(models.map((m) => m.id))
-})

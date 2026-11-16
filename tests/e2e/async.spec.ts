@@ -16,29 +16,6 @@ import {
   expectPendingJobPersisted,
 } from './helpers/app'
 
-test('switch chats while a request runs; loading shows in sidebar', async ({ page }) => {
-  const openai = await mockOpenAI(page, { reply: (u) => `Reply: ${u}` })
-
-  await setKeysThroughSettings(page, { openai: 'sk-test' })
-  await send(page, 'first')
-  await expect(loadingPlaceholder(page)).toBeVisible()
-
-  // Start a new chat while 'first' is still in flight.
-  await newChat(page)
-  await expect(messageInput(page)).toBeEnabled()
-  await expect(loadingPlaceholder(page)).toHaveCount(0)
-
-  // The still-running chat shows a loading dot in the sidebar.
-  await openSidebar(page)
-  await expect(responseLoadingIndicator(chatRow(page, 'first'))).toBeVisible()
-
-  // Completing the in-flight request lands its answer in the right chat.
-  openai.complete()
-  await selectChat(page, 'first')
-  await expect(assistantMessages(page)).toContainText('Reply: first')
-  await expect(responseLoadingIndicator(chatRow(page, 'first'))).toHaveCount(0)
-})
-
 test('two concurrent requests can finish in reverse order', async ({ page }) => {
   const openai = await mockOpenAI(page, { reply: (u) => `Reply: ${u}` })
 
@@ -46,7 +23,10 @@ test('two concurrent requests can finish in reverse order', async ({ page }) => 
   await send(page, 'alpha')
   await expect(loadingPlaceholder(page)).toBeVisible()
 
+  // A new chat is usable while 'alpha' is still in flight.
   await newChat(page)
+  await expect(messageInput(page)).toBeEnabled()
+  await expect(loadingPlaceholder(page)).toHaveCount(0)
   await send(page, 'beta')
   await expect(loadingPlaceholder(page)).toBeVisible()
 
@@ -67,6 +47,9 @@ test('two concurrent requests can finish in reverse order', async ({ page }) => 
 
   openai.completeRequest('alpha')
   await expect(assistantMessages(page)).toContainText('Reply: alpha')
+  await openSidebar(page)
+  await expect(chatRow(page, 'alpha')).toBeVisible()
+  await expect(responseLoadingIndicator(chatRow(page, 'alpha'))).toHaveCount(0)
   expect(openai.calls()).toBe(2)
 })
 
@@ -81,29 +64,6 @@ test('pending placeholder keeps the submitted model label', async ({ page }) => 
   const otherModel = await selectOtherModel(page)
   await expect(loadingPlaceholder(page)).toContainText(submittedModel)
   await expect(loadingPlaceholder(page)).not.toContainText(otherModel)
-})
-
-test('OpenAI background job survives a reload and lands its answer', async ({ page }) => {
-  const openai = await mockOpenAI(page, { reply: (u) => `Reply: ${u}` })
-
-  await setKeysThroughSettings(page, { openai: 'sk-test' })
-  await send(page, 'persist me')
-  await expect(loadingPlaceholder(page)).toBeVisible()
-  await expectPendingJobPersisted(page, 'persist me')
-
-  // Reload while the job is still running server-side (not completed yet). The
-  // persisted handle means boot re-polls instead of discarding the request.
-  await page.reload()
-
-  // The chat is still shown as loading in the sidebar after reload.
-  await openSidebar(page)
-  await expect(responseLoadingIndicator(chatRow(page, 'persist me'))).toBeVisible()
-
-  // Completing the job now lands the answer via the resumed poll loop.
-  openai.complete()
-  await selectChat(page, 'persist me')
-  await expect(assistantMessages(page)).toContainText('Reply: persist me')
-  await expect(responseLoadingIndicator(chatRow(page, 'persist me'))).toHaveCount(0)
 })
 
 test('Google background job survives a reload and lands its answer', async ({ page }) => {

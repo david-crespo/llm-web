@@ -5,7 +5,6 @@ import {
   send,
   regenerate,
   editMessage,
-  forkMessage,
   userMessages,
   assistantMessages,
   messageInput,
@@ -28,29 +27,20 @@ test('regenerate replaces the last response in place', async ({ page }) => {
   expect(openai.calls()).toBe(2)
 })
 
-test('edit a user message after an error pops it back into the input', async ({ page }) => {
+test('a failed request gates the input until the message is edited', async ({ page }) => {
   const openai = await mockOpenAI(page)
 
   await setKeysThroughSettings(page, { openai: 'sk-test' })
   await send(page, 'oops')
   openai.fail(401)
   await expect(assistantMessages(page)).toContainText('Error:')
+  await expect(page.getByText('Stop: error')).toBeVisible()
+  // Input is gated until the user regens, forks, or edits.
+  await expect(page.getByPlaceholder('Regen or fork to continue after error')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Send' })).toBeDisabled()
 
   await editMessage(page, 'oops')
   await expect(messageInput(page)).toHaveValue('oops')
-  await expect(userMessages(page)).toHaveCount(0)
-})
-
-test('fork branches a new chat and seeds the input', async ({ page }) => {
-  await mockOpenAI(page, { reply: (u) => `Re: ${u}`, auto: true })
-
-  await setKeysThroughSettings(page, { openai: 'sk-test' })
-  await send(page, 'original')
-  await expect(assistantMessages(page)).toContainText('Re: original')
-
-  await forkMessage(page, 'original')
-  // Forking from the first message yields an empty new chat with the text queued.
-  await expect(messageInput(page)).toHaveValue('original')
   await expect(userMessages(page)).toHaveCount(0)
 })
 

@@ -19,7 +19,7 @@ export type Segment = { kind: 'text'; text: string } | { kind: 'pasted'; text: s
 
 /** Rough token estimate. Providers' tokenizers differ, but ~4 chars per token
  * is close enough for a size hint on English text and code. */
-export function estimateTokens(text: string): number {
+function estimateTokens(text: string): number {
   return Math.ceil(text.length / 4)
 }
 

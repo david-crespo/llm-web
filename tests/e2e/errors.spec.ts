@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test'
 import { messageInput, selectChat } from './helpers/app'
+import { answer, savedChat, seedChats } from './helpers/history'
+import { models } from '../../src/lib/models'
 
 // The app runs on a phone, where there is no console. These cover the two
 // channels that make an error readable there: +error.svelte for anything
@@ -97,46 +99,7 @@ test('a render crash is caught by the boundary instead of blanking the page', as
     } as unknown as typeof Intl.NumberFormat
   }, CRASH_COST)
 
-  await page.goto('/settings')
-  await page.evaluate(
-    (cost) =>
-      new Promise<void>((resolve, reject) => {
-        const request = indexedDB.open('llm-web', 1)
-        request.onerror = () => reject(request.error)
-        request.onupgradeneeded = () => {
-          const db = request.result
-          const chats = db.createObjectStore('chats', { keyPath: 'id', autoIncrement: true })
-          chats.createIndex('createdAt', 'createdAt', { unique: false })
-          db.createObjectStore('apiKeys', { keyPath: 'id' })
-        }
-        request.onsuccess = () => {
-          const db = request.result
-          const transaction = db.transaction('chats', 'readwrite')
-          transaction.onerror = () => reject(transaction.error)
-          transaction.oncomplete = () => {
-            db.close()
-            resolve()
-          }
-          transaction.objectStore('chats').add({
-            createdAt: new Date().toISOString(),
-            systemPrompt: 'test',
-            messages: [
-              { role: 'user', content: 'crash me' },
-              {
-                role: 'assistant',
-                model: 'GPT-5.6',
-                content: 'costly',
-                cost,
-                timeMs: 1000,
-                tokens: { input: 10, output: 20 },
-              },
-            ],
-          })
-        }
-      }),
-    CRASH_COST,
-  )
-
+  await seedChats(page, [savedChat('crash me', [{ ...answer(models[0].id), cost: CRASH_COST }])])
   await page.goto('/')
   await selectChat(page, 'crash me')
 

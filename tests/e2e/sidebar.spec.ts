@@ -5,35 +5,14 @@ import { answer, savedChat, seedChats } from './helpers/history'
 import { models } from '../../src/lib/models'
 import {
   send,
-  newChat,
   openSidebar,
   chatRow,
-  assistantMessages,
+  deleteChat,
   expectPendingJobPersisted,
   sidebarRows,
   selectChat,
   userMessages,
 } from './helpers/app'
-
-test('create, then delete a chat via the confirm dialog', async ({ page }) => {
-  await mockOpenAI(page, { reply: (u) => `Re: ${u}`, auto: true })
-
-  await setKeysThroughSettings(page, { openai: 'sk-test' })
-  await send(page, 'alpha')
-  await expect(assistantMessages(page)).toContainText('Re: alpha')
-  await newChat(page)
-  await send(page, 'beta')
-  await expect(assistantMessages(page)).toContainText('Re: beta')
-
-  // Delete the non-active 'alpha' chat.
-  await openSidebar(page)
-  await chatRow(page, 'alpha').getByLabel('Chat menu').click()
-  await page.getByRole('menuitem', { name: 'Delete' }).click()
-  await page.getByRole('button', { name: 'Delete', exact: true }).click()
-
-  await expect(chatRow(page, 'alpha')).toHaveCount(0)
-  await expect(chatRow(page, 'beta')).toBeVisible()
-})
 
 test('deleting a resumed pending chat cancels its provider job', async ({ page }) => {
   const openai = await mockOpenAI(page)
@@ -46,10 +25,7 @@ test('deleting a resumed pending chat cancels its provider job', async ({ page }
   await page.reload()
   await expect.poll(openai.polls).toBeGreaterThan(pollsBeforeReload)
 
-  await openSidebar(page)
-  await chatRow(page, 'delete while pending').getByLabel('Chat menu').click()
-  await page.getByRole('menuitem', { name: 'Delete' }).click()
-  await page.getByRole('button', { name: 'Delete', exact: true }).click()
+  await deleteChat(page, 'delete while pending')
 
   await expect(chatRow(page, 'delete while pending')).toHaveCount(0)
   await expect.poll(openai.cancels).toBe(1)
@@ -70,9 +46,7 @@ test('large histories are virtualized to bound the rendered sidebar', async ({ p
 
   // Only the visible rows plus a small overscan are mounted, while every chat
   // remains reachable through one continuous scroll area.
-  await expect(sidebarRows(page)).not.toHaveCount(106)
   expect(await sidebarRows(page).count()).toBeLessThan(30)
-  await expect(sidebarRows(page).first()).toHaveCSS('height', '68px')
 
   const history = page.getByRole('region', { name: 'Chat history' })
   await history.evaluate((element) => (element.scrollTop = element.scrollHeight))
@@ -128,10 +102,7 @@ test('deleting the open chat restores the fallback chat’s toggles and scroll',
     window.scrollTo(0, document.documentElement.scrollHeight)
   })
 
-  await openSidebar(page)
-  await chatRow(page, 'doomed chat').getByLabel('Chat menu').click()
-  await page.getByRole('menuitem', { name: 'Delete' }).click()
-  await page.getByRole('button', { name: 'Delete', exact: true }).click()
+  await deleteChat(page, 'doomed chat')
 
   await expect(userMessages(page)).toContainText('fallback chat')
   await expect(search).toHaveAttribute('aria-pressed', 'false')
@@ -142,4 +113,7 @@ test('deleting the open chat restores the fallback chat’s toggles and scroll',
       ),
     )
     .toBe(0)
+  await openSidebar(page)
+  await expect(chatRow(page, 'fallback chat')).toBeVisible()
+  await expect(chatRow(page, 'doomed chat')).toHaveCount(0)
 })

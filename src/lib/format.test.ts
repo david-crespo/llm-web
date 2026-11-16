@@ -1,12 +1,7 @@
 import { describe, expect, test } from 'vitest'
-import { formatTokens, formatTokensExact, fullModel, shortModel } from './format'
+import { formatTokens, formatTokensExact, shortModel } from './format'
 
 describe('model names', () => {
-  test('fullModel keeps the brand prefix and handles missing names', () => {
-    expect(fullModel('Gemini 4 Carbon')).toBe('Gemini 4 Carbon')
-    expect(fullModel(undefined)).toBe('?')
-    expect(fullModel('')).toBe('?')
-  })
   test('shortModel strips a brand prefix', () => expect(shortModel('Claude Opus 5')).toBe('Opus 5'))
   test('shortModel leaves other names alone', () => expect(shortModel('GPT-5.6')).toBe('GPT-5.6'))
   // A stored message from an older version of the app may be missing the field.

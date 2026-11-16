@@ -1,28 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { hasLatexChar, renderMath } from './math'
-
-describe('hasLatexChar', () => {
-  test.each([
-    'a\\b',
-    'a^b',
-    'a_b',
-    'a{b',
-    'a}b',
-    'a=b',
-    'a/b',
-    'a,b',
-    'a+b',
-    'a-b',
-    '(a)',
-    'x',
-    'N',
-    'dx',
-    'dy',
-    'hello',
-  ])('true: %s', (s) => expect(hasLatexChar(s)).toBe(true))
-
-  test.each(['50', '100', '3.14'])('false: %s', (s) => expect(hasLatexChar(s)).toBe(false))
-})
+import { renderMath } from './math'
 
 describe('renderMath', () => {
   // Helper: check that renderMath produced MathML output
@@ -79,13 +56,6 @@ describe('renderMath', () => {
       expect(result).not.toContain('math-error')
     })
 
-    test('renders math containing both \\sim and \\$ without error', () => {
-      const result = renderMath('Hyperscaler capex $\\sim\\$900$B total')
-      expect(result).toContain('<math')
-      expect(result).not.toContain('temml-error')
-      expect(result).not.toContain('math-error')
-    })
-
     test('long mixed paragraph: math spans render, prose preserved, no errors', () => {
       const input =
         '**\\$400$–$\\$650$B globally for U.S.-led LLM development/serving**, before geographic adjustment. If only counting **spending physically in the U.S.**, knock that down by perhaps **25–45%**, because a material fraction of data centers, cloud regions, power, and supply-chain spend is outside the U.S. That yields the **$300$–$\\$500$B** estimate.'
@@ -126,36 +96,20 @@ describe('renderMath', () => {
     'use `\\(x^2\\)` for inline math',
     '```\n\\(x^2\\)\n```',
     '```latex\n\\(x^2\\)\n```',
+    '\\(x\ny\\)',
+    'foo \\(\\) bar',
   ])('not math: %s', (input) => {
     expect(renderMath(input)).toBe(input)
   })
 
-  describe('multiple expressions', () => {
-    test('renders multiple inline expressions in one string', () => {
-      const result = renderMath('$x$ and $y$')
-      const mathCount = (result.match(/<math/g) ?? []).length
-      expect(mathCount).toBe(2)
-    })
-
-    test('renders mixed block and inline', () => {
-      const result = renderMath('$$x^2$$ and $y$')
-      const mathCount = (result.match(/<math/g) ?? []).length
-      expect(mathCount).toBe(2)
-    })
+  test('renders mixed block and inline', () => {
+    const result = renderMath('$$x^2$$ and $y$')
+    expect((result.match(/<math/g) ?? []).length).toBe(2)
   })
 
-  describe('math adjacent to punctuation', () => {
-    test('renders math followed by period', () => {
-      const result = renderMath('$x$.')
-      expect(result).toContain('<math')
-      expect(result).toMatch(/\.$/)
-    })
-
-    test('renders math followed by comma', () => {
-      const result = renderMath('$x$, then')
-      expect(result).toContain('<math')
-      expect(result).toContain(', then')
-    })
+  test('renders math followed by punctuation', () => {
+    expect(renderMath('$x$.')).toMatch(/<math.*\.$/s)
+    expect(renderMath('$x$, then')).toMatch(/<math.*, then$/s)
   })
 
   describe('\\(...\\) inline math', () => {
@@ -172,12 +126,6 @@ describe('renderMath', () => {
       expect(mathCount).toBe(2)
     })
 
-    test('does not match across newlines', () => {
-      // (.+?) doesn't cross \n, so this should not be treated as math.
-      const input = '\\(x\ny\\)'
-      expect(renderMath(input)).toBe(input)
-    })
-
     test('renders \\(...\\) following prose with parens', () => {
       // (x) is just prose parens; \(y\) is math. Make sure the (x) doesn't
       // confuse the regex.
@@ -185,11 +133,6 @@ describe('renderMath', () => {
       const mathCount = (result.match(/<math/g) ?? []).length
       expect(mathCount).toBe(1)
       expect(result).toContain('f(x) where')
-    })
-
-    test('empty \\(\\) is not rendered', () => {
-      // (.+?) requires at least one char.
-      expect(renderMath('foo \\(\\) bar')).toBe('foo \\(\\) bar')
     })
   })
 

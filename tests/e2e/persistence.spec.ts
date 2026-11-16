@@ -12,49 +12,21 @@ import {
   messageInput,
   forkMessage,
 } from './helpers/app'
+import { savedChat, seedChats } from './helpers/history'
 
 test('stored history loads into the sidebar and stale empty chats are dropped', async ({
   page,
 }) => {
-  await page.goto('/settings')
-  await page.evaluate(
-    () =>
-      new Promise<void>((resolve, reject) => {
-        const request = indexedDB.open('llm-web', 1)
-        request.onerror = () => reject(request.error)
-        request.onupgradeneeded = () => {
-          const db = request.result
-          const chats = db.createObjectStore('chats', { keyPath: 'id', autoIncrement: true })
-          chats.createIndex('createdAt', 'createdAt', { unique: false })
-          db.createObjectStore('apiKeys', { keyPath: 'id' })
-        }
-        request.onsuccess = () => {
-          const db = request.result
-          const transaction = db.transaction('chats', 'readwrite')
-          transaction.onerror = () => reject(transaction.error)
-          transaction.oncomplete = () => {
-            db.close()
-            resolve()
-          }
-          const chats = transaction.objectStore('chats')
-          for (let index = 0; index < 3; index += 1) {
-            chats.add({
-              createdAt: new Date(Date.now() - index * 1000).toISOString(),
-              systemPrompt: 'test',
-              messages: [{ role: 'user', content: `seed ${index}` }],
-            })
-          }
-          // An empty chat left over from a previous page load. Even though it's
-          // the newest record, it should be dropped, not shown as a duplicate
-          // of this load's fresh chat.
-          chats.add({
-            createdAt: new Date(Date.now() + 1000).toISOString(),
-            systemPrompt: 'test',
-            messages: [],
-          })
-        }
-      }),
-  )
+  await seedChats(page, [
+    ...[0, 1, 2].map((index) => ({
+      ...savedChat(`seed ${index}`),
+      createdAt: new Date(Date.now() - index * 1000),
+    })),
+    // An empty chat left over from a previous page load. Even though it's the
+    // newest record, it should be dropped, not shown as a duplicate of this
+    // load's fresh chat.
+    { createdAt: new Date(Date.now() + 1000), systemPrompt: 'test', messages: [] },
+  ])
 
   await page.goto('/')
   await expect(messageInput(page)).toBeVisible()
@@ -116,27 +88,6 @@ test('OpenAI reasoning summaries and response chains survive reload and forks', 
   expect(bodies[4].input).toEqual([{ role: 'user', content: 'branch two' }])
 })
 
-test('multiple chats and their messages persist across reload', async ({ page }) => {
-  await mockOpenAI(page, { reply: (u) => `Re: ${u}`, auto: true })
-
-  await setKeysThroughSettings(page, { openai: 'sk-test' })
-  await send(page, 'one')
-  await expect(assistantMessages(page)).toContainText('Re: one')
-  await newChat(page)
-  await send(page, 'two')
-  await expect(assistantMessages(page)).toContainText('Re: two')
-
-  await page.reload()
-  // Both chats survive in history, and opening one restores its full message content.
-  await openSidebar(page)
-  await expect(chatRow(page, 'one')).toBeVisible()
-  await expect(chatRow(page, 'two')).toBeVisible()
-
-  await selectChat(page, 'one')
-  await expect(userMessages(page)).toContainText('one')
-  await expect(assistantMessages(page)).toContainText('Re: one')
-})
-
 test('reload reopens the open chat, and a fresh visit starts a new one', async ({ page }) => {
   await mockOpenAI(page, { reply: (u) => `Re: ${u}`, auto: true })
   await setKeysThroughSettings(page, { openai: 'sk-test' })
@@ -153,6 +104,9 @@ test('reload reopens the open chat, and a fresh visit starts a new one', async (
   await page.reload()
   await expect(userMessages(page)).toContainText(['one'])
   await expect(assistantMessages(page)).toContainText('Re: one')
+  await openSidebar(page)
+  await expect(chatRow(page, 'one')).toBeVisible()
+  await expect(chatRow(page, 'two')).toBeVisible()
 
   await page.goto('/')
   await expect(page).toHaveURL(/\/\?chat=\d+$/)

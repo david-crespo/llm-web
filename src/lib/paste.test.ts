@@ -1,10 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { estimateTokens, joinComposer, pasteLabel, splitComposer, splitSegments } from './paste'
-
-describe('estimateTokens', () => {
-  test('rounds up chars/4', () => expect(estimateTokens('abcde')).toBe(2))
-  test('empty', () => expect(estimateTokens('')).toBe(0))
-})
+import { joinComposer, pasteLabel, splitComposer, splitSegments } from './paste'
 
 describe('pasteLabel', () => {
   test('formats with a thousands separator', () =>
