@@ -5,6 +5,7 @@ import { mockOpenAI, mockAnthropic, mockGoogle } from './helpers/mocks'
 import {
   send,
   selectModel,
+  messageInput,
   assistantMessages,
   loadingPlaceholder,
   expectReasoning,
@@ -29,6 +30,8 @@ test('Anthropic happy path with reasoning', async ({ page }) => {
   await expect(assistantMessages(page)).toContainText('Hello from Claude.')
   // Reasoning (from Anthropic `thinking` blocks) is collapsed until expanded.
   await expectReasoning(page, 'Thinking about the greeting.')
+  await expect(assistantMessages(page)).toContainText(/\$0\.000\d/)
+  await expect(assistantMessages(page)).toContainText('12 → 8')
   expect(anthropic.calls()).toBe(1)
   const tools = anthropic.bodies()[0]?.tools as { name: string }[]
   expect(tools.map((tool) => tool.name)).toEqual(['web_search', 'web_fetch', 'code_execution'])
@@ -51,7 +54,8 @@ test('Google happy path with reasoning', async ({ page }) => {
   })
 
   await setKeysThroughSettings(page, { google: 'gm-test' })
-  await send(page, 'Hi')
+  await messageInput(page).fill('Hi')
+  await messageInput(page).press('ControlOrMeta+Enter')
   google.complete()
   await expect(assistantMessages(page)).toContainText('Hello from Gemini.')
   await expectReasoning(page, 'Pondering the greeting.')
@@ -59,4 +63,18 @@ test('Google happy path with reasoning', async ({ page }) => {
   // @google/genai 2.11 removed this header because it failed browser CORS
   // preflights: https://github.com/googleapis/js-genai/issues/1723
   expect(createHeaders).not.toHaveProperty('api-revision')
+
+  // Defaults: Search on, Think off.
+  await page.getByRole('button', { name: 'Search' }).click()
+  await page.getByRole('button', { name: 'Think' }).click()
+  await send(page, 'Again')
+  await expect(assistantMessages(page)).toHaveCount(2)
+  const [defaults, changed] = google.bodies() as {
+    tools: { type: string }[]
+    generation_config: { thinking_level: string }
+  }[]
+  expect(defaults.tools).toContainEqual({ type: 'google_search' })
+  expect(defaults.generation_config.thinking_level).toBe('low')
+  expect(changed.tools).not.toContainEqual({ type: 'google_search' })
+  expect(changed.generation_config.thinking_level).toBe('high')
 })

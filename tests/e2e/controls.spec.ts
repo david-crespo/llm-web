@@ -8,6 +8,7 @@ import {
   loadingPlaceholder,
   selectChat,
   selectModel,
+  selectedModel,
 } from './helpers/app'
 import { models } from '../../src/lib/models'
 import { answer, savedChat, seedChats } from './helpers/history'
@@ -62,10 +63,13 @@ test('Anthropic: toggling Think mid-chat keeps top-level effort fixed', async ({
   await send(page, 'two')
   await expect(assistantMessages(page)).toHaveCount(2)
   await think.click()
+  await page.getByRole('button', { name: 'Search' }).click()
   await send(page, 'three')
   await expect(assistantMessages(page)).toHaveCount(3)
 
   const bodies = anthropic.bodies()
+  // Search was on until the third request.
+  expect(bodies.map((b) => Array.isArray(b.tools))).toEqual([true, true, false])
   expect(bodies.map((b) => b.output_config)).toEqual([
     { effort: 'low' },
     { effort: 'low' },
@@ -147,19 +151,23 @@ test('Stop cancels an in-flight response and gates the input', async ({ page }) 
   await expect.poll(openai.cancels).toBe(1)
 })
 
-test('selecting a chat restores Search and Think from its last turn', async ({ page }) => {
-  const id = models[0].id
+test('selecting a chat restores the model, Search, and Think from its last turn', async ({
+  page,
+}) => {
+  const quiet = models[0]
+  const loud = models.at(-1)!
+  await setKeysThroughSettings(page, { [quiet.provider]: 'a', [loud.provider]: 'b' })
   await seedChats(page, [
     savedChat('quiet chat', [
-      { ...answer(id), search: false },
+      { ...answer(quiet.id), search: false },
       { role: 'user', content: 'retry', think: true },
       // Error messages record no search setting, so the one before counts.
-      { ...answer(id), stop_reason: 'error' },
+      { ...answer(quiet.id), stop_reason: 'error' },
     ]),
     savedChat('loud chat', [
-      { ...answer(id), search: false },
+      { ...answer(loud.id), search: false },
       { role: 'user', content: 'again', think: false },
-      { ...answer(id), search: true },
+      { ...answer(loud.id), search: true },
     ]),
   ])
   await page.goto('/')
@@ -167,10 +175,12 @@ test('selecting a chat restores Search and Think from its last turn', async ({ p
   const think = page.getByRole('button', { name: 'Think' })
 
   await selectChat(page, 'quiet chat')
+  await expect.poll(() => selectedModel(page)).toBe(quiet.id)
   await expect(search).toHaveAttribute('aria-pressed', 'false')
   await expect(think).toHaveAttribute('aria-pressed', 'true')
 
   await selectChat(page, 'loud chat')
+  await expect.poll(() => selectedModel(page)).toBe(loud.id)
   await expect(search).toHaveAttribute('aria-pressed', 'true')
   await expect(think).toHaveAttribute('aria-pressed', 'false')
 

@@ -15,11 +15,12 @@ test('no keys: shows the no-keys message and a disabled selector', async ({ page
   await expect(select).toContainText('No API keys')
 })
 
-test('anthropic key: shows only Anthropic models', async ({ page }) => {
-  await setKeysThroughSettings(page, { anthropic: 'sk-ant-test' })
+test('only providers with a key have their models listed', async ({ page }) => {
+  await setKeysThroughSettings(page, { anthropic: 'sk-ant-test', openai: 'sk-test' })
+  await setKeysThroughSettings(page, { openai: '' })
 
-  // Setting a key clears the no-keys message and enables the selector, and only
-  // the keyed provider's models are offered (no OpenAI/Gemini leakage).
+  // Setting a key clears the no-keys message and enables the selector. Only
+  // Anthropic still has a key, so only its models are listed.
   await expect(page.getByText(noKeysMessage)).toHaveCount(0)
   await expect(page.getByLabel('Select model')).toBeEnabled()
   const anthropicIds = models.filter((m) => m.provider === 'anthropic').map((m) => m.id)

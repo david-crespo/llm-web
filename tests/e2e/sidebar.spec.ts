@@ -118,3 +118,20 @@ test('deleting the open chat restores the fallback chat’s toggles and scroll',
   await expect(chatRow(page, 'fallback chat')).toBeVisible()
   await expect(chatRow(page, 'doomed chat')).toHaveCount(0)
 })
+
+test('the theme choice survives a reload', async ({ page }) => {
+  await page.goto('/')
+  const html = page.locator('html')
+  const cycle = page.getByRole('button', { name: 'Cycle theme' })
+  // Cycles system, light, dark. The test browsers' system theme is light.
+  await openSidebar(page)
+  await cycle.click()
+  await cycle.click()
+  await expect(html).toHaveClass(/dark/)
+
+  await page.reload()
+  await expect(html).toHaveClass(/dark/)
+  await openSidebar(page)
+  await cycle.click()
+  await expect(html).not.toHaveClass(/dark/)
+})

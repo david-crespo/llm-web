@@ -9,6 +9,8 @@ import {
   assistantMessages,
   messageInput,
   selectChat,
+  openSidebar,
+  chatRow,
 } from './helpers/app'
 import { answer, savedChat, seedChats } from './helpers/history'
 import { models } from '../../src/lib/models'
@@ -72,4 +74,28 @@ test('the message menu opens above the composer', async ({ page }) => {
   // Clicking an item fails if the composer is on top and takes the click.
   await page.getByRole('menuitem', { name: 'Fork' }).click()
   await expect(messageInput(page)).toHaveValue('last question')
+})
+
+test('Copy copies one message, and Copy as Markdown the whole chat', async ({ page }) => {
+  type Copied = { copied?: string }
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText: async (text: string) => void ((window as Copied).copied = text) },
+    })
+  })
+  const copied = () => page.evaluate(() => (window as Copied).copied)
+  await seedChats(page, [savedChat('copy me', [answer(models[0].id, 'The answer.')])])
+  await page.goto('/')
+  await selectChat(page, 'copy me')
+
+  await userMessages(page).getByLabel('Message options').click()
+  await page.getByRole('menuitem', { name: 'Copy' }).click()
+  await expect.poll(copied).toBe('copy me')
+
+  await openSidebar(page)
+  await chatRow(page, 'copy me').getByLabel('Chat menu').click()
+  await page.getByRole('menuitem', { name: 'Copy as Markdown' }).click()
+  await expect.poll(copied).toContain('# user (1/2)\n\ncopy me\n\n---\n\n# assistant (2/2)')
+  expect(await copied()).toContain('\n\nThe answer.')
 })
