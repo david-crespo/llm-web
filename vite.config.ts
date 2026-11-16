@@ -55,5 +55,11 @@ export default defineConfig({
   plugins,
   // The Playwright e2e specs live in tests/e2e and use *.spec.ts names that
   // match vitest's default glob, so exclude them — they run via `test:e2e`.
-  test: { exclude: [...configDefaults.exclude, 'tests/e2e/**'] },
+  // .playwright is local scratch space that can link back to src.
+  test: {
+    exclude: [...configDefaults.exclude, 'tests/e2e/**', '.playwright/**'],
+    clearMocks: true,
+    // Number formatting follows the machine's locale; the tests assert US English.
+    env: { LC_ALL: 'en_US.UTF-8' },
+  },
 })

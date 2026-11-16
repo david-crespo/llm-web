@@ -8,6 +8,8 @@ const KEY_LABELS = {
 
 type Provider = keyof typeof KEY_LABELS
 
+/** Leaves /settings and then the chat page in session history, which the
+ * back/forward test in persistence.spec.ts needs. */
 export async function setKeysThroughSettings(
   page: Page,
   keys: Partial<Record<Provider, string>>,

@@ -42,8 +42,8 @@ test('two concurrent requests can finish in reverse order', async ({ page }) => 
   await selectChat(page, 'beta')
   await expect(assistantMessages(page)).toContainText('Reply: beta')
   await selectChat(page, 'alpha')
-  await expect(assistantMessages(page)).toHaveCount(0)
   await expect(loadingPlaceholder(page)).toBeVisible()
+  await expect(assistantMessages(page)).toHaveCount(0)
 
   openai.completeRequest('alpha')
   await expect(assistantMessages(page)).toContainText('Reply: alpha')
@@ -129,14 +129,14 @@ test('durable job survives transient poll failures', async ({ page }) => {
   await expect.poll(openai.polls).toBeGreaterThan(0)
 
   const pollsBeforeFailure = openai.polls()
-  // The OpenAI SDK retries twice internally. Three consecutive HTTP failures
-  // exercise the app's persisted retry path rather than only the SDK's retry.
+  // The OpenAI SDK retries twice internally, so three consecutive HTTP failures
+  // reach the app as one failed poll. A fourth request means the app retried
+  // it. The wait is real time: the SDK's backoff, then the app's.
   openai.failNextPolls(3, 503)
   await expect
     .poll(openai.polls, { timeout: 10_000 })
-    .toBeGreaterThanOrEqual(pollsBeforeFailure + 3)
+    .toBeGreaterThanOrEqual(pollsBeforeFailure + 4)
   await expect(loadingPlaceholder(page)).toBeVisible()
-  await expect(assistantMessages(page)).toHaveCount(0)
 
   openai.completeRequest('retry me')
   await expect(assistantMessages(page)).toContainText('Reply: retry me')

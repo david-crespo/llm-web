@@ -107,7 +107,9 @@ test('a scroll clamped by a chat switch isn’t saved as the new chat’s offset
   await openSidebar(page)
   // Switch to the shorter chat, whose content clamps the long chat's offset,
   // and away again in the next frame, after its restore has run but before
-  // the scroll event the restore causes.
+  // the scroll event the restore causes. If the restore's timing changes, the
+  // second click misses that window and this test passes without checking
+  // anything, so revisit it when touching restoreScroll.
   await page.evaluate(() => {
     const row = (name: string) =>
       document.querySelector<HTMLElement>(`[aria-label="Select chat: ${name}"]`)!

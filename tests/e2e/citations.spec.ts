@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import { setKeysThroughSettings } from './helpers/settings'
 import { mockOpenAI, mockAnthropic, mockGoogle } from './helpers/mocks'
-import { send, selectChat, selectModel, assistantMessages } from './helpers/app'
+import { send, selectChat, selectModel, assistantMessages, userMessages } from './helpers/app'
 import { models } from '../../src/lib/models'
 import {
   openaiSearchResponse,
@@ -119,7 +119,7 @@ test('Anthropic search: multi-block inline citations, page_age metadata, and cle
   )
 
   // Outside click dismisses the popover
-  await page.locator('body').click({ position: { x: 8, y: 8 } })
+  await userMessages(page).getByText('Who won the 2026 Nobel Prizes?').click()
   await expect(popover).toBeHidden()
 
   // End sources deduplicate the 5 inline citations down to 2 cited sources + 2 extra search results

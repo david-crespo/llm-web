@@ -46,8 +46,11 @@ test('a small paste goes into the textarea as usual', async ({ page }) => {
   await messageInput(page).fill('short')
   // A dispatched paste event is not default-handled by the browser, so if the
   // app leaves it alone the textarea stays as it was and no chip appears.
+  // The large paste that follows gives the test a chip to wait for. There
+  // should be only that one.
   await paste(page, 'tiny')
-  await expect(page.locator('[data-pasted-chip]')).toHaveCount(0)
+  await paste(page, LONG)
+  await expect(page.locator('[data-pasted-chip]')).toHaveCount(1)
   await expect(messageInput(page)).toHaveValue('short')
 })
 

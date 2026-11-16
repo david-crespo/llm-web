@@ -20,10 +20,11 @@ test('deleting a resumed pending chat cancels its provider job', async ({ page }
   await setKeysThroughSettings(page, { openai: 'sk-test' })
   await send(page, 'delete while pending')
   await expectPendingJobPersisted(page, 'delete while pending')
-  const pollsBeforeReload = openai.polls()
 
+  // Count from after the reload, to leave out polls the old page had in flight.
   await page.reload()
-  await expect.poll(openai.polls).toBeGreaterThan(pollsBeforeReload)
+  const pollsAfterReload = openai.polls()
+  await expect.poll(openai.polls).toBeGreaterThan(pollsAfterReload)
 
   await deleteChat(page, 'delete while pending')
 
