@@ -15,6 +15,10 @@
 
   function showWindowError(event: Event) {
     const { error, message } = event as ErrorEvent
+    // For an error from a cross-origin script, browsers leave `error` undefined
+    // and set `message` to "Script error.". The CSP only allows this app's own
+    // scripts, so these come from browser extensions and have nothing to report.
+    if (!error && message === 'Script error.') return
     showError(error ?? message, 'window')
   }
 </script>

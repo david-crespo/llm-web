@@ -39,6 +39,23 @@ test('an unhandled rejection surfaces a report', async ({ page }) => {
   await expect(report(page)).toContainText('boom from a promise')
 })
 
+test('a masked cross-origin script error is ignored', async ({ page }) => {
+  await page.goto('/')
+  await expect(messageInput(page)).toBeVisible()
+
+  // Simulate an uncaught error from a browser extension's content script. The
+  // overlay shows only the first error, so seeing the real one confirms the
+  // masked one was ignored.
+  await page.evaluate(() => {
+    window.dispatchEvent(new ErrorEvent('error', { message: 'Script error.' }))
+    setTimeout(() => {
+      throw new Error('a real error')
+    })
+  })
+
+  await expect(report(page)).toContainText('a real error')
+})
+
 test('a bad route renders the error page rather than a bare SvelteKit 404', async ({ page }) => {
   await page.goto('/no-such-route')
 
