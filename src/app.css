@@ -4,96 +4,99 @@
 @variant dark (.dark &);
 
 @theme {
+  /* From the app icon. Light: cream surfaces with teal text, borders, and accents.
+     Dark: teal-tinted surfaces with cream text. */
+
   /* Surfaces */
-  --color-surface: oklch(100% 0 0);
-  --color-surface-alt: oklch(98% 0.004 260);
-  --color-surface-elevated: oklch(100% 0 0);
-  --color-surface-active: oklch(93% 0.045 255);
-  --color-surface-hover: oklch(97% 0.02 255);
-  --color-surface-user: oklch(92% 0.008 260);
+  --color-surface: oklch(99.5% 0.005 115);
+  --color-surface-alt: oklch(97.5% 0.006 115);
+  --color-surface-elevated: oklch(99.8% 0.003 115);
+  --color-surface-active: oklch(94% 0.014 180);
+  --color-surface-hover: oklch(96.5% 0.012 180);
+  --color-surface-user: oklch(95% 0.009 115);
 
   /* Borders */
-  --color-edge: oklch(85% 0.01 260);
-  --color-edge-muted: oklch(91% 0.006 260);
+  --color-edge: oklch(85% 0.012 180);
+  --color-edge-muted: oklch(91.5% 0.007 180);
 
   /* Foreground (text) */
-  --color-fg: oklch(13% 0.025 260);
-  --color-fg-muted: oklch(45% 0.015 260);
-  --color-fg-faint: oklch(65% 0.012 260);
+  --color-fg: oklch(18% 0.012 180);
+  --color-fg-muted: oklch(44% 0.012 180);
+  --color-fg-faint: oklch(63% 0.012 180);
 
   /* Accents */
-  --color-accent: oklch(52% 0.2 260);
-  --color-accent-muted: oklch(60% 0.17 260);
+  --color-accent: oklch(43% 0.07 180);
+  --color-accent-muted: oklch(56% 0.055 180);
 
   /* Links */
-  --color-link: oklch(52% 0.2 260);
-  --color-link-hover: oklch(45% 0.22 260);
+  --color-link: oklch(43% 0.07 180);
+  --color-link-hover: oklch(32% 0.055 180);
 
   /* Code */
-  --color-code-bg: oklch(93% 0.01 260);
-  --color-code-block-bg: oklch(98.5% 0.004 260);
+  --color-code-bg: oklch(93.5% 0.007 115);
+  --color-code-block-bg: oklch(98% 0.005 115);
 
   /* Inline citation badge */
-  --color-badge-bg: oklch(93.5% 0.012 260);
-  --color-badge-hover: oklch(88.5% 0.035 255);
-  --color-badge-edge: oklch(84% 0.015 260);
+  --color-badge-bg: oklch(94% 0.009 180);
+  --color-badge-hover: oklch(90% 0.02 180);
+  --color-badge-edge: oklch(85% 0.015 180);
 
-  /* Toggle active state (blue tinted) */
-  --color-toggle-active: oklch(88% 0.07 255);
-  --color-toggle-active-hover: oklch(82% 0.1 255);
-  --color-toggle-active-border: oklch(78% 0.12 255);
-  --color-toggle-active-fg: oklch(13% 0.025 260);
+  /* Toggle active state (teal tinted) */
+  --color-toggle-active: oklch(93% 0.025 180);
+  --color-toggle-active-hover: oklch(89% 0.035 180);
+  --color-toggle-active-border: oklch(68% 0.055 180);
+  --color-toggle-active-fg: oklch(30% 0.05 180);
 
   /* Button primary (Send) */
-  --color-btn-primary: oklch(52% 0.2 260);
-  --color-btn-primary-hover: oklch(45% 0.22 260);
-  --color-btn-disabled: oklch(68% 0.012 260);
+  --color-btn-primary: oklch(38% 0.055 180);
+  --color-btn-primary-hover: oklch(32% 0.055 180);
+  --color-btn-disabled: oklch(68% 0.009 180);
 
   /* Danger/error */
-  --color-danger: oklch(55% 0.22 25);
-  --color-surface-danger: oklch(97% 0.025 25);
+  --color-danger: oklch(54% 0.2 28);
+  --color-surface-danger: oklch(96.5% 0.025 30);
 }
 
 @layer theme {
   .dark {
-    --color-surface: oklch(14% 0.01 260);
-    --color-surface-alt: oklch(20% 0.012 260);
-    --color-surface-elevated: oklch(17% 0.01 260);
-    --color-surface-active: oklch(32% 0.025 260);
-    --color-surface-hover: oklch(28% 0.02 260);
-    --color-surface-user: oklch(30% 0.015 260);
+    --color-surface: oklch(16% 0.007 180);
+    --color-surface-alt: oklch(21% 0.009 180);
+    --color-surface-elevated: oklch(19% 0.009 180);
+    --color-surface-active: oklch(29% 0.018 180);
+    --color-surface-hover: oklch(25% 0.012 180);
+    --color-surface-user: oklch(25% 0.011 180);
 
-    --color-edge: oklch(33% 0.015 260);
-    --color-edge-muted: oklch(22% 0.01 260);
+    --color-edge: oklch(34% 0.012 180);
+    --color-edge-muted: oklch(24% 0.009 180);
 
-    --color-fg: oklch(92% 0.008 260);
-    --color-fg-muted: oklch(70% 0.012 260);
-    --color-fg-faint: oklch(52% 0.015 260);
+    --color-fg: oklch(93% 0.009 115);
+    --color-fg-muted: oklch(73% 0.012 180);
+    --color-fg-faint: oklch(55% 0.012 180);
 
-    --color-accent: oklch(70% 0.15 255);
-    --color-accent-muted: oklch(78% 0.12 255);
+    --color-accent: oklch(76% 0.06 180);
+    --color-accent-muted: oklch(62% 0.05 180);
 
-    --color-link: oklch(78% 0.12 255);
-    --color-link-hover: oklch(85% 0.09 255);
+    --color-link: oklch(82% 0.065 180);
+    --color-link-hover: oklch(89% 0.05 180);
 
-    --color-code-bg: oklch(26% 0.015 260);
-    --color-code-block-bg: oklch(22% 0.012 260);
+    --color-code-bg: oklch(27% 0.011 180);
+    --color-code-block-bg: oklch(21% 0.009 180);
 
-    --color-badge-bg: oklch(25% 0.016 260);
-    --color-badge-hover: oklch(32% 0.035 255);
-    --color-badge-edge: oklch(36% 0.02 260);
+    --color-badge-bg: oklch(26% 0.012 180);
+    --color-badge-hover: oklch(32% 0.02 180);
+    --color-badge-edge: oklch(38% 0.015 180);
 
-    --color-toggle-active: oklch(30% 0.08 255);
-    --color-toggle-active-hover: oklch(38% 0.12 255);
-    --color-toggle-active-border: oklch(50% 0.18 260);
-    --color-toggle-active-fg: oklch(88% 0.07 255);
+    --color-toggle-active: oklch(26% 0.02 180);
+    --color-toggle-active-hover: oklch(31% 0.03 180);
+    --color-toggle-active-border: oklch(52% 0.06 180);
+    --color-toggle-active-fg: oklch(86% 0.06 180);
 
-    --color-btn-primary: oklch(55% 0.2 260);
-    --color-btn-primary-hover: oklch(62% 0.18 260);
-    --color-btn-disabled: oklch(42% 0.015 260);
+    --color-btn-primary: oklch(46% 0.065 180);
+    --color-btn-primary-hover: oklch(52% 0.07 180);
+    --color-btn-disabled: oklch(38% 0.012 180);
 
-    --color-danger: oklch(68% 0.18 25);
-    --color-surface-danger: oklch(20% 0.035 25);
+    --color-danger: oklch(70% 0.17 28);
+    --color-surface-danger: oklch(22% 0.04 28);
   }
 }
 
@@ -187,7 +190,7 @@ textarea:focus,
 select:focus {
   outline: none;
   border-color: var(--color-accent);
-  box-shadow: 0 0 0 1.5px oklch(70% 0.15 255 / 0.4);
+  box-shadow: 0 0 0 1.5px color-mix(in oklch, var(--color-accent-muted) 45%, transparent);
 }
 
 select option {

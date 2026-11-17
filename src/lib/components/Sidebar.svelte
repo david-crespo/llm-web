@@ -164,7 +164,7 @@
           role="button"
           tabindex="0"
           aria-label={`Select chat: ${preview}`}
-          class="chat-row absolute right-0 left-0 flex overflow-hidden border-b border-edge-muted py-3 pr-3 pl-3.5 focus:ring-2 focus:ring-gray-500 focus:outline-none focus:ring-inset {isActive
+          class="chat-row absolute right-0 left-0 flex overflow-hidden border-b border-edge-muted py-3 pr-3 pl-3.5 focus:ring-2 focus:ring-accent-muted focus:outline-none focus:ring-inset {isActive
             ? 'bg-surface-active'
             : ''}"
           style:height={`${HISTORY_ROW_HEIGHT}px`}
