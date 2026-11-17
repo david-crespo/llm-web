@@ -19,7 +19,7 @@ vi.mock('#lib/settings.svelte.ts', () => ({ settings: { getKey: () => 'test-key'
 const user = (content: string, think?: boolean): ChatMessage => ({ role: 'user', content, think })
 const answer: AssistantMessage = {
   role: 'assistant',
-  model: 'GPT-6.1 Sol',
+  model: 'GPT-6.2 Sol',
   content: 'answer',
   tokens: { input: 0, output: 0 },
   stop_reason: 'completed',

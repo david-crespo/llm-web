@@ -58,11 +58,20 @@ export const models: Model[] = [
   },
   {
     provider: 'openai',
-    key: 'gpt-6.1-sol',
-    id: 'GPT-6.1 Sol',
+    key: 'gpt-6.2-sol',
+    id: 'GPT-6.2 Sol',
     input: 2,
     input_cached: 0.1,
     output: 10,
+    search_cost: 0.01,
+  },
+  {
+    provider: 'openai',
+    key: 'gpt-6.2-astra',
+    id: 'GPT-6.2 Astra',
+    input: 8,
+    input_cached: 0.4,
+    output: 40,
     search_cost: 0.01,
   },
 ]
