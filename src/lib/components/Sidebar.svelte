@@ -196,7 +196,7 @@
   </div>
 
   <!-- Bottom section -->
-  <div class="flex items-center justify-center gap-2 border-t border-edge p-3">
+  <div class="flex items-center justify-center gap-2 border-t border-edge p-3 pb-(--bottom-bar-pb)">
     {#if !isDesktop}
       <!-- Close button (mobile only) -->
       <button

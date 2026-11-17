@@ -34,7 +34,7 @@
 
   function getToggleClasses(isActive: boolean, extra = '') {
     const base =
-      'h-10 w-10 md:w-auto flex items-center justify-center rounded border p-0'
+      'h-10 w-10 shrink-0 md:w-auto flex items-center justify-center rounded border p-0'
     const active =
       'border-toggle-active-border bg-toggle-active text-toggle-active-fg hover:bg-toggle-active-hover'
     const inactive = 'border-edge bg-surface-alt text-fg-muted hover:bg-surface-hover'
@@ -87,7 +87,7 @@
 
 <div
   bind:clientHeight={height}
-  class="fixed inset-x-0 bottom-0 z-10 w-full border-t border-edge bg-surface-alt p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:relative"
+  class="fixed inset-x-0 bottom-0 z-10 w-full border-t border-edge bg-surface-alt p-3 pb-(--bottom-bar-pb) md:relative"
 >
   <button
     onclick={scrollToBottom}
@@ -147,10 +147,10 @@
     </div>
 
     <!-- Button row -->
-    <div class="flex items-center gap-1">
+    <div class="flex items-center gap-2">
       <button
         onclick={() => (chatState.sidebarOpen = !chatState.sidebarOpen)}
-        class="size-10 rounded border border-edge bg-surface-alt hover:bg-surface-hover md:hidden"
+        class="size-10 shrink-0 rounded border border-edge bg-surface-alt hover:bg-surface-hover md:hidden"
         aria-label="Toggle sidebar"
         aria-expanded={chatState.sidebarOpen}
         aria-controls="mobile-sidebar"
@@ -162,68 +162,64 @@
         {/if}
       </button>
 
-      <div class="flex-1"></div>
-
-      <div class="flex items-center gap-2">
-        <!-- Model selector -->
-        <div class="relative">
-          <select
-            value={hasAnyKeys ? chatState.selectedModel : undefined}
-            onchange={(e) => {
-              if (hasAnyKeys) {
-                const index = e.currentTarget.selectedIndex
-                chatState.selectedModel = availableModels[index]
-              }
-            }}
-            disabled={!hasAnyKeys}
-            class="h-10 w-32 appearance-none rounded border border-edge bg-surface-alt bg-none px-2 py-2 text-sm text-fg disabled:text-fg-faint sm:w-44 sm:pr-8"
-            aria-label="Select model"
-          >
-            {#if !hasAnyKeys}
-              <option selected>No API keys</option>
-            {:else}
-              {#each availableModels as model (model.key)}
-                <option value={model}>{model.id}</option>
-              {/each}
-            {/if}
-          </select>
-          <ChevronDownIcon
-            class="pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 text-fg-faint sm:block"
-          />
-        </div>
-
-        <!-- Web Search Toggle Button -->
-        <button
-          onclick={() => (chatState.webSearch = !chatState.webSearch)}
-          class={getToggleClasses(chatState.webSearch, 'md:gap-2 md:pl-2.5 md:pr-3')}
-          title="Web Search"
-          aria-label="Search"
-          aria-pressed={chatState.webSearch}
+      <!-- Model selector: takes the width the fixed-size controls leave -->
+      <div class="relative ml-auto max-w-44 min-w-0 flex-1">
+        <select
+          value={hasAnyKeys ? chatState.selectedModel : undefined}
+          onchange={(e) => {
+            if (hasAnyKeys) {
+              const index = e.currentTarget.selectedIndex
+              chatState.selectedModel = availableModels[index]
+            }
+          }}
+          disabled={!hasAnyKeys}
+          class="h-10 w-full appearance-none rounded border border-edge bg-surface-alt bg-none px-2 py-2 text-sm text-fg disabled:text-fg-faint sm:pr-8"
+          aria-label="Select model"
         >
-          <SearchIcon />
-          <span class="hidden text-sm md:inline">Search</span>
-        </button>
-
-        <!-- Reasoning Toggle Button -->
-        <button
-          onclick={() => (chatState.reasoning = !chatState.reasoning)}
-          class={getToggleClasses(chatState.reasoning, 'md:gap-1 md:pl-2 md:pr-3')}
-          title="Reasoning"
-          aria-label="Think"
-          aria-pressed={chatState.reasoning}
-        >
-          <ThinkingIcon />
-          <span class="hidden text-sm md:inline">Think</span>
-        </button>
-
-        <button
-          onclick={onSend}
-          disabled={chatState.isCurrentLoading || !message.trim() || chatState.lastMessageIsError}
-          class="rounded bg-btn-primary px-4 py-2 text-white hover:bg-btn-primary-hover disabled:bg-btn-disabled"
-        >
-          Send
-        </button>
+          {#if !hasAnyKeys}
+            <option selected>No API keys</option>
+          {:else}
+            {#each availableModels as model (model.key)}
+              <option value={model}>{model.id}</option>
+            {/each}
+          {/if}
+        </select>
+        <ChevronDownIcon
+          class="pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 text-fg-faint sm:block"
+        />
       </div>
+
+      <!-- Web Search Toggle Button -->
+      <button
+        onclick={() => (chatState.webSearch = !chatState.webSearch)}
+        class={getToggleClasses(chatState.webSearch, 'md:gap-2 md:pl-2.5 md:pr-3')}
+        title="Web Search"
+        aria-label="Search"
+        aria-pressed={chatState.webSearch}
+      >
+        <SearchIcon />
+        <span class="hidden text-sm md:inline">Search</span>
+      </button>
+
+      <!-- Reasoning Toggle Button -->
+      <button
+        onclick={() => (chatState.reasoning = !chatState.reasoning)}
+        class={getToggleClasses(chatState.reasoning, 'md:gap-1 md:pl-2 md:pr-3')}
+        title="Reasoning"
+        aria-label="Think"
+        aria-pressed={chatState.reasoning}
+      >
+        <ThinkingIcon />
+        <span class="hidden text-sm md:inline">Think</span>
+      </button>
+
+      <button
+        onclick={onSend}
+        disabled={chatState.isCurrentLoading || !message.trim() || chatState.lastMessageIsError}
+        class="shrink-0 rounded bg-btn-primary px-4 py-2 text-white hover:bg-btn-primary-hover disabled:bg-btn-disabled"
+      >
+        Send
+      </button>
     </div>
   </div>
 </div>

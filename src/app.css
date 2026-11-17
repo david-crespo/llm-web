@@ -116,6 +116,18 @@ body {
   }
 }
 
+/* env(safe-area-inset-bottom) is nonzero only when the page reaches the bottom
+   of the screen: in the home-screen app, or in Safari with its address bar at
+   the top. With bottom padding equal to the inset, the buttons at the ends of a
+   bottom bar sit too close to the screen's rounded corners, so --bottom-bar-pb
+   scales it by 1.25 to raise them clear of the curves at full width.
+   --safe-bottom exists so Playwright tests, which can't emulate safe-area
+   insets, can override it. */
+:root {
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --bottom-bar-pb: max(0.75rem, calc(var(--safe-bottom) * 1.25));
+}
+
 /* Syntax highlighting theme handled via link tags in app.html */
 
 /* Remove default button styles */
