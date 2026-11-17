@@ -174,41 +174,26 @@ const sidebarToggle = (page: Page) => page.getByRole('button', { name: 'Toggle s
 test.describe('swiping the mobile sidebar', () => {
   test.skip(({ hasTouch }) => !hasTouch, 'Touch only')
 
-  test('opens from the left edge in the home-screen app and closes by swiping left', async ({
-    page,
-  }) => {
-    await page.addInitScript(() => {
-      const matchMedia = window.matchMedia.bind(window)
-      window.matchMedia = (query) =>
-        query === '(display-mode: standalone)'
-          ? ({ matches: true, addEventListener() {}, removeEventListener() {} } as never)
-          : matchMedia(query)
-    })
+  test('closes by swiping left', async ({ page }) => {
     await page.goto('/')
     await expect(messageInput(page)).toBeVisible()
+    await openSidebar(page)
 
     // Mid-drag, the drawer follows the finger.
-    await swipe(page, [5, 300], [150, 305], { lift: false })
+    const { width } = (await page.locator('#mobile-sidebar').boundingBox())!
+    await swipe(page, [250, 300], [150, 305], { lift: false })
     const box = await page.locator('#mobile-sidebar').boundingBox()
-    expect(box!.x + box!.width).toBeCloseTo(145, -1)
-    await swipe(page, [150, 305], [250, 305], { press: false })
-    await expect(sidebarToggle(page)).toHaveAttribute('aria-expanded', 'true')
-
-    await swipe(page, [250, 300], [20, 305])
+    expect(box!.x + box!.width).toBeCloseTo(width - 100, -1)
+    await swipe(page, [150, 305], [20, 305], { press: false })
     await expect(sidebarToggle(page)).toHaveAttribute('aria-expanded', 'false')
   })
 
-  test('an edge swipe in the browser is left to Safari', async ({ page }) => {
+  test('does not open from the left edge, where the swipe is Back', async ({ page }) => {
     await page.goto('/')
     await expect(messageInput(page)).toBeVisible()
     await swipe(page, [5, 300], [250, 305])
     // Give a wrongly opened drawer time to show up.
     await page.waitForTimeout(300)
-    await expect(sidebarToggle(page)).toHaveAttribute('aria-expanded', 'false')
-
-    // Swiping to close still works in Safari.
-    await openSidebar(page)
-    await swipe(page, [250, 300], [20, 305])
     await expect(sidebarToggle(page)).toHaveAttribute('aria-expanded', 'false')
   })
 })

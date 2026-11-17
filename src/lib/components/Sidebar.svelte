@@ -99,8 +99,6 @@
     if (isDesktop) return
     const stop = trackDrawerSwipe({
       isOpen: () => chatState.sidebarOpen,
-      // Only the home-screen app: in Safari, a swipe in from the left edge is Back.
-      canOpen: () => matchMedia('(display-mode: standalone)').matches,
       drawerWidth: () => drawer?.offsetWidth ?? 1,
       onDrag: (progress) => (dragProgress = progress),
       onSettle: (open) => (chatState.sidebarOpen = open),
