@@ -76,6 +76,7 @@
   }
 
   import { getThemeMode, cycleThemeMode } from '#lib/theme.svelte.ts'
+  import { trackDrawerSwipe } from '#lib/swipe.ts'
 
   // Conditionally render desktop vs mobile sidebar to avoid creating
   // duplicate DOM (especially DropdownMenu portals) for the hidden variant
@@ -88,6 +89,27 @@
     }
     mq.addEventListener('change', handler)
     return () => mq.removeEventListener('change', handler)
+  })
+
+  let drawer = $state<HTMLDivElement>()
+  /** How far open the mobile drawer is while a finger drags it, or null. */
+  let dragProgress = $state<number | null>(null)
+
+  $effect(() => {
+    if (isDesktop) return
+    const stop = trackDrawerSwipe({
+      isOpen: () => chatState.sidebarOpen,
+      // Only the home-screen app: in Safari, a swipe in from the left edge is Back.
+      canOpen: () => matchMedia('(display-mode: standalone)').matches,
+      drawerWidth: () => drawer?.offsetWidth ?? 1,
+      onDrag: (progress) => (dragProgress = progress),
+      onSettle: (open) => (chatState.sidebarOpen = open),
+    })
+    // A drag cut short by switching to the desktop layout never ends.
+    return () => {
+      stop()
+      dragProgress = null
+    }
   })
 
   $effect(() => {
@@ -271,6 +293,8 @@
   <div
     class="fixed inset-0 z-40 bg-black/20 transition-opacity duration-150
       {chatState.sidebarOpen ? 'opacity-100' : 'pointer-events-none opacity-0'}"
+    class:transition-none={dragProgress !== null}
+    style:opacity={dragProgress}
     role="button"
     tabindex="0"
     aria-label="Close sidebar overlay"
@@ -281,9 +305,12 @@
   <!-- Panel -->
   <div
     id="mobile-sidebar"
+    bind:this={drawer}
     class="fixed top-0 left-0 z-50 flex w-4/5 max-w-sm flex-col overflow-hidden border-r border-edge bg-surface-alt transition-transform duration-150
       {chatState.sidebarOpen ? 'translate-x-0' : '-translate-x-full'}"
+    class:transition-none={dragProgress !== null}
     style="height: 100dvh;"
+    style:translate={dragProgress === null ? undefined : `${(dragProgress - 1) * 100}% 0`}
   >
     {@render sidebarContent(false)}
   </div>

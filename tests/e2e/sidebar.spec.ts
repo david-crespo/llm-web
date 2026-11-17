@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect, type Page } from '@playwright/test'
 import { setKeysThroughSettings } from './helpers/settings'
 import { mockOpenAI } from './helpers/mocks'
 import { answer, savedChat, seedChats } from './helpers/history'
@@ -12,6 +12,7 @@ import {
   sidebarRows,
   selectChat,
   userMessages,
+  messageInput,
 } from './helpers/app'
 
 test('deleting a resumed pending chat cancels its provider job', async ({ page }) => {
@@ -134,4 +135,80 @@ test('the theme choice survives a reload', async ({ page }) => {
   await openSidebar(page)
   await cycle.click()
   await expect(html).not.toHaveClass(/dark/)
+})
+
+/** Drag one finger from `from` to `to` in a few steps. Playwright has no swipe
+ * and WebKit has no Touch constructor, so this dispatches plain events with
+ * `touches` filled in, all on the element at `from`. `press: false` continues
+ * a drag started with `lift: false`. */
+async function swipe(
+  page: Page,
+  from: [number, number],
+  to: [number, number],
+  { press = true, lift = true } = {},
+) {
+  await page.evaluate(
+    ([from, to, press, lift]) => {
+      const target = document.elementFromPoint(...from)!
+      const fire = (type: string, [x, y]: [number, number]) => {
+        const event = new Event(type, { bubbles: true, cancelable: true })
+        const touches = type === 'touchend' ? [] : [{ clientX: x, clientY: y }]
+        Object.defineProperty(event, 'touches', { value: touches })
+        target.dispatchEvent(event)
+      }
+      if (press) fire('touchstart', from)
+      for (let step = 1; step <= 5; step++) {
+        fire('touchmove', [
+          from[0] + ((to[0] - from[0]) * step) / 5,
+          from[1] + ((to[1] - from[1]) * step) / 5,
+        ])
+      }
+      if (lift) fire('touchend', to)
+    },
+    [from, to, press, lift] as const,
+  )
+}
+
+const sidebarToggle = (page: Page) => page.getByRole('button', { name: 'Toggle sidebar' })
+
+test.describe('swiping the mobile sidebar', () => {
+  test.skip(({ hasTouch }) => !hasTouch, 'Touch only')
+
+  test('opens from the left edge in the home-screen app and closes by swiping left', async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      const matchMedia = window.matchMedia.bind(window)
+      window.matchMedia = (query) =>
+        query === '(display-mode: standalone)'
+          ? ({ matches: true, addEventListener() {}, removeEventListener() {} } as never)
+          : matchMedia(query)
+    })
+    await page.goto('/')
+    await expect(messageInput(page)).toBeVisible()
+
+    // Mid-drag, the drawer follows the finger.
+    await swipe(page, [5, 300], [150, 305], { lift: false })
+    const box = await page.locator('#mobile-sidebar').boundingBox()
+    expect(box!.x + box!.width).toBeCloseTo(145, -1)
+    await swipe(page, [150, 305], [250, 305], { press: false })
+    await expect(sidebarToggle(page)).toHaveAttribute('aria-expanded', 'true')
+
+    await swipe(page, [250, 300], [20, 305])
+    await expect(sidebarToggle(page)).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  test('an edge swipe in the browser is left to Safari', async ({ page }) => {
+    await page.goto('/')
+    await expect(messageInput(page)).toBeVisible()
+    await swipe(page, [5, 300], [250, 305])
+    // Give a wrongly opened drawer time to show up.
+    await page.waitForTimeout(300)
+    await expect(sidebarToggle(page)).toHaveAttribute('aria-expanded', 'false')
+
+    // Swiping to close still works in Safari.
+    await openSidebar(page)
+    await swipe(page, [250, 300], [20, 305])
+    await expect(sidebarToggle(page)).toHaveAttribute('aria-expanded', 'false')
+  })
 })
