@@ -2,26 +2,44 @@ import temml from 'temml'
 
 // Render LaTeX math expressions to MathML
 // Supports both $...$/$$...$$ and \(...\)/\[...\] delimiters
-export function renderMath(text: string): string {
+//
+// The returned text has placeholders where the math was, and restore puts the
+// MathML back into the HTML that markdown produces. Markdown must not see the
+// MathML: \grave renders to a literal backtick, for example, and two of them
+// make a code span out of everything in between.
+export function renderMath(text: string): { text: string; restore: (html: string) => string } {
+  // The placeholders below use NUL, so drop any NULs already in the text
+  // oxlint-disable-next-line no-control-regex
+  text = text.replace(/\x00/g, '')
+
   // Protect code blocks and inline code from math processing
   const codeBlocks: string[] = []
-  const placeholder = (i: number) => `\x00CODE${i}\x00`
-
-  // Protect fenced code blocks
-  text = text.replace(/```[\s\S]*?```|`[^`\n]+`/g, (match) => {
+  text = text.replace(/(```|~~~)[\s\S]*?\1|`[^`\n]+`/g, (match) => {
     codeBlocks.push(match)
-    return placeholder(codeBlocks.length - 1)
+    return `\x00CODE${codeBlocks.length - 1}\x00`
   })
+  const restoreCode = (s: string) =>
+    // oxlint-disable-next-line no-control-regex
+    s.replace(/\x00CODE(\d+)\x00/g, (_, i) => codeBlocks[parseInt(i)])
+
+  const math: string[] = []
+  const toMathML = (latex: string, displayMode: boolean) => {
+    // A math span can contain a code placeholder, as in $\frac{`n`$.
+    latex = restoreCode(latex)
+    let html: string
+    try {
+      html = temml.renderToString(latex, { displayMode })
+    } catch {
+      html = `<code class="math-error">${latex}</code>`
+    }
+    math.push(html)
+    return `\x00MATH${math.length - 1}\x00`
+  }
 
   // Block math: $$...$$ or \[...\]
-  text = text.replace(/\$\$([\s\S]+?)\$\$|\\\[([\s\S]+?)\\\]/g, (_, d1, d2) => {
-    const latex = (d1 ?? d2).trim()
-    try {
-      return temml.renderToString(latex, { displayMode: true })
-    } catch {
-      return `<code class="math-error">${latex}</code>`
-    }
-  })
+  text = text.replace(/\$\$([\s\S]+?)\$\$|\\\[([\s\S]+?)\\\]/g, (_, d1, d2) =>
+    toMathML((d1 ?? d2).trim(), true),
+  )
   // Inline math: $...$ (not \$) or \(...\)
   // For $...$, require at least one LaTeX-ish char to avoid "$50 to $100" false positives.
   // Content allows `\$` (LaTeX-escaped dollar) so it is not mistaken for a closer;
@@ -33,19 +51,15 @@ export function renderMath(text: string): string {
       if (d1 !== undefined && !shouldRenderDollarMath(d1, source.slice(offset + match.length))) {
         return match
       }
-      const latex = (d1 ?? d2).trim()
-      try {
-        return temml.renderToString(latex, { displayMode: false })
-      } catch {
-        return `<code class="math-error">${latex}</code>`
-      }
+      return toMathML((d1 ?? d2).trim(), false)
     },
   )
 
-  // Restore code blocks
-  // oxlint-disable-next-line no-control-regex
-  text = text.replace(/\x00CODE(\d+)\x00/g, (_, i) => codeBlocks[parseInt(i)])
-  return text
+  return {
+    text: restoreCode(text),
+    // oxlint-disable-next-line no-control-regex
+    restore: (html) => html.replace(/\x00MATH(\d+)\x00/g, (_, i) => math[parseInt(i)]),
+  }
 }
 
 // Heuristic: does the string contain characters typical of LaTeX?

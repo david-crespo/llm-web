@@ -37,5 +37,5 @@ export const systemBase = `
 - Put code within a triple-backtick fence block with a language key (like \`\`\`rust)
 - Never put markdown prose (or bullets or whatever) in a fenced code block
 - For inline math, use \\(...\\), not $...$. For block math, $$...$$ or \\[...\\]. \\(...\\) is parsed as math anywhere it appears, so don't write \\( or \\) in prose; for a literal "\\(" use a code span.
-- Don't wrap dollar amounts in math just to display them — write "$300", "$300-$500", "~$300" plainly. (Inside an actual equation, \\$ is fine.)
+- Use math only for math. Write dollar amounts plainly ("$300", "$300-$500", "~$300"); inside an actual equation, \\$ is fine. Write Greek and other non-Latin words as Unicode text (πρὸς ἑαυτό), not as LaTeX symbols and accents.
 - Today's date is ${new Date().toISOString().slice(0, 10)}`

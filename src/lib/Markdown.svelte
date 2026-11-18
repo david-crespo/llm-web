@@ -103,8 +103,8 @@
     void (async () => {
       const prepared = prepareMarkdownCitations(content, citations, sources)
       // Render math before markdown so $...$ isn't misinterpreted
-      const withMath = renderMath(prepared.content)
-      const rendered = await marked.parse(withMath, { renderer })
+      const math = renderMath(prepared.content)
+      const rendered = math.restore(await marked.parse(math.text, { renderer }))
 
       // A newer render started while we were awaiting — discard this result
       if (seq !== renderSeq) return

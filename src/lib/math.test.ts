@@ -1,5 +1,22 @@
+import { marked } from 'marked'
 import { describe, expect, test } from 'vitest'
-import { renderMath } from './math'
+import { renderMath as renderMathParts } from './math'
+
+// Render with no markdown pass in between
+function renderMath(input: string) {
+  const { text, restore } = renderMathParts(input)
+  return restore(text)
+}
+
+// Render the way Markdown.svelte does: math, then markdown, then restore
+async function renderWithMarkdown(input: string) {
+  const { text, restore } = renderMathParts(input)
+  const html = restore(await marked.parse(text))
+  expect(html).not.toContain('\x00')
+  return html
+}
+
+const mathCount = (html: string) => (html.match(/<math/g) ?? []).length
 
 describe('renderMath', () => {
   // Helper: check that renderMath produced MathML output
@@ -89,6 +106,7 @@ describe('renderMath', () => {
     'use `$x^2$` in LaTeX',
     '```\n$x^2$\n```',
     '```python\n$x^2$\n```',
+    '~~~\n$x^2$\n~~~',
     '\\$not math$',
     '$x\ny$',
     '**$30.7k** of depreciation, versus **$13.6k** for a Toyota',
@@ -133,6 +151,40 @@ describe('renderMath', () => {
       const mathCount = (result.match(/<math/g) ?? []).length
       expect(mathCount).toBe(1)
       expect(result).toContain('f(x) where')
+    })
+  })
+
+  describe('markdown around rendered math', () => {
+    test('backticks in MathML are not code spans', async () => {
+      // \grave renders as a literal backtick in an <mo>. Two of them made marked
+      // see a code span stretching across the MathML between them.
+      const html = await renderWithMarkdown('$\\grave{o}$ and $\\grave{o}$')
+      expect(html).not.toContain('<code')
+      expect(mathCount(html)).toBe(2)
+    })
+
+    test('pipes in MathML do not split table cells', async () => {
+      const html = await renderWithMarkdown('| a | b |\n|---|---|\n| \\(|x|\\) | y |')
+      expect(html).toContain('<td>y</td>')
+      expect(mathCount(html)).toBe(1)
+    })
+
+    test('math inside bold and headings', async () => {
+      expect(await renderWithMarkdown('**$x^2$**-time')).toMatch(
+        /<strong><math.*<\/math><\/strong>/,
+      )
+      expect(await renderWithMarkdown('## Solving $x^2$')).toMatch(/<h2>Solving <math/)
+    })
+
+    test('code span inside a math span is restored', () => {
+      // Code is set aside before math, so the latex can contain its placeholder.
+      expect(renderMath('$\\frac{`n`$ end')).not.toContain('\x00')
+    })
+
+    test('placeholder-like text in the input is not replaced', async () => {
+      const html = await renderWithMarkdown('\x00MATH1\x00 and $x^2$')
+      expect(html).not.toContain('undefined')
+      expect(mathCount(html)).toBe(1)
     })
   })
 
